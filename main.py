@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+main.py - punto di partenza. Doppio clic oppure da terminale:
+
+    python main.py                 scarica i dati, crea cot_radar.html e lo apre nel browser
+    python main.py --demo          stessa cosa con dati FINTI (nessun internet): per provare e fare debug
+    python main.py --debug         stampa i dettagli di ogni passaggio (quale serie arriva, quanto ci mette...)
+    python main.py --out public    modalita' sito: crea public/index.html (usata da GitHub Actions)
+    python main.py --no-open       non apre il browser
+    python main.py --pianifica     Windows: aggiornamento automatico ogni venerdi' alle 21:45
+
+Solo libreria standard di Python 3.9+: non serve installare nulla.
+"""
+import os
+import sys
+import traceback
+import webbrowser
+
+# permette di lanciare main.py da qualsiasi cartella (anche con doppio clic)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from cot_radar.config import OUT                     # noqa: E402
+from cot_radar.log import log, setup                 # noqa: E402
+from cot_radar.pagina import build, error_page       # noqa: E402
+
+
+def install_task():
+    """Crea un'attivita' pianificata di Windows (o suggerisce la riga di crontab su Mac/Linux)."""
+    exe, me = sys.executable, os.path.abspath(__file__)
+    if os.name != "nt":
+        print(f"Aggiungi a crontab (crontab -e):  45 21 * * 5 {exe} {me}")
+        return
+    import subprocess
+    r = subprocess.run(["schtasks", "/Create", "/F", "/SC", "WEEKLY", "/D", "FRI", "/ST", "21:45", "/TN", "COT Radar",
+                        "/TR", f'"{exe}" "{me}"'], capture_output=True, text=True)
+    print(r.stdout or r.stderr)
+    print("Fatto: ogni venerdi' alle 21:45 COT Radar si aggiorna e si apre." if r.returncode == 0
+          else "Non riuscito: apri il Prompt dei comandi come amministratore e riprova.")
+
+
+def main(argv):
+    setup(debug="--debug" in argv)
+    if "--pianifica" in argv:
+        install_task()
+        return 0
+
+    site = "--out" in argv
+    out = OUT
+    if site:
+        folder = argv[argv.index("--out") + 1]
+        os.makedirs(folder, exist_ok=True)
+        out = os.path.join(folder, "index.html")
+
+    if "--demo" in argv:
+        from cot_radar.demo import demo_data
+        log.warning("MODALITA' DEMO: dati finti, non usarli per decidere")
+        source = demo_data
+    else:
+        from cot_radar.fonti import load_all
+        source = load_all
+
+    try:
+        page = build(source, demo="--demo" in argv)
+    except Exception:
+        err = traceback.format_exc()
+        log.error("Errore:\n%s", err)
+        if site:
+            return 1          # sul sito NON pubblichiamo una pagina di errore: resta online l'ultima versione buona
+        page = error_page(err)
+
+    with open(out, "w", encoding="utf-8") as f:
+        f.write(page)
+    log.info("Pagina creata: %s", out)
+    if not site and "--no-open" not in argv:
+        webbrowser.open("file:///" + out.replace("\\", "/").lstrip("/"))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

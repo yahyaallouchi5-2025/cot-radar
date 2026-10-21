@@ -1,0 +1,241 @@
+/* ==========================================================================
+   app.js - disegna la dashboard a partire dai dati
+   --------------------------------------------------------------------------
+   I dati arrivano da Python nella costante D (vedi index.html):
+     D.meta      impostazioni e ora di aggiornamento      D.sources   stato di ogni fonte
+     D.assets    ogni strumento (punteggi, COT, mercato)   D.pairs     coppie di valute
+     D.market    driver di mercato                         D.mortgage  mutui
+     D.fed       liquidita' Fed                            D.corr      matrice delle correlazioni
+   Ogni sezione qui sotto riempie un pezzo di pagina (gli id corrispondono a quelli di index.html).
+   Si usano "template literal" `...${valore}...` per costruire l'HTML.
+   DEBUG: F12 -> Console. Scrivi D per vedere i dati, D.assets.EUR per un singolo strumento.
+          Un errore in rosso nella Console indica file e riga del problema.
+   ========================================================================== */
+const M=D.meta;            // impostazioni (pesi, soglie, ora di aggiornamento)
+
+const COL={"STRONG BUY":"var(--sb)","BUY":"var(--b)","NEUTRO":"var(--n)","SELL":"var(--s)","STRONG SELL":"var(--ss)"};
+const fmt=n=>{if(n==null||isNaN(n))return"n/d";const r=Math.round(n);return(r>0?"+":"")+(r==0?0:r).toLocaleString("it-IT");};
+const fx=(n,d=2)=>n==null||isNaN(n)?"n/d":n.toLocaleString("it-IT",{minimumFractionDigits:d,maximumFractionDigits:d});
+const sg=(n,d=2)=>n==null||isNaN(n)?"n/d":(n>0?"+":"")+fx(n,d);
+const c2=v=>{const t=v.toFixed(2);return t=="-0.00"?"0.00":t;};const c1=v=>{const t=v.toFixed(1);return t=="-0.0"?"0.0":t;};
+const verb=s=>s>=20?["COMPRANO","up","▲"]:s<=-20?["VENDONO","down","▼"]:["neutri","flat","■"];
+const badge=l=>`<span class="badge" style="background:${COL[l]}">${l}</span>`;
+const pos=s=>Math.max(0,Math.min(100,(s+100)/2));
+const nm=k=>(D.assets[k]||{}).name||k;
+const esc=t=>String(t).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const lab=s=>Math.abs(s)>=M.strong?(s>0?"STRONG BUY":"STRONG SELL"):Math.abs(s)>=M.normal?(s>0?"BUY":"SELL"):"NEUTRO";
+const $=id=>document.getElementById(id);
+
+/* ---------- stato fonti e avvisi ----------
+   Un riquadro per fonte (pallino verde/giallo/rosso) e, sotto, gli avvisi in chiaro.
+   Se l'ora attuale supera la prossima uscita prevista (next_ms), la pagina avvisa che ci sono dati nuovi. */
+$("updated").innerHTML=`Aggiornato il <b>${M.now}</b>`;
+const DOT={ok:"var(--b)",cache:"var(--warn)",late:"var(--s)",err:"var(--s)"};
+const STX={ok:"aggiornato",cache:"dati salvati (offline)",late:"IN RITARDO",err:"errore"};
+$("status").innerHTML=D.sources.filter(s=>s.st!="err").map(s=>`<div class="src"><div class="t"><i style="background:${DOT[s.st]}"></i>${s.name}</div>
+ <div class="d"><b>${s.last}</b><span class="x"> &middot; ${STX[s.st]}</span><span class="nx"><br>Prossimo: ${s.next}</span></div></div>`).join("");
+const al=[];D.sources.forEach(s=>{if(s.msg)al.push(`<div class="alert ${s.st=='late'||s.st=='err'?'red':''}"><b>${s.name}:</b> ${esc(s.msg)}</div>`);
+ if(s.next_ms&&Date.now()>s.next_ms)al.push(`<div class="alert red"><b>${s.name}:</b> sono usciti dati nuovi (${s.next}) dopo questo aggiornamento. Riapri cot_radar.py per scaricarli.</div>`);});
+if(M.demo)al.unshift(`<div class="alert red"><b>DATI DIMOSTRATIVI:</b> pagina creata con --demo, i numeri sono finti.</div>`);
+$("alerts").innerHTML=al.join("");
+
+/* ---------- navigazione ----------
+   Le schede sono <section>: si mostra solo quella con la classe "on". */
+document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#nav button,section").forEach(x=>x.classList.remove("on"));
+ b.classList.add("on");$(b.dataset.t).classList.add("on");window.scrollTo({top:0});});
+const go=t=>document.querySelector(`#nav button[data-t=${t}]`).click();
+
+/* ---------- grafici ----------
+   spark(): mini linea senza assi.  lineChart(): grafico con assi, griglia e legenda.
+   Entrambi producono SVG (grafica vettoriale): nitidi su qualsiasi schermo, nessuna libreria esterna. */
+function spark(v,col){v=v.filter(x=>x!=null);if(v.length<2)return"";const mn=Math.min(...v),mx=Math.max(...v),W=300,H=54;
+ const p=v.map((y,i)=>`${(i/(v.length-1)*W).toFixed(1)},${(H-4-(y-mn)/((mx-mn)||1)*(H-8)).toFixed(1)}`).join(" ");
+ return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><polyline points="${p}" fill="none" stroke="${col}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>`;}
+function lineChart(x,series,unit){const W=760,H=280,L=48,R=16,T=14,B=30;const all=series.flatMap(s=>s.v.filter(v=>v!=null));
+ if(!all.length)return"";let mn=Math.min(...all),mx=Math.max(...all);const pad=(mx-mn)*.08||.5;mn-=pad;mx+=pad;
+ const X=i=>L+i/(x.length-1)*(W-L-R),Y=v=>T+(1-(v-mn)/(mx-mn))*(H-T-B);
+ const ticks=[0,1,2,3,4].map(i=>mn+(mx-mn)*i/4);
+ let g=ticks.map(t=>`<line x1="${L}" x2="${W-R}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)"/><text x="${L-8}" y="${Y(t)+4}" text-anchor="end" font-size="11" fill="var(--mute)">${t.toFixed(1)}${unit}</text>`).join("");
+ const xi=[0,Math.floor((x.length-1)/2),x.length-1];g+=xi.map(i=>`<text x="${X(i)}" y="${H-8}" text-anchor="${i==0?'start':i==x.length-1?'end':'middle'}" font-size="11" fill="var(--mute)">${x[i]}</text>`).join("");
+ series.forEach(s=>{let d="",pen=false;s.v.forEach((v,i)=>{if(v==null){pen=false;return;}d+=(pen?"L":"M")+X(i).toFixed(1)+","+Y(v).toFixed(1);pen=true;});
+  g+=`<path d="${d}" fill="none" stroke="${s.c}" stroke-width="${s.w||2.2}" ${s.dash?'stroke-dasharray="5 4"':''} stroke-linejoin="round"/>`;
+  const li=s.v.map((v,i)=>[v,i]).filter(p=>p[0]!=null).pop();if(li)g+=`<circle cx="${X(li[1])}" cy="${Y(li[0])}" r="3.5" fill="${s.c}"/>`;});
+ return `<div class="legend">${series.map(s=>`<span><i style="background:${s.c}"></i>${s.n}</span>`).join("")}</div><svg class="chart" viewBox="0 0 ${W} ${H}">${g}</svg>`;}
+
+/* ---------- segnali ----------
+   Riepilogo in alto, settori, schede delle coppie (card) e degli altri strumenti (acard).
+   mtag() decide l'etichetta "Mercato conferma / contro / gia' scontato" confrontando i segni di COT e Mercato. */
+const SEC=D.sectors,byS={};Object.values(D.assets).forEach(a=>{if(a.key!="USD")(byS[a.group]=byS[a.group]||[]).push(a);});
+const NOTE={"Tassi USA":"Futures sui titoli di Stato: COMPRARE = scommettere su tassi in calo.","VIX":"Sul VIX comprare = aspettarsi piu' volatilita'."};
+function mtag(cot,mac){if(mac==null)return`<span class="tag">mercato: n/d</span>`;if(Math.abs(mac)<25)return`<span class="tag">mercato: gia' scontato</span>`;
+ if(Math.abs(cot)<10)return`<span class="tag">mercato ${mac>0?'rialzista':'ribassista'}</span>`;
+ return (mac>0)==(cot>0)?`<span class="tag ok">Mercato conferma</span>`:`<span class="tag ko">Mercato contro</span>`;}
+const split=(cot,mac)=>`<div class="split"><div>COT (${Math.round((1-M.mw)*100)}%)<b>${fmt(cot)}</b></div><div>Mercato (${Math.round(M.mw*100)}%)<b>${mac==null?'n/d':fmt(mac)}</b></div></div>`;
+const meter=s=>`<div class="meter"><i style="left:${pos(s)}%"></i></div><div class="scale"><span>-100 vendi</span><span>finale <b style="color:var(--ink)">${fmt(s)}</b></span><span>compra +100</span></div>`;
+
+(function kpis(){const strong=D.pairs.filter(p=>p.label.startsWith("STRONG")).length+Object.values(D.assets).filter(a=>a.key!="USD"&&a.group!="Valute"&&a.label.startsWith("STRONG")).length;
+ const act=D.pairs.filter(p=>p.label!="NEUTRO").length+Object.values(D.assets).filter(a=>a.key!="USD"&&a.group!="Valute"&&a.label!="NEUTRO").length;
+ const r=D.market?D.market.risk:null,rl=r==null?"n/d":r>=30?"Favorevole":r<=-30?"Sfavorevole":"Neutro";
+ const mo=D.mortgage,pf=mo&&mo.proj_fix&&mo.proj_fix.points.length?mo.proj_fix.points.slice(-1)[0]:null;
+ const cot=D.sources[0];
+ $("kpis").innerHTML=`<div class="card kpi"><h3>Segnali attivi</h3><div class="big">${act}</div><div class="note">di cui <b>${strong}</b> STRONG</div></div>
+ <div class="card kpi"><h3>Clima di rischio</h3><div class="big" style="color:${r>=30?'var(--b)':r<=-30?'var(--s)':'var(--ink)'}">${rl}</div><div class="note">VIX, spread e rendimenti reali, 4 settimane</div></div>
+ <div class="card kpi"><h3>Mutuo fisso Italia</h3><div class="big">${mo&&mo.fix!=null?fx(mo.fix)+"%":"n/d"}</div><div class="note">${mo?fd(mo.last):""}${pf?` &middot; stima ${fd(pf.month)}: <b>${fx(pf.value)}%</b>`:""}</div></div>
+ <div class="card kpi"><h3>Prossimo COT</h3><div class="big" style="font-size:20px;margin-top:12px">${cot.next}</div><div class="note">dati al ${cot.last}</div></div>`;})();
+function fd(s){if(!s)return"";const m=["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];if(s.length==7)return m[+s.slice(5,7)-1]+" "+s.slice(0,4);return s.slice(8,10)+"/"+s.slice(5,7)+"/"+s.slice(0,4);}
+
+$("sectors").innerHTML=SEC.filter(g=>byS[g]).map(g=>{const l=byS[g],avg=l.reduce((x,a)=>x+a.score,0)/l.length;
+ const up=l.filter(a=>a.score>=M.normal).length,dn=l.filter(a=>a.score<=-M.normal).length;
+ return `<div class="sec" data-g="${g}" style="background:${COL[lab(avg*1.6)]}"><b>${g}</b><span>${fmt(avg)}</span><small>${up} in acquisto &middot; ${dn} in vendita</small></div>`}).join("");
+document.querySelectorAll(".sec").forEach(x=>x.onclick=()=>{go("assets");selS(x.dataset.g);});
+const L5=["STRONG BUY","BUY","NEUTRO","SELL","STRONG SELL"];
+$("summary").innerHTML=L5.map(l=>`<div class="sum" style="background:${COL[l]}"><b>${D.pairs.filter(p=>p.label==l).length}</b><small>${l}</small></div>`).join("");
+function sideRow(k){const a=D.assets[k]||{score:0};const v=verb(a.score);return `<div class="r"><span>${k} <span class="small">${nm(k)}</span></span><span class="${v[1]}">${v[2]} ${v[0]} (${fmt(a.score)})</span></div>`;}
+function why(p){const b=verb(D.assets[p.base].score)[0],q=verb(D.assets[p.quote].score)[0];
+ const dir=p.score>=M.normal?"tende a SALIRE":p.score<=-M.normal?"tende a SCENDERE":"non ha una direzione chiara";
+ if(p.div)return `Speculatori: ${b} ${p.base} e ${q} ${p.quote}. Spingono in direzioni opposte, quindi ${p.pair} ${dir}.`;
+ return `Su ${p.base} sono ${b.toLowerCase()}, su ${p.quote} ${q.toLowerCase()}: nessuna divergenza netta, ${p.pair} ${dir} (segnale meno forte).`;}
+function card(p){return `<div class="card"><div class="pairhead"><span class="pair">${p.pair}</span>${badge(p.label)}</div>${meter(p.score)}${split(p.cot,p.macro)}
+ <div class="rows">${sideRow(p.base)}${sideRow(p.quote)}</div>
+ <div class="tags">${p.div?'<span class="tag div">Divergenza</span>':''}${mtag(p.cot,p.macro)}${p.new?`<span class="tag new">Nuovo (prima ${p.prev})</span>`:''}</div>
+ <div class="why">${why(p)}</div></div>`;}
+const act=D.pairs.filter(p=>p.label!="NEUTRO");
+$("cards").innerHTML=act.length?act.map(card).join(""):`<div class="card">Nessun segnale attivo sulle valute questa settimana.</div>`;
+function acard(a){const v=verb(a.score),m=a.mkt;return `<div class="card"><div class="pairhead"><span class="pair" style="font-size:19px">${a.name}</span>${badge(a.label)}</div>
+ <div class="small" style="margin-top:2px">${a.group} &middot; ${a.key} &middot; COT Index ${a.idx}/100</div>${meter(a.score)}${split(a.cot,a.macro)}
+ <div class="tags">${mtag(a.cot,a.macro)}${a.new?`<span class="tag new">Nuovo (prima ${a.prev_label})</span>`:''}${a.crowded?'<span class="tag ko">affollato</span>':''}</div>
+ <div class="why">Speculatori: <b class="${v[1]}">${v[0]}</b>, ${fmt(a.d_net)} contratti in settimana, ${fmt(a.d_net4)} in 4 settimane.${m?` Mercato: ${m.status.toLowerCase()}.`:''}${NOTE[a.key]||NOTE[a.group]?' '+(NOTE[a.key]||NOTE[a.group]):''}</div></div>`;}
+const oth=Object.values(D.assets).filter(a=>a.group!="Valute"&&a.label!="NEUTRO").sort((x,y)=>Math.abs(y.score)-Math.abs(x.score));
+$("acards").innerHTML=oth.length?oth.map(acard).join(""):`<div class="card">Nessun segnale attivo.</div>`;
+
+/* ---------- coppie ----------
+   Tabella completa con filtri; drawTable() la ridisegna a ogni clic su un filtro. */
+let F="Tutti";
+function drawTable(){const rows=D.pairs.filter(p=>F=="Tutti"||(F=="Divergenze"?p.div:p.label.includes(F))).slice().sort((a,b)=>b.score-a.score);
+ $("ptable").innerHTML=`<tr><th>Coppia</th><th>Segnale</th><th class="num">Finale</th><th></th><th class="num">COT</th><th class="num">Mercato</th><th>Base</th><th>Quotata</th><th>Divergenza</th><th class="num">Corr. flussi</th></tr>`+
+ rows.map(p=>{const s=p.score,w=Math.abs(s)/2,vb=verb(D.assets[p.base].score),vq=verb(D.assets[p.quote].score);
+ return `<tr><td><b>${p.pair}</b>${p.new?' <span class="tag new">nuovo</span>':''}</td><td>${badge(p.label)}</td><td class="num"><b>${fmt(s)}</b></td>
+ <td><div class="bar"><i style="left:${s<0?50-w:50}%;width:${w}%;background:${s<0?'var(--s)':'var(--b)'}"></i></div></td>
+ <td class="num">${fmt(p.cot)}</td><td class="num">${p.macro==null?'n/d':fmt(p.macro)}</td>
+ <td class="${vb[1]}">${vb[2]} ${p.base}</td><td class="${vq[1]}">${vq[2]} ${p.quote}</td><td>${p.div?'<span class="tag div">si\'</span>':'<span class="small">no</span>'}</td>
+ <td class="num">${p.corr==null?'n/d':c2(p.corr)}</td></tr>`}).join("");}
+$("filters").innerHTML=["Tutti","STRONG","BUY","SELL","NEUTRO","Divergenze"].map(x=>`<button class="${x==F?'on':''}">${x}</button>`).join("");
+document.querySelectorAll("#filters button").forEach(b=>b.onclick=()=>{F=b.textContent;document.querySelectorAll("#filters button").forEach(x=>x.classList.toggle("on",x==b));drawTable();});
+drawTable();
+
+/* ---------- strumenti ----------
+   Una riga per strumento, raggruppati per settore. selS(settore) filtra (usato anche dai riquadri dei settori). */
+let SF="Tutti";
+function selS(g){SF=g;document.querySelectorAll("#sfilters button").forEach(x=>x.classList.toggle("on",x.textContent==g));drawAssets();}
+$("sfilters").innerHTML=["Tutti",...SEC.filter(g=>byS[g])].map(g=>`<button class="${g==SF?'on':''}">${g}</button>`).join("");
+document.querySelectorAll("#sfilters button").forEach(b=>b.onclick=()=>selS(b.textContent));
+function drawAssets(){const groups={};D.order.forEach(k=>{const a=D.assets[k];if(a&&k!="DXY"&&(SF=="Tutti"||a.group==SF))(groups[a.group]=groups[a.group]||[]).push(a);});
+ if(D.assets.DXY&&groups["Valute"])groups["Valute"].push(D.assets.DXY);
+ $("alist").innerHTML=Object.entries(groups).map(([g,list])=>`<div class="group">${g}</div>`+list.sort((a,b)=>b.score-a.score).map(a=>{
+  const s=a.score,w=Math.abs(s)/2;
+  let t=a.composite?`Meta' indice del dollaro, meta' l'inverso di tutte le altre valute.`:
+   `<b>Speculatori:</b> ${a.d_net==0?'nessuna variazione':(a.d_net>0?'comprato ':'venduto ')+fmt(Math.abs(a.d_net)).replace('+','')+' contratti netti'} in settimana, ${fmt(a.d_net4)} in 4 settimane; netto ${fmt(a.net)} (${a.pct_oi}% open interest), COT Index ${a.idx}/100.`;
+  if(a.mkt)t+=` <b>Mercato:</b> ${a.mkt.status.toLowerCase()} (R² ${fx(a.mkt.r2)}).`;
+  if(a.crowded)t+=` <b style="color:var(--warn)">Posizionamento affollato: rischio inversione.</b>`;
+  return `<div class="asset"><div class="nm"><b>${a.name}</b><small>${a.key}</small></div>
+  <div class="abar"><i style="left:${s<0?50-w:50}%;width:${w}%;background:${s<0?'var(--s)':'var(--b)'}"></i></div>
+  <div style="text-align:right"><b style="font-size:17px">${fmt(s)}</b><br>${badge(a.label||lab(s))}</div><div class="txt">${t}</div></div>`}).join("")+
+  (NOTE[g]?`<p class="small" style="margin:0 0 8px">${NOTE[g]}</p>`:'')).join("");}
+drawAssets();
+
+/* ---------- mercato e macro ----------
+   Schede dei driver (valore, variazioni, forza del movimento) e tabella "quanto e' gia' scontato". */
+(function(){const X=D.market,el=$("mtop");
+ if(!X){el.innerHTML=`<h2>Mercato e macro</h2><div class="card">Dati di mercato (FRED) non disponibili: i segnali usano solo il COT.</div>`;return;}
+ const r=X.risk,env=r>=30?["FAVOREVOLE agli asset di rischio","var(--sb)"]:r<=-30?["SFAVOREVOLE agli asset di rischio","var(--ss)"]:["NEUTRO per gli asset di rischio","var(--n)"];
+ const dcard=d=>{const u=d.unit=="pb"?" pb":"";const val=d.unit=="pb"?fx(d.value)+"%":fx(d.value,1);const bad=["vix","hy","real"].includes(d.key);
+  const cls=d.d4==null?'flat':(d.d4>0)==bad?'down':'up';
+  return `<div class="card"><h3>${d.name}</h3><div class="kpi"><div class="big">${val}</div></div>
+  <div class="kv"><span>1 settimana</span><b>${sg(d.d1,1)}${u}</b><span>4 settimane</span><b class="${cls}">${sg(d.d4,1)}${u}</b><span>Forza del movimento</span><b>${Math.abs(d.z4)>=1.5?'forte':Math.abs(d.z4)>=.75?'media':'debole'} (z ${sg(d.z4,1)})</b></div>${spark(d.spark,"var(--c1)")}</div>`;};
+ let h=`<h2>Il mercato in questo momento</h2><p class="sub">Solo indicatori prezzati ogni giorno dal mercato: anticipano le notizie invece di inseguirle. Ultimo dato: ${fd(X.anchor)}.</p>
+ <div class="env" style="background:${env[1]}"><b>Clima ${env[0]}</b>Combina VIX, spread delle obbligazioni high yield e rendimenti reali delle ultime 4 settimane (punteggio ${fmt(r)}).</div>
+ <div class="grid k3">${X.drivers.map(dcard).join("")}</div>
+ <h2>Quanto e' gia' scontato nei prezzi</h2><p class="sub">Per ogni strumento con un prezzo pubblico: una regressione su ${M.regw} settimane stima quanto i driver qui sopra muovono il prezzo.
+ Poi confronta la mossa che i driver <b>implicavano</b> nelle ultime 4 settimane con quella che il prezzo ha <b>fatto davvero</b>. Se coincidono la notizia e' gia' nel prezzo; se il prezzo e' rimasto indietro resta uno spazio, che diventa il punteggio "Mercato".</p>
+ <div class="tablewrap"><table id="mtable"></table></div>`;
+ const F=D.fed;
+ if(F)h+=`<h2>Liquidita' della Fed (contesto, lento)</h2><p class="sub">QE e QT cambiano il quadro in mesi, non in giorni: per questo sono mostrati come contesto e non entrano nel punteggio.</p>
+ <div class="grid k2"><div class="card"><h3>Bilancio Fed</h3><div class="kpi"><div class="big">${fx(F.bs/1e6)} mila mld $</div><div class="note">${F.regime} &middot; 3 mesi ${sg(F.bs13)}% &middot; dato del ${fd(F.date)}</div></div>${spark(F.spark_bs,"var(--ink)")}</div>
+ <div class="card"><h3>Liquidita' netta</h3><div class="kpi"><div class="big">${fx(F.nl/1e6)} mila mld $</div><div class="note">Bilancio - conto del Tesoro - reverse repo &middot; 4 settimane ${sg(F.nl4)}%</div></div>${spark(F.spark_nl,F.nl4>0?"var(--b)":"var(--s)")}</div></div>`;
+ el.innerHTML=h;
+ const rows=Object.values(D.assets).filter(a=>a.mkt&&a.key!="USD").sort((a,b)=>Math.abs(b.mkt.score)-Math.abs(a.mkt.score));
+ $("mtable").innerHTML=`<tr><th>Strumento</th><th class="num">R²</th><th>Driver principale</th><th class="num">Mossa implicita 4s</th><th class="num">Mossa reale 4s</th><th class="num">Differenza</th><th>Lettura</th><th class="num">Punteggio</th></tr>`+
+ rows.map(a=>{const m=a.mkt,t=m.top[0];const st=m.r2<.05?'<span class="small">poco legato al macro</span>':Math.abs(m.gz)<.5?'<span class="tag">gia\' scontato</span>':m.gz>0?'<span class="tag ok">spazio al rialzo</span>':'<span class="tag ko">spazio al ribasso</span>';
+ return `<tr><td><b>${a.name}</b> <span class="small">${a.key}</span></td><td class="num">${fx(m.r2)}</td><td>${t?`${t.name} <span class="${t.c>0?'up':'down'}">${sg(t.c)}%</span>`:''}</td>
+ <td class="num">${sg(m.impl)}%</td><td class="num">${sg(m.act)}%</td><td class="num"><b>${sg(m.gap)}%</b></td><td>${st}</td><td class="num"><b class="${m.score>=25?'up':m.score<=-25?'down':'flat'}">${fmt(m.score)}</b></td></tr>`}).join("");
+})();
+
+/* ---------- mutui ----------
+   Tassi Italia, stime, grafico 5 anni, calcolatore della rata (ammortamento francese), confronto europeo.
+   Formula della rata: R = C * i / (1 - (1+i)^-n) con i = tasso annuo/12/100 e n = numero di mesi. */
+(function(){const X=D.mortgage,el=$("mortgage");
+ if(!X){el.innerHTML=`<h2>Mutui</h2><div class="card">Dati BCE sui mutui non disponibili in questo momento.</div>`;return;}
+ const pf=X.proj_fix,pv=X.proj_var,lp=p=>p&&p.points.length?p.points[p.points.length-1]:null,lf=lp(pf),lv=lp(pv);
+ const trend=(p,cur)=>{if(!p)return"n/d";const d=p.value-cur;return Math.abs(d)<.05?"stabile":d>0?"in SALITA":"in DISCESA";};
+ const ycard=(t,v,d12,note)=>`<div class="card kpi"><h3>${t}</h3><div class="big">${v==null?'n/d':fx(v)+'%'}</div><div class="note">${note}${d12!=null?` &middot; 12 mesi <b class="${d12>0?'down':'up'}">${sg(d12)}</b>`:''}</div></div>`;
+ const it=X.table.find(r=>r.code=="IT")||{};
+ let h=`<h2>Mutui per la casa in Italia</h2><p class="sub">Tassi medi effettivamente applicati dalle banche sui nuovi mutui (statistica ufficiale BCE/Banca d'Italia). Ultimo mese disponibile: <b>${fd(X.last)}</b>; la BCE lo pubblica circa 5 settimane dopo la fine del mese.</p>
+ <div class="grid k3">${ycard("Tasso fisso (oltre 10 anni)",X.fix,it.fix_d12,"Tasso medio nuovi mutui")}${ycard("Tasso variabile (fino a 1 anno)",X.var,it.var_d12,"Legato a Euribor / tasso BCE")}${ycard("Media di tutti i mutui",X.tot,it.tot_d12,"Fissi e variabili insieme")}</div>
+ <h2>Dove stanno andando</h2><p class="sub">I tassi dei mutui seguono, con 1-2 mesi di ritardo, i tassi di mercato: il fisso segue il rendimento a 10 anni (proxy dell'IRS), il variabile segue l'ESTR/Euribor. Questi sono aggiornati ogni giorno, quindi permettono di stimare i mesi non ancora pubblicati.</p>
+ <div class="grid k2">
+ <div class="card"><h3>Stima tasso fisso</h3><div class="kpi"><div class="big">${lf?fx(lf.value)+'%':'n/d'}</div><div class="note">${lf?`stima per ${fd(lf.month)} (&plusmn;${fx(lf.err)}) &middot; tendenza <b>${trend(lf,X.fix)}</b>`:'dati insufficienti'}</div></div>
+ <div class="kv"><span>Rendimento 10 anni area euro (AAA)</span><b>${X.y10.v!=null?fx(X.y10.v)+'%':'n/d'}</b><span>Margine banca sul fisso</span><b>${X.fix_spread!=null?fx(X.fix_spread)+' punti':'n/d'}</b><span>Affidabilita' del modello (R²)</span><b>${pf?fx(pf.r2):'n/d'}</b></div></div>
+ <div class="card"><h3>Stima tasso variabile</h3><div class="kpi"><div class="big">${lv?fx(lv.value)+'%':'n/d'}</div><div class="note">${lv?`stima per ${fd(lv.month)} (&plusmn;${fx(lv.err)}) &middot; tendenza <b>${trend(lv,X.var)}</b>`:'dati insufficienti'}</div></div>
+ <div class="kv"><span>ESTR (tasso overnight)</span><b>${X.estr.v!=null?fx(X.estr.v)+'%':'n/d'}</b><span>Euribor 3 mesi (${X.euribor?fd(X.euribor.month):''})</span><b>${X.euribor?fx(X.euribor.v,3)+'%':'n/d'}</b><span>Tasso BCE sui depositi</span><b>${X.dfr.v!=null?fx(X.dfr.v)+'%':'n/d'}</b></div></div></div>
+ <div class="card" style="margin-top:20px"><h3 style="margin-bottom:12px">Cosa sconta il mercato sulla BCE</h3><p style="margin:0;color:var(--ink2)">${X.y2.v!=null&&X.dfr.v!=null?(X.y2.v<X.dfr.v-.1?`Il rendimento a 2 anni (${fx(X.y2.v)}%) e' <b>sotto</b> il tasso BCE (${fx(X.dfr.v)}%): il mercato si aspetta <b>tagli dei tassi</b> nei prossimi due anni, favorevole per i variabili.`:X.y2.v>X.dfr.v+.1?`Il rendimento a 2 anni (${fx(X.y2.v)}%) e' <b>sopra</b> il tasso BCE (${fx(X.dfr.v)}%): il mercato si aspetta <b>rialzi dei tassi</b>, sfavorevole per i variabili.`:`Il rendimento a 2 anni (${fx(X.y2.v)}%) e' vicino al tasso BCE (${fx(X.dfr.v)}%): il mercato non si aspetta grandi cambiamenti a breve.`):'Dati non disponibili.'}
+ ${X.fix!=null&&X.var!=null?` Oggi il fisso costa <b>${sg(X.fix-X.var)}</b> punti rispetto al variabile.`:''}</p></div>
+ <h2>Storico 5 anni</h2><p class="sub">Tassi sui nuovi mutui in Italia confrontati con i tassi di mercato che li guidano.</p>
+ <div class="card">${lineChart(X.hist.months.map(fd),[{n:"Mutuo fisso >10a",v:X.hist.fix,c:"var(--c1)",w:2.6},{n:"Mutuo variabile",v:X.hist.var,c:"var(--c2)",w:2.6},{n:"Rendimento 10a (AAA)",v:X.hist.y10,c:"var(--c3)",dash:1},{n:"ESTR",v:X.hist.estr,c:"var(--c4)",dash:1}],"%")}</div>
+ <h2>Calcolatore rata</h2><p class="sub">Rata mensile con ammortamento alla francese. I tassi sono precompilati con le medie attuali: la tua banca puo' offrire valori diversi.</p>
+ <div class="card"><div class="calc"><div><label>Importo del mutuo (&euro;)</label><input id="cA" type="number" value="200000" step="5000"></div><div><label>Durata (anni)</label><input id="cN" type="number" value="30" min="5" max="40"></div>
+ <div><label>Tasso fisso / variabile (%)</label><div style="display:flex;gap:8px"><input id="cF" type="number" step="0.05" value="${X.fix!=null?X.fix:3.5}"><input id="cV" type="number" step="0.05" value="${X.var!=null?X.var:3.3}"></div></div></div>
+ <div class="grid k3" id="cOut"></div></div>
+ <h2>Confronto europeo</h2><p class="sub">Stessa statistica BCE per i principali paesi dell'area euro.</p>
+ <div class="tablewrap"><table><tr><th>Paese</th><th class="num">Fisso &gt;10a</th><th class="num">Variabile</th><th class="num">Media</th><th class="num">Media, 12 mesi</th><th>Mese</th></tr>
+ ${X.table.map(r=>`<tr><td><b>${r.name}</b></td><td class="num">${r.fix!=null?fx(r.fix)+'%':'n/d'}</td><td class="num">${r.var!=null?fx(r.var)+'%':'n/d'}</td><td class="num">${r.tot!=null?fx(r.tot)+'%':'n/d'}</td><td class="num ${r.tot_d12>0?'down':'up'}">${r.tot_d12!=null?sg(r.tot_d12):'n/d'}</td><td>${fd(r.month)}</td></tr>`).join("")}</table></div>
+ ${X.us30?`<h2>Stati Uniti</h2><div class="grid k2"><div class="card kpi"><h3>Mutuo USA 30 anni fisso</h3><div class="big">${fx(X.us30.v)}%</div><div class="note">Freddie Mac, settimana del ${fd(X.us30.date)} &middot; 4 settimane <b class="${X.us30.d4>0?'down':'up'}">${sg(X.us30.d4)}</b></div>${spark(X.us30.spark,"var(--c1)")}</div>
+ <div class="card"><h3>Perche' guardarlo</h3><p style="color:var(--ink2);margin:10px 0 0">I tassi USA si muovono prima: un calo del mutuo USA e del Treasury 10 anni tende a trascinare in basso anche i rendimenti europei e quindi, con qualche settimana di ritardo, i mutui a tasso fisso in Italia.</p></div></div>`:''}`;
+ el.innerHTML=h;
+ function calc(){const A=+$("cA").value,n=+$("cN").value*12;const rata=t=>{const r=t/1200;return r?A*r/(1-Math.pow(1+r,-n)):A/n;};
+  const f=rata(+$("cF").value),v=rata(+$("cV").value),eu=x=>x.toLocaleString("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:0});
+  $("cOut").innerHTML=`<div class="card kpi" style="box-shadow:none;background:var(--soft);border:0"><h3>Rata fisso</h3><div class="big">${eu(f)}</div><div class="note">Interessi totali ${eu(f*n-A)}</div></div>
+  <div class="card kpi" style="box-shadow:none;background:var(--soft);border:0"><h3>Rata variabile (oggi)</h3><div class="big">${eu(v)}</div><div class="note">Interessi totali ${eu(v*n-A)} se i tassi restano invariati</div></div>
+  <div class="card kpi" style="box-shadow:none;background:var(--soft);border:0"><h3>Differenza al mese</h3><div class="big">${eu(f-v)}</div><div class="note">Con +1 punto il variabile diventa ${eu(rata(+$("cV").value+1))}</div></div>`;}
+ ["cA","cN","cF","cV"].forEach(i=>$(i).oninput=calc);calc();
+})();
+
+/* ---------- correlazioni ----------
+   Mappa di calore: verde = si muovono insieme, rosso = in direzioni opposte, intensita' = forza. */
+const KA=D.corr.keys,MA=D.corr.m;let K,Mx,CF="Valute";
+function hcol(c){if(c==null)return"transparent";const a=Math.min(1,Math.abs(c));return c>0?`rgba(34,163,90,${a})`:`rgba(224,82,77,${a})`;}
+function selC(g){CF=g;document.querySelectorAll("#cfilters button").forEach(x=>x.classList.toggle("on",x.textContent==g));
+ const idx=KA.map((k,i)=>i).filter(i=>{const a=D.assets[KA[i]];return CF=="Tutto"||(a&&a.group==CF);});
+ const extra=CF=="Valute"||CF=="Tutto"?[]:KA.map((k,i)=>i).filter(i=>["DXY","GOLD","SP500","US10Y"].includes(KA[i])&&!idx.includes(i));
+ const use=idx.concat(extra);K=use.map(i=>KA[i]);Mx=use.map(i=>use.map(j=>MA[i][j]));drawCorr();}
+$("cfilters").innerHTML=["Tutto",...SEC.filter(g=>byS[g])].map(g=>`<button class="${g==CF?'on':''}">${g}</button>`).join("");
+document.querySelectorAll("#cfilters button").forEach(b=>b.onclick=()=>selC(b.textContent));
+function drawCorr(){$("heat").innerHTML=`<tr><th></th>${K.map(k=>`<th>${k}</th>`).join("")}</tr>`+
+ K.map((r,i)=>`<tr><th class="r">${r}</th>${K.map((c,j)=>{const v=Mx[i][j];return `<td title="${nm(r)} / ${nm(c)}" style="background:${i==j?'var(--soft)':hcol(v)};color:${v!=null&&Math.abs(v)>.55?'#fff':'var(--ink)'}">${i==j||v==null?'':c1(v)}</td>`}).join("")}</tr>`).join("");
+ const pl=[];K.forEach((a,i)=>K.forEach((b,j)=>{if(j>i&&Mx[i][j]!=null)pl.push([a,b,Mx[i][j]])}));pl.sort((x,y)=>y[2]-x[2]);
+ const li=l=>`<ol style="margin:12px 0 10px;padding-left:20px;line-height:1.9">${l.map(x=>`<li><b>${x[0]}</b> e <b>${x[1]}</b> <span class="small">${c2(x[2])}</span></li>`).join("")}</ol>`;
+ $("together").innerHTML=`<h3>Si muovono insieme</h3>${li(pl.slice(0,6))}<div class="small">Quando gli speculatori comprano uno, comprano anche l'altro.</div>`;
+ $("opposite").innerHTML=`<h3>Si muovono al contrario</h3>${li(pl.slice(-6).reverse())}<div class="small">Quando comprano uno vendono l'altro: qui nascono le divergenze.</div>`;}
+selC("Valute");
+
+/* ---------- metodo ----------
+   Testo della guida: i numeri (pesi, soglie) arrivano da D.meta, cosi' restano allineati a config.py. */
+const w=M.w;
+$("guide").innerHTML=`<h2>Come funziona</h2>
+<h3>1. Le tre fonti</h3><p><b>CFTC</b> (venerdi' 21:30 italiane, dati del martedi'): quanti contratti hanno in acquisto e in vendita i grandi speculatori. <b>FRED</b>, Fed di St. Louis (ogni giorno): tassi, rendimenti reali, inflazione attesa, VIX, spread high yield, cambi, indici, petrolio, bilancio Fed. <b>BCE</b> (ogni giorno i tassi di mercato, ogni mese i mutui): tassi sui nuovi mutui, Euribor, ESTR, curva dei rendimenti. Ogni fonte ha il suo stato in alto: verde aggiornato, giallo dati salvati, rosso in ritardo.</p>
+<h3>2. Punteggio COT (${Math.round((1-M.mw)*100)}% del finale)</h3><ul><li><b>${w.posizione*100}% posizione</b>: COT Index a 3 anni (0 = mai cosi' short, 100 = mai cosi' long).</li><li><b>${w.flusso_1w*100}% flusso della settimana</b> e <b>${w.flusso_4w*100}% flusso a 4 settimane</b>, misurati in z-score a 52 settimane.</li><li>Se il posizionamento e' gia' estremo (oltre 95 o sotto 5) la forza viene ridotta del 30%.</li></ul>
+<h3>3. Punteggio Mercato (${Math.round(M.mw*100)}% del finale)</h3><p>Il mercato sconta le notizie in anticipo, quindi non uso dati macro pubblicati in ritardo ma solo indicatori prezzati ogni giorno: tasso USA 2 anni (aspettative sulla Fed), rendimento reale 10 anni, inflazione attesa, VIX, spread high yield, differenziale 2 anni USA-Europa. Per ogni strumento con un prezzo pubblico una regressione (ridge, ${M.regw} settimane, stimata escludendo le ultime 4) misura quanto ogni driver muove il prezzo. Nelle ultime 4 settimane si confronta la mossa <b>implicita</b> con quella <b>reale</b>: differenza vicina a zero = gia' scontato (punteggio ~0); prezzo in ritardo = punteggio nella direzione dei driver, ridotto se il modello spiega poco (R² basso).</p>
+<h3>4. Segnali</h3><p>Coppia = (finale base - finale quotata) / 2. Da ${M.normal} in su BUY/SELL, da ${M.strong} STRONG solo con divergenza (forza almeno ${M.divmin} da entrambi i lati, di segno opposto).</p>
+<h3>5. Mutui</h3><p>Tassi medi sui nuovi mutui per acquisto casa (statistica BCE MIR, fonte Banca d'Italia per l'Italia). La stima dei mesi non ancora pubblicati usa una regressione delle variazioni mensili del tasso sulle variazioni del rendimento a 10 anni (fisso) o dell'ESTR (variabile), del mese stesso e di quello prima. L'intervallo &plusmn; e' l'errore tipico del modello.</p>
+<h3>6. Aggiornamenti</h3><p>Ogni apertura scarica tutto. Aggiornamento automatico ogni venerdi': nel Prompt dei comandi <code>python cot_radar.py --pianifica</code>.</p>
+<h3>7. Limiti</h3><ul><li>Sono stime statistiche, non certezze: le relazioni cambiano nel tempo.</li><li>Il COT ha 3 giorni di ritardo; i mutui circa 5 settimane.</li><li>Oro, materie agricole e altri strumenti senza prezzo gratuito su FRED usano solo il COT.</li><li>Non e' una consulenza finanziaria.</li></ul>`;
+$("foot").innerHTML=`Fonti: CFTC Commitments of Traders (Legacy, Futures Only) &middot; FRED, Federal Reserve Bank of St. Louis &middot; Banca Centrale Europea, ECB Data Portal. Generato il ${M.now}.`;

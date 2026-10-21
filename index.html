@@ -1,0 +1,44 @@
+<!doctype html>
+<!--
+  index.html - struttura della dashboard.
+  Python (cot_radar/pagina.py) sostituisce i segnaposto CSS, JS e DATA (tra doppie graffe)
+  con web/stile.css, web/app.js e i dati in formato JSON. Ogni id (es. id="kpis") viene riempito da app.js.
+-->
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>COT Radar</title>
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#14161b">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="COT Radar">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2314161b'/%3E%3Cpath d='M12 44 L26 30 L36 38 L52 18' stroke='%2322a35a' stroke-width='6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+{{CSS}}
+</style></head><body><div class="wrap">
+<div class="top"><div><h1>COT Radar</h1><p class="lead">Posizionamento dei grandi speculatori (CFTC), driver di mercato a breve termine (FRED) e tassi sui mutui in Europa (BCE), in un'unica schermata.</p></div>
+<div class="updated" id="updated"></div></div>
+<div class="status" id="status"></div>
+<div class="alerts" id="alerts"></div>
+<nav id="nav">
+<button data-t="sig" class="on">Segnali</button><button data-t="pairs">Coppie</button><button data-t="assets">Strumenti</button>
+<button data-t="mkt">Mercato e macro</button><button data-t="mortg">Mutui</button><button data-t="corr">Correlazioni</button><button data-t="guide">Metodo</button></nav>
+
+<section id="sig" class="on">
+ <div class="grid k4" id="kpis"></div>
+ <h2>Settori</h2><p class="sub">Media del punteggio finale degli strumenti di ogni settore. Clicca un settore per vederne il dettaglio.</p><div class="sectors" id="sectors"></div>
+ <h2>Valute</h2><p class="sub">Segnali sulle coppie: punteggio della valuta base meno quello della quotata. STRONG solo con divergenza vera (uno comprato, l'altro venduto).</p>
+ <div class="summary" id="summary"></div><div class="grid" id="cards"></div>
+ <h2>Materie prime, indici, tassi e crypto</h2><p class="sub">Solo gli strumenti con un segnale attivo, dal piu' forte.</p><div class="grid" id="acards"></div>
+</section>
+<section id="pairs"><h2>Tutte le coppie</h2><p class="sub">Ordinate per punteggio. "COT" e "Mercato" sono le due componenti del punteggio finale.</p><div class="filters" id="filters"></div><div class="tablewrap"><table id="ptable"></table></div></section>
+<section id="assets"><h2>Forza di ogni strumento</h2><p class="sub">Barra verde = spinta in acquisto, rossa = in vendita. Il testo sotto riassume cosa hanno fatto gli speculatori e cosa dice il mercato.</p><div class="filters" id="sfilters"></div><div id="alist"></div></section>
+<section id="mkt"><div id="mtop"></div></section>
+<section id="mortg"><div id="mortgage"></div></section>
+<section id="corr"><h2>Correlazioni dei flussi speculativi</h2><p class="sub">Quanto gli speculatori comprano e vendono due strumenti insieme (+1) o in modo opposto (-1), ultime 52 settimane.</p>
+<div class="filters" id="cfilters"></div><div class="grid k2" style="margin-bottom:20px"><div class="card" id="together"></div><div class="card" id="opposite"></div></div>
+<div class="tablewrap" style="padding:16px"><table class="heat" id="heat"></table></div></section>
+<section id="guide" class="guide"></section>
+<div class="foot" id="foot"></div>
+</div>
+<script>
+/* dati inseriti da Python (pagina.py) */
+const D={{DATA}};
+{{JS}}
+</script></body></html>

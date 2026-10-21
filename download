@@ -1,0 +1,9 @@
+# file creati dal programma: non vanno su GitHub
+cot_radar.html
+public/
+demo/
+dati/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
