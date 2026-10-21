@@ -77,6 +77,9 @@ Esercizio per imparare: in `config.py` cambia `MACRO_WEIGHT = 0.25` in `0.5`, la
 
 Clic su una scheda, una riga delle tabelle o uno strumento: si apre il grafico di **TradingView** (gratuito) con
 timeframe **H1 / H4 / D / W**, periodo visibile H1 = 3 mesi, H4 ≈ 10 mesi, D = 1 anno, W = 5 anni (si zooma con la rotellina), strumenti di disegno, **schermo intero** e link a tradingview.com.
+Sotto il grafico c'e' il **pannello COT**: per ognuna delle ultime 26 settimane quanto i Non Commercial hanno
+comprato (verde) o venduto (rosso), in % dell'open interest; per una coppia e' il flusso della base meno quello
+della quotata. La data e' il martedi' di riferimento, pubblicato il venerdi' dopo.
 I simboli sono in `cot_radar/config.py` → `TV_SYMBOLS` / `TV_PAIRS` (modificabili). Alcuni strumenti sono quotati
 "al contrario" (es. segnale su JPY → grafico USDJPY; tassi → grafico del rendimento): il pannello lo segnala.
 

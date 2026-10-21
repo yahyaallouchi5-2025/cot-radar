@@ -43,7 +43,9 @@
  <div class="tvtesta"><div><div id="tvtitolo"></div><div id="tvsotto" class="small"></div></div>
   <div class="tvcomandi"><div class="filters" id="tviv" style="margin:0"><button data-iv="60">H1</button><button data-iv="240">H4</button><button data-iv="D" class="on">D</button><button data-iv="W">W</button></div>
   <button id="tvfull" class="tvbtn" title="Schermo intero">&#x26F6; Schermo intero</button><a id="tvlink" class="tvbtn" target="_blank" rel="noopener">TradingView &#x2197;</a><button id="tvchiudi" class="tvbtn" title="Chiudi (Esc)">&#x2715;</button></div></div>
- <div id="tvchart" class="tvchart"></div></div></div>
+ <div id="tvchart" class="tvchart"></div>
+ <!-- pannello COT sotto il grafico: flussi settimanali dei Non Commercial (vedi app.js, disegnaCOT) -->
+ <div id="tvcot" class="tvcot"></div></div></div>
 <script>
 /* dati inseriti da Python (pagina.py) */
 const D={{DATA}};

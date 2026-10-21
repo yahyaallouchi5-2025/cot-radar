@@ -16,6 +16,14 @@ from .log import log
 from .mercato import market_model
 
 
+def flussi(ser, settimane=26):
+    """Pannello COT sotto il grafico: per ognuna delle ultime 'settimane' la variazione del netto Non Commercial
+    in % dell'open interest. Positivo = hanno comprato (netto salito), negativo = hanno venduto.
+    La data e' il MARTEDI' di riferimento (il dato esce il venerdi' successivo)."""
+    n = [(x["date"], x["net"] / x["oi"] * 100) for x in ser]
+    return [[n[i][0], round(n[i][1] - n[i - 1][1], 2)] for i in range(max(1, len(n) - settimane), len(n))]
+
+
 def analyse(cot_rows, fred, ecb):
     """Restituisce (assets, pairs, corr, market)."""
     series = cot_series(cot_rows)
@@ -30,7 +38,8 @@ def analyse(cot_rows, fred, ecb):
         now, prev = cot_strength(ser, len(ser) - 1), cot_strength(ser, len(ser) - 2)
         if not now:
             continue
-        now.update(key=k, name=name, group=group, cot_prev=prev["cot"] if prev else None, mkt=None)
+        now.update(key=k, name=name, group=group, cot_prev=prev["cot"] if prev else None, mkt=None,
+                   flussi=flussi(ser))
         assets[k] = now
         hist[k] = ser
     missing = [a[0] for a in ASSETS if a[0] not in assets]
@@ -70,6 +79,14 @@ def analyse(cot_rows, fred, ecb):
                  prev=round(0.5 * (dxy["prev"] or 0) + 0.5 * inv_p, 1) if dxy else round(inv_p, 1),
                  macro=dxy.get("macro") if dxy else None, new=False)
         u["label"] = label(u["score"], single=True)
+        # flussi settimanali del dollaro: stessa ricetta del punteggio (50% DXY + 50% inverso delle altre valute)
+        per_data = {}
+        for c in majors:
+            for d, v in assets[c].get("flussi", []):
+                per_data.setdefault(d, []).append(v)
+        dx = dict(dxy.get("flussi", [])) if dxy else {}
+        u["flussi"] = [[d, round(0.5 * dx[d] - 0.5 * sum(v) / len(v), 2) if dxy else round(-sum(v) / len(v), 2)]
+                       for d, v in sorted(per_data.items()) if not dxy or d in dx]
         assets["USD"] = u
 
     # ---- 4. coppie: punteggio = (base - quotata) / 2, cosi' resta tra -100 e +100

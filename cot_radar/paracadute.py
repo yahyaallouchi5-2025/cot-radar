@@ -39,7 +39,7 @@ def valuta(nuovo, vecchio):
         if fonte == "fred_riserva":
             continue
         if st != "online":
-            critici.append(f"fonte {fonte.upper()} {st}: in pagina restano gli ultimi dati salvati")
+            critici.append(f"fonte {fonte.upper()} non disponibile ({st}): pubblicati gli ultimi dati validi")
 
     # 2) il nuovo risultato ha meno contenuto dell'ultimo buono: NON si pubblica
     if vecchio:

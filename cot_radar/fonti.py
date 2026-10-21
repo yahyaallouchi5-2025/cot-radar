@@ -166,8 +166,8 @@ def load_all():
         except Exception as e:
             fred_manut = "manutenzione" in str(e)
         if fred_manut:
-            log.warning("FRED e' in manutenzione: salto le altre %d serie e uso i dati salvati "
-                        "(riprovo da solo al prossimo controllo automatico)", len(ids) - 1)
+            log.warning("FRED in manutenzione: %d serie rinviate, uso fonti alternative e ultimi dati disponibili",
+                        len(ids) - 1)
         else:
             f_fred.update({sid: fred_pool.submit(get_fred, sid, since) for sid in ids[1:]})
 

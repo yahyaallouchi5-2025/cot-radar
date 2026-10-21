@@ -18,4 +18,4 @@ Mappa dei moduli (in ordine di "viaggio" dei dati):
   demo.py        dati finti per provare senza internet
   log.py         registro: schermo + dati/registro.log + riepilogo per la scheda "Registro"
 """
-__version__ = "4.3"
+__version__ = "4.4"
