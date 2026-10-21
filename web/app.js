@@ -297,7 +297,10 @@ function caricaTV(){if(TV.caricato)return TV.caricato;
 function disegnaTV(){const info=tvInfo(TV.spec),box=$("tvchart");box.innerHTML="";
  if(!info.sym){box.innerHTML=`<div class="tvmsg">Nessun grafico associato a questo strumento.</div>`;return;}
  const scuro=matchMedia("(prefers-color-scheme: dark)").matches;
- caricaTV().then(()=>{new TradingView.widget({container_id:"tvchart",autosize:true,symbol:info.sym,interval:TV.iv,range:TV.iv=="W"?"12M":"3M",
+ caricaTV().then(()=>{new TradingView.widget({container_id:"tvchart",autosize:true,symbol:info.sym,interval:TV.iv,
+   // "range" = periodo visibile. ATTENZIONE: TradingView adatta il timeframe al range (3M->1h, 12M->D, 60M->W),
+   // quindi lo abbiniamo solo dove coincide; per H4 nessun range (mostra le ultime ~300 candele).
+   ...({"60":{range:"3M"},"D":{range:"12M"},"W":{range:"60M"}}[TV.iv]||{}),
    timezone:"Europe/Rome",theme:scuro?"dark":"light",style:"1",locale:"it",allow_symbol_change:true,withdateranges:true,hide_side_toolbar:false,save_image:true});})
  .catch(e=>{box.innerHTML=`<div class="tvmsg">${esc(e.message)}. <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(info.sym)}" target="_blank" rel="noopener">Apri il grafico su TradingView</a></div>`;console.error("[COT Radar] grafico:",e);});}
 function apriGrafico(spec){TV.spec=spec;const info=tvInfo(spec),m=$("tvmodal");
