@@ -47,6 +47,8 @@ jobs:
         run: python -m unittest discover -s tests
 
       - name: Scarica i dati e crea la pagina
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}   # chiave gratuita FRED, salvata nei "Secrets" del repository
         run: python main.py --out public --debug
 
       - uses: actions/upload-pages-artifact@v3
