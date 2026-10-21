@@ -19,6 +19,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta
 
+from . import riserva
 from .config import (ASSETS, CACHE, CFTC_URL, ECB_REQ, ECB_URL, FRED_API_URL, FRED_IDS, FRED_URL, HISTORY_WEEKS,
                      TIMEOUT)
 from .log import log
@@ -193,6 +194,20 @@ def load_all():
                 if not fred_manut:                    # in manutenzione il messaggio e' gia' stato scritto sopra
                     log.warning("FRED %s non scaricato: %s", sid, e)
         fred_pool.shutdown()
+        # Serie FRED non arrivate -> le chiediamo alle FONTI DI RISERVA (Tesoro USA, NY Fed, BCE...: vedi riserva.py).
+        # Si aggiungono alla copia salvata solo i giorni NUOVI: dove abbiamo gia' il dato FRED, teniamo quello.
+        mancanti = [sid for sid in FRED_IDS if sid not in f_fred or f_fred[sid].exception() is not None]
+        if mancanti:
+            dati_r, err_r = riserva.scarica(mancanti, since, http, get_ecb)
+            for sid, punti in dati_r.items():
+                vecchi = fred["data"].get(sid) or []
+                ultimo = vecchi[-1][0] if vecchi else ""
+                nuovi = [[d, v * FRED_IDS[sid]] for d, v in punti if d > ultimo]
+                fred["data"][sid] = vecchi + nuovi
+            status["fred_riserva"] = len(dati_r)
+            if err_r:
+                errors["riserva"] = [f"{k}: {v}" for k, v in err_r.items()]
+            log.info("FRED: %d serie mancanti, %d recuperate dalle fonti di riserva", len(mancanti), len(dati_r))
         if ok:
             fred["saved"] = now
         cache["fred"] = fred

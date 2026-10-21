@@ -124,7 +124,10 @@ def sources_status(cache, status, errors, assets, mort, fred):
     for grp, nm in (("cot", "CFTC"), ("fred", "FRED"), ("ecb", "BCE")):
         if status.get(grp) == "manutenzione":
             out.append({"name": f"Download {nm}", "last": "", "next": "", "st": "cache",
-                        "msg": "sito in manutenzione: non insisto, uso i dati salvati e ricontrollo da solo ogni ora."})
+                        "msg": "sito in manutenzione: non insisto. "
+                               + (f"{status.get('fred_riserva', 0)} serie prese dalle fonti di riserva (Tesoro USA, NY Fed, BCE...), "
+                                  if status.get("fred_riserva") else "")
+                               + "il resto dai dati salvati; ricontrollo da solo ogni ora."})
             continue
         if status.get(grp) in ("cache", "assente", "parziale") and errors.get(grp):
             e = errors[grp]
