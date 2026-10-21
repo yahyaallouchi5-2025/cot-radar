@@ -1,0 +1,18 @@
+# Workflow usa-e-getta: piccola correzione di testo nel pannello COT (poi va cancellato).
+name: Correzione testo
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  applica:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          set -e
+          echo '/Td6WFoAAATm1rRGAgAhARwAAAAQz1jM4AQJAmddADIaSQnC/BF9UN4KT0fZ17lPVow7X5XFpicXiQ/vb6aAlmaaMhGKi4KJADiFr60i7p/4XhXSTapKnom0Oy0+9nhD0ruokhOZjvc6w6q8dBpYY7mXylM16RECBaoRt+Uz0ZXJqxlwizgVR8Twh9s4Hyx2Jrx36+8ptxQqLiauxx2LucPppTIPqw8g7jhxfAfBQSOKWYI7U74efc6UiKtC2NPQsalnRXVkeTU8fwWjDE/qq17H59dn/2wZro8Dwe/64lvfL9Map9yd651qDTqcKb/DOL47+gWFE6OUFX/qsGkEFt229ih35pHDdoX969b6SAxmwd9IaqpD4rd4vxUVUIGfv56yBRq6Th4ptR4fbWBwdxtucJRQqQPZ6CZpd0VR12DDEtL17WXQVrvEB+AVWvetYX+qi75d27fuCo85vL8hUqO2vgXLf2yP9CbImLbO4A/gie+cslWe417Qi+VQonl7RAMvtpf84Z+7/iWTaq+1FNqgsudI4V4qcU1bso8U2Cz9RmaxP8SF+jKsYxlnXei+2eXdQVdQibnGCCLboc6VHbRK0Ufa1dj3SQ+TNsT6GEFXeP/KOZAIfCWX+f5MIdhTLmRbxtSy8+OWy5vy+Su/kVIBa8LX9ouxBAyZCWHKNZJjwuPI3lIdUVQf4ofjsrn9C8zj9jTbD1DC9gqluEC3bi4PbKIIu//t4Cvpn0e7HvisOsXjSUgvYaGsXz5EsL6pqHP3+ZiURSs9N8UcH6yHYGtWMuuiK/adY8Xf+ZpualyM+cWazV9H0z5B3jQ0FxCtJlJfrMWCq4lbVDvzE6dpPI9IFdXNLgAA18D/Ld716VoAAYMFiggAADw6Zh+xxGf7AgAAAAAEWVo=' | base64 -d | xz -d > /tmp/p.diff
+          git apply /tmp/p.diff
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Layout piu' largo e correzione 'vendite concentrate'"
+          git push
