@@ -80,6 +80,9 @@ timeframe **H1 / H4 / D / W**, periodo visibile H1 = 3 mesi, H4 ≈ 10 mesi, D =
 Sotto il grafico c'e' il **pannello COT**: per ognuna delle ultime 26 settimane quanto i Non Commercial hanno
 comprato (verde) o venduto (rosso), in % dell'open interest; per una coppia e' il flusso della base meno quello
 della quotata. La data e' il martedi' di riferimento, pubblicato il venerdi' dopo.
+La riga **Ultime 3 settimane** somma i flussi recenti (per lo swing): "concentrati" = 3 settimane su 3 nello
+stesso verso, "prevalenti" = 2 su 3; accanto c'e' la posizione netta attuale (net long/short in % OI).
+Il pannello si **allarga o schiaccia trascinando la barretta** sopra di esso (doppio clic = misura iniziale).
 Gli strumenti usano i **nomi originali in inglese** (come CFTC, CME e TradingView: es. *Class III Milk*, simbolo
 `CME:DC1!`), con il nome italiano sotto (`NOMI_EN` in `cot_radar/config.py`).
 Se la pagina aperta e' vecchia (cache del browser) compare l'avviso "versione piu' recente" con il pulsante Aggiorna.

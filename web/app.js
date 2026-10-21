@@ -322,18 +322,45 @@ function flussiDi(spec){const t=spec.slice(0,1),k=spec.slice(2);
  if(t=="a"){const f=(D.assets[k]||{}).flussi||[],inv=!!((D.tv||{})[k]||{}).inv;return f.map(([d,v])=>[d,inv?-v:v]);}
  const p=D.pairs.find(x=>x.pair==k)||{},fb=new Map((D.assets[p.base]||{}).flussi||[]),fq=new Map((D.assets[p.quote]||{}).flussi||[]);
  return [...fb.keys()].filter(d=>fq.has(d)).sort().map(d=>[d,+(fb.get(d)-fq.get(d)).toFixed(2)]);}
+/* Lettura delle ultime 3 settimane (swing): somma dei flussi e quante settimane vanno nella stessa direzione.
+   3 su 3 nello stesso verso = flusso CONCENTRATO (posizionamento che si sta costruendo), 2 su 3 = prevalente. */
+function tre(f){const u=f.slice(-3),tot=u.reduce((s,x)=>s+x[1],0),su=u.filter(x=>x[1]>0).length,giu=u.filter(x=>x[1]<0).length;
+ const n=Math.max(su,giu),verso=tot>=0?"acquisti":"vendite";
+ const forza=n==3?"concentrati":n==2?"prevalenti":"misti";
+ return {u,tot,txt:n<2?"flussi misti, nessuna direzione chiara":`${verso} ${forza} (${n} su 3)`,col:n<2?"var(--ink2)":tot>=0?"var(--sb)":"var(--ss)"};}
+/* posizione netta attuale in % dell'open interest: >0 net long, <0 net short */
+function netto(k,inv){const a=D.assets[k]||{};if(a.pct_oi==null)return "";const v=inv?-a.pct_oi:a.pct_oi;
+ return `${esc(k)} <b style="color:${v>=0?"var(--sb)":"var(--ss)"}">net ${v>=0?"long":"short"} ${fx(Math.abs(v),1)}%</b>`;}
 function disegnaCOT(spec){const box=$("tvcot");try{
  const f=flussiDi(spec);if(!f.length){box.innerHTML=`<div class="riga">Nessun dato COT per questo strumento.</div>`;return;}
- const max=Math.max(...f.map(x=>Math.abs(x[1])),0.01),W=600,H=64,bw=W/f.length;
- const barre=f.map(([d,v],i)=>{const h=Math.abs(v)/max*(H/2-2),y=v>=0?H/2-h:H/2,ultima=i==f.length-1;
+ const max=Math.max(...f.map(x=>Math.abs(x[1])),0.01),W=600,H=100,bw=W/f.length;
+ const barre=f.map(([d,v],i)=>{const h=Math.abs(v)/max*(H/2-2),y=v>=0?H/2-h:H/2,recente=i>=f.length-3;   // le ultime 3 piene
   return `<rect x="${(i*bw+bw*0.15).toFixed(1)}" y="${y.toFixed(1)}" width="${(bw*0.7).toFixed(1)}" height="${Math.max(h,0.8).toFixed(1)}" rx="1.5"
-   fill="${v>=0?"var(--sb)":"var(--ss)"}" opacity="${ultima?1:0.55}"><title>martedi' ${fd(d)}: ${v>=0?"+":""}${fx(v)}% open interest</title></rect>`;}).join("");
- const [ud,uv]=f[f.length-1],ven=new Date(ud);ven.setDate(ven.getDate()+3);
+   fill="${v>=0?"var(--sb)":"var(--ss)"}" opacity="${recente?1:0.45}"><title>martedi' ${fd(d)}: ${v>=0?"+":""}${fx(v)}% open interest</title></rect>`;}).join("");
+ // fascia chiara dietro le ultime 3 settimane
+ const fascia=`<rect x="${((f.length-3)*bw).toFixed(1)}" y="0" width="${(3*bw).toFixed(1)}" height="${H}" fill="var(--soft)" opacity=".6"/>`;
+ const [ud,uv]=f[f.length-1],ven=new Date(ud);ven.setDate(ven.getDate()+3),t=tre(f);
+ const k=spec.slice(2),p=spec[0]=="p"?D.pairs.find(x=>x.pair==k)||{}:null,inv=!!((D.tv||{})[k]||{}).inv;
+ const pos=p?[netto(p.base),netto(p.quote)].filter(Boolean).join(" &middot; "):netto(k,inv);
  box.innerHTML=`<div class="riga"><span><b>COT Non Commercial</b><span class="lungo"> &middot; variazione settimanale del netto (% open interest) &middot; ultime ${f.length} settimane</span></span>
   <span>Ultimo: <b style="color:${uv>=0?"var(--sb)":"var(--ss)"}">${uv>=0?"acquisti":"vendite"} ${uv>=0?"+":""}${fx(uv)}%</b> &middot; <span class="lungo">dato di marted&igrave; ${fd(ud)}, pubblicato venerd&igrave; ${fd(ven.toISOString().slice(0,10))}</span><span class="corto">mar ${fd(ud).slice(0,5)}</span></span></div>
-  <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Flussi COT settimanali"><line x1="0" x2="${W}" y1="${H/2}" y2="${H/2}" stroke="var(--line)"/>${barre}</svg>
-  <div class="assi"><span>${fd(f[0][0])}</span><span class="lungo">verde = comprano &middot; rosso = vendono${spec[0]=="p"?" (base contro quotata)":""}</span><span>${fd(ud)}</span></div>`;
+  <div class="riga tre"><span><b><span class="lungo">Ultime 3 settimane:</span><span class="corto">3 sett.:</span></b> ${t.u.map(x=>`<span style="color:${x[1]>=0?"var(--sb)":"var(--ss)"}">${x[1]>=0?"+":""}${fx(x[1])}</span>`).join(" &middot; ")}
+   = <b style="color:${t.col}">${t.tot>=0?"+":""}${fx(t.tot)}%</b> &rarr; <b style="color:${t.col}">${t.txt}</b></span>${pos?`<span>Posizione: ${pos}</span>`:""}</div>
+  <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Flussi COT settimanali">${fascia}<line x1="0" x2="${W}" y1="${H/2}" y2="${H/2}" stroke="var(--line)"/>${barre}</svg>
+  <div class="assi"><span>${fd(f[0][0])}</span><span class="lungo">verde = comprano &middot; rosso = vendono${p?" (base contro quotata)":""} &middot; fascia = ultime 3 settimane</span><span>${fd(ud)}</span></div>`;
  }catch(e){box.innerHTML="";console.error("[COT Radar] pannello COT:",e);}}   // se si rompe sparisce il pannello, non il grafico
+/* MANIGLIA: trascinando la barretta tra grafico e pannello COT si allarga o si schiaccia il pannello.
+   Doppio clic = misura iniziale. La misura scelta resta salvata in questo browser (se il browser lo permette). */
+(function(){const man=$("tvmaniglia"),pan=$("tvpannello");if(!man||!pan)return;
+ const MIN=30,MAX=420,STD=72;
+ const imposta=h=>{h=Math.round(Math.min(MAX,Math.max(MIN,h)));pan.style.setProperty("--cotH",h+"px");try{localStorage.setItem("cotH",h);}catch(e){}};
+ try{const h=+localStorage.getItem("cotH");if(h)pan.style.setProperty("--cotH",Math.min(MAX,Math.max(MIN,h))+"px");}catch(e){}
+ let y0=0,h0=0;
+ man.addEventListener("pointerdown",ev=>{ev.preventDefault();y0=ev.clientY;h0=parseFloat(getComputedStyle(pan).getPropertyValue("--cotH"))||STD;
+  man.setPointerCapture(ev.pointerId);pan.classList.add("trascino");});        // durante il trascinamento il grafico non "ruba" il mouse
+ man.addEventListener("pointermove",ev=>{if(pan.classList.contains("trascino"))imposta(h0+(y0-ev.clientY));});   // su = piu' alto
+ const fine=()=>pan.classList.remove("trascino");man.addEventListener("pointerup",fine);man.addEventListener("pointercancel",fine);
+ man.addEventListener("dblclick",()=>imposta(STD));})();
 function apriGrafico(spec){TV.spec=spec;const info=tvInfo(spec),m=$("tvmodal");disegnaCOT(spec);
  $("tvtitolo").innerHTML=`<span class="pair">${esc(info.nome)}</span> ${info.label?badge(info.label):""} <span class="small">punteggio ${fmt(info.score)}</span>`;
  $("tvsotto").innerHTML=`${esc(info.sotto)} &middot; simbolo <b>${esc(info.sym||"n/d")}</b>`+(info.inv?` &middot; <b style="color:var(--warn)">grafico quotato al contrario: BUY sul segnale = grafico che SCENDE</b>`:"");
