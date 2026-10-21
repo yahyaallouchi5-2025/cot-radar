@@ -326,7 +326,7 @@ function flussiDi(spec){const t=spec.slice(0,1),k=spec.slice(2);
    3 su 3 nello stesso verso = flusso CONCENTRATO (posizionamento che si sta costruendo), 2 su 3 = prevalente. */
 function tre(f){const u=f.slice(-3),tot=u.reduce((s,x)=>s+x[1],0),su=u.filter(x=>x[1]>0).length,giu=u.filter(x=>x[1]<0).length;
  const n=Math.max(su,giu),verso=tot>=0?"acquisti":"vendite";
- const forza=n==3?"concentrati":n==2?"prevalenti":"misti";
+ const forza=n==3?(tot>=0?"concentrati":"concentrate"):n==2?"prevalenti":"misti";   // accordo: acquisti concentrati / vendite concentrate
  return {u,tot,txt:n<2?"flussi misti, nessuna direzione chiara":`${verso} ${forza} (${n} su 3)`,col:n<2?"var(--ink2)":tot>=0?"var(--sb)":"var(--ss)"};}
 /* posizione netta attuale in % dell'open interest: >0 net long, <0 net short */
 function netto(k,inv){const a=D.assets[k]||{};if(a.pct_oi==null)return "";const v=inv?-a.pct_oi:a.pct_oi;
