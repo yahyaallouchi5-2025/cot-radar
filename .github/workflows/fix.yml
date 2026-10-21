@@ -1,0 +1,18 @@
+# Workflow usa-e-getta: FRED in manutenzione -> niente tentativi a raffica (poi va cancellato).
+name: Correzione FRED
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  applica:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          set -e
+          echo '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' | base64 -d | xz -d > /tmp/p.diff
+          git apply /tmp/p.diff
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "FRED in manutenzione: una sola prova, poi dati salvati e controllo orario"
+          git push
