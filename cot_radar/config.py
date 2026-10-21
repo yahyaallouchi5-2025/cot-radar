@@ -134,3 +134,44 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # cartella 
 WEB_DIR = os.path.join(ROOT, "web")                                    # template HTML/CSS/JS
 CACHE = os.path.join(ROOT, "dati", "cache.json")                       # ultima copia dei dati scaricati
 OUT = os.path.join(ROOT, "cot_radar.html")                             # dashboard creata in locale
+REGISTRO = os.path.join(ROOT, "dati", "registro.log")                  # file di registro (a rotazione)
+STATO = os.path.join(ROOT, "dati", "stato.json")                       # riepilogo dell'ultima esecuzione
+
+# --------------------------------------------------------------------------- grafici a candele (TradingView)
+# Simbolo TradingView da aprire al clic su ogni strumento/coppia. Formato "BORSA:SIMBOLO".
+#   FX:      cambi spot (forex)            OANDA:  CFD (indici, metalli)
+#   TVC:     indici/rendimenti di riferimento   "1!" = futures continuo (contratto piu' vicino)
+# "inv": True = il grafico e' quotato al contrario rispetto al segnale (es. JPY: BUY yen = USDJPY che SCENDE).
+# Per cambiare un simbolo basta modificarlo qui: provalo prima su tradingview.com.
+TV_SYMBOLS = {
+    # valute (contro dollaro)
+    "EUR": ("FX:EURUSD", False), "GBP": ("FX:GBPUSD", False), "AUD": ("FX:AUDUSD", False),
+    "NZD": ("FX:NZDUSD", False), "JPY": ("FX:USDJPY", True), "CHF": ("FX:USDCHF", True),
+    "CAD": ("FX:USDCAD", True), "MXN": ("FX:USDMXN", True), "BRL": ("FX_IDC:USDBRL", True),
+    "ZAR": ("FX:USDZAR", True), "DXY": ("TVC:DXY", False), "USD": ("TVC:DXY", False),
+    # indici azionari (CFD) e volatilita'
+    "SP500": ("OANDA:SPX500USD", False), "NASDAQ": ("OANDA:NAS100USD", False), "DOW": ("OANDA:US30USD", False),
+    "RUSSELL": ("OANDA:US2000USD", False), "EAFE": ("AMEX:EFA", False), "EM": ("AMEX:EEM", False),
+    "VIX": ("TVC:VIX", False),
+    # tassi: il grafico e' il RENDIMENTO, che si muove al contrario del prezzo del futures
+    "US2Y": ("TVC:US02Y", True), "US5Y": ("TVC:US05Y", True), "US10Y": ("TVC:US10Y", True),
+    "USBOND": ("TVC:US30Y", True), "ULTRA": ("TVC:US30Y", True), "FEDFUNDS": ("CBOT:ZQ1!", False),
+    "SOFR": ("CME:SR31!", False),
+    # energia
+    "WTI": ("TVC:USOIL", False), "BRENT": ("TVC:UKOIL", False), "NATGAS": ("NYMEX:NG1!", False),
+    "HEATOIL": ("NYMEX:HO1!", False), "GASOLINE": ("NYMEX:RB1!", False),
+    # metalli
+    "GOLD": ("OANDA:XAUUSD", False), "SILVER": ("OANDA:XAGUSD", False), "COPPER": ("COMEX:HG1!", False),
+    "PLATINUM": ("OANDA:XPTUSD", False), "PALLADIUM": ("OANDA:XPDUSD", False),
+    # agricoli e bestiame (futures continui)
+    "CORN": ("CBOT:ZC1!", False), "SOY": ("CBOT:ZS1!", False), "SOYOIL": ("CBOT:ZL1!", False),
+    "SOYMEAL": ("CBOT:ZM1!", False), "WHEAT": ("CBOT:ZW1!", False), "KCWHEAT": ("CBOT:KE1!", False),
+    "RICE": ("CBOT:ZR1!", False), "SUGAR": ("ICEUS:SB1!", False), "COFFEE": ("ICEUS:KC1!", False),
+    "COCOA": ("ICEUS:CC1!", False), "COTTON": ("ICEUS:CT1!", False), "OJ": ("ICEUS:OJ1!", False),
+    "CATTLE": ("CME:LE1!", False), "FEEDER": ("CME:GF1!", False), "HOGS": ("CME:HE1!", False),
+    "MILK": ("CME:DC1!", False),
+    # crypto
+    "BTC": ("BITSTAMP:BTCUSD", False), "ETH": ("BITSTAMP:ETHUSD", False),
+}
+# coppie che non sono "FX:" + nome
+TV_PAIRS = {"XAUUSD": "OANDA:XAUUSD", "XAGUSD": "OANDA:XAGUSD", "USDBRL": "FX_IDC:USDBRL"}

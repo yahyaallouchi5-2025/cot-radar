@@ -12,7 +12,8 @@ Mappa dei moduli (in ordine di "viaggio" dei dati):
   analisi.py     unisce tutto: strumenti, coppie, correlazioni
   calendario.py  orari di uscita, ritardi, stato delle fonti
   pagina.py      costruisce la pagina HTML (usa i file in web/)
+  controlli.py   controlli di qualita' dei dati (dati vecchi, valori impossibili, mercati spariti)
   demo.py        dati finti per provare senza internet
-  log.py         messaggi a schermo (--debug per i dettagli)
+  log.py         registro: schermo + dati/registro.log + riepilogo per la scheda "Registro"
 """
-__version__ = "4.1"
+__version__ = "4.2"

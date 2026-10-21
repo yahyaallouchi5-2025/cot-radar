@@ -26,28 +26,61 @@ const esc=t=>String(t).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[
 const lab=s=>Math.abs(s)>=M.strong?(s>0?"STRONG BUY":"STRONG SELL"):Math.abs(s)>=M.normal?(s>0?"BUY":"SELL"):"NEUTRO";
 const $=id=>document.getElementById(id);
 
+
+/* ---------- aiuti comuni a piu' sezioni ---------- */
+const SEC=D.sectors,byS={};Object.values(D.assets).forEach(a=>{if(a.key!="USD")(byS[a.group]=byS[a.group]||[]).push(a);});
+const NOTE={"Tassi USA":"Futures sui titoli di Stato: COMPRARE = scommettere su tassi in calo.","VIX":"Sul VIX comprare = aspettarsi piu' volatilita'."};
+function mtag(cot,mac){if(mac==null)return`<span class="tag">mercato: n/d</span>`;if(Math.abs(mac)<25)return`<span class="tag">mercato: gia' scontato</span>`;
+ if(Math.abs(cot)<10)return`<span class="tag">mercato ${mac>0?'rialzista':'ribassista'}</span>`;
+ return (mac>0)==(cot>0)?`<span class="tag ok">Mercato conferma</span>`:`<span class="tag ko">Mercato contro</span>`;}
+const split=(cot,mac)=>`<div class="split"><div>COT (${Math.round((1-M.mw)*100)}%)<b>${fmt(cot)}</b></div><div>Mercato (${Math.round(M.mw*100)}%)<b>${mac==null?'n/d':fmt(mac)}</b></div></div>`;
+const meter=s=>`<div class="meter"><i style="left:${pos(s)}%"></i></div><div class="scale"><span>-100 vendi</span><span>finale <b style="color:var(--ink)">${fmt(s)}</b></span><span>compra +100</span></div>`;
+function fd(s){if(!s)return"";const m=["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];if(s.length==7)return m[+s.slice(5,7)-1]+" "+s.slice(0,4);return s.slice(8,10)+"/"+s.slice(5,7)+"/"+s.slice(0,4);}
+
+/* ---------- PROTEZIONE ANTI-CROLLO ----------
+   Ogni sezione qui sotto e' racchiusa in try { ... } catch: se una sezione ha un errore (bug o dati strani)
+   al suo posto compare un riquadro "Sezione non disponibile" e TUTTE le altre continuano a funzionare.
+   Gli errori imprevisti (anche dentro i clic) mostrano un avviso rosso in alto invece di una pagina bianca.
+   DEBUG: F12 -> Console: ogni errore e' stampato con il nome della sezione. window.__errori li elenca tutti. */
+window.__errori=[];
+function fail(sezione,contenitore,e){
+ window.__errori.push({sezione,errore:String(e&&e.stack||e)});
+ console.error("[COT Radar] sezione '"+sezione+"' non disponibile:",e);
+ const box=`<div class="alert red"><b>Sezione "${sezione}" non disponibile.</b> Errore: ${esc(e&&e.message||e)}. Le altre sezioni funzionano normalmente.</div>`;
+ const el=contenitore&&document.getElementById(contenitore);
+ if(el)el.insertAdjacentHTML("afterbegin",box);else{const a=document.getElementById("alerts");if(a)a.insertAdjacentHTML("beforeend",box);}
+}
+function bannerErrore(msg){const a=document.getElementById("alerts");if(a&&!a.querySelector(".js-err"))a.insertAdjacentHTML("afterbegin",`<div class="alert red js-err"><b>Errore imprevisto nella pagina:</b> ${esc(msg)}. Ricarica la pagina; se si ripete controlla la scheda "Registro".</div>`);}
+window.addEventListener("error",ev=>{window.__errori.push({sezione:"pagina",errore:String(ev.message)});bannerErrore(ev.message);});
+window.addEventListener("unhandledrejection",ev=>{window.__errori.push({sezione:"pagina",errore:String(ev.reason)});bannerErrore(ev.reason);});
+
 /* ---------- stato fonti e avvisi ----------
    Un riquadro per fonte (pallino verde/giallo/rosso) e, sotto, gli avvisi in chiaro.
    Se l'ora attuale supera la prossima uscita prevista (next_ms), la pagina avvisa che ci sono dati nuovi. */
+try{
 $("updated").innerHTML=`Aggiornato il <b>${M.now}</b>`;
-const DOT={ok:"var(--b)",cache:"var(--warn)",late:"var(--s)",err:"var(--s)"};
-const STX={ok:"aggiornato",cache:"dati salvati (offline)",late:"IN RITARDO",err:"errore"};
+var DOT={ok:"var(--b)",cache:"var(--warn)",late:"var(--s)",err:"var(--s)"};
+var STX={ok:"aggiornato",cache:"dati salvati (offline)",late:"IN RITARDO",err:"errore"};
 $("status").innerHTML=D.sources.filter(s=>s.st!="err").map(s=>`<div class="src"><div class="t"><i style="background:${DOT[s.st]}"></i>${s.name}</div>
  <div class="d"><b>${s.last}</b><span class="x"> &middot; ${STX[s.st]}</span><span class="nx"><br>Prossimo: ${s.next}</span></div></div>`).join("");
-const al=[];D.sources.forEach(s=>{if(s.msg)al.push(`<div class="alert ${s.st=='late'||s.st=='err'?'red':''}"><b>${s.name}:</b> ${esc(s.msg)}</div>`);
+var al=[];D.sources.forEach(s=>{if(s.msg)al.push(`<div class="alert ${s.st=='late'||s.st=='err'?'red':''}"><b>${s.name}:</b> ${esc(s.msg)}</div>`);
  if(s.next_ms&&Date.now()>s.next_ms)al.push(`<div class="alert red"><b>${s.name}:</b> sono usciti dati nuovi (${s.next}) dopo questo aggiornamento. Riapri cot_radar.py per scaricarli.</div>`);});
 if(M.demo)al.unshift(`<div class="alert red"><b>DATI DIMOSTRATIVI:</b> pagina creata con --demo, i numeri sono finti.</div>`);
 $("alerts").innerHTML=al.join("");
+}catch(e){fail('Stato fonti e avvisi','alerts',e);}
 
 /* ---------- navigazione ----------
    Le schede sono <section>: si mostra solo quella con la classe "on". */
+try{
 document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#nav button,section").forEach(x=>x.classList.remove("on"));
  b.classList.add("on");$(b.dataset.t).classList.add("on");window.scrollTo({top:0});});
-const go=t=>document.querySelector(`#nav button[data-t=${t}]`).click();
+var go=t=>document.querySelector(`#nav button[data-t=${t}]`).click();
+}catch(e){fail('Navigazione','nav',e);}
 
 /* ---------- grafici ----------
    spark(): mini linea senza assi.  lineChart(): grafico con assi, griglia e legenda.
    Entrambi producono SVG (grafica vettoriale): nitidi su qualsiasi schermo, nessuna libreria esterna. */
+try{
 function spark(v,col){v=v.filter(x=>x!=null);if(v.length<2)return"";const mn=Math.min(...v),mx=Math.max(...v),W=300,H=54;
  const p=v.map((y,i)=>`${(i/(v.length-1)*W).toFixed(1)},${(H-4-(y-mn)/((mx-mn)||1)*(H-8)).toFixed(1)}`).join(" ");
  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><polyline points="${p}" fill="none" stroke="${col}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>`;}
@@ -61,17 +94,12 @@ function lineChart(x,series,unit){const W=760,H=280,L=48,R=16,T=14,B=30;const al
   g+=`<path d="${d}" fill="none" stroke="${s.c}" stroke-width="${s.w||2.2}" ${s.dash?'stroke-dasharray="5 4"':''} stroke-linejoin="round"/>`;
   const li=s.v.map((v,i)=>[v,i]).filter(p=>p[0]!=null).pop();if(li)g+=`<circle cx="${X(li[1])}" cy="${Y(li[0])}" r="3.5" fill="${s.c}"/>`;});
  return `<div class="legend">${series.map(s=>`<span><i style="background:${s.c}"></i>${s.n}</span>`).join("")}</div><svg class="chart" viewBox="0 0 ${W} ${H}">${g}</svg>`;}
+}catch(e){fail('Grafici',null,e);}
 
 /* ---------- segnali ----------
    Riepilogo in alto, settori, schede delle coppie (card) e degli altri strumenti (acard).
    mtag() decide l'etichetta "Mercato conferma / contro / gia' scontato" confrontando i segni di COT e Mercato. */
-const SEC=D.sectors,byS={};Object.values(D.assets).forEach(a=>{if(a.key!="USD")(byS[a.group]=byS[a.group]||[]).push(a);});
-const NOTE={"Tassi USA":"Futures sui titoli di Stato: COMPRARE = scommettere su tassi in calo.","VIX":"Sul VIX comprare = aspettarsi piu' volatilita'."};
-function mtag(cot,mac){if(mac==null)return`<span class="tag">mercato: n/d</span>`;if(Math.abs(mac)<25)return`<span class="tag">mercato: gia' scontato</span>`;
- if(Math.abs(cot)<10)return`<span class="tag">mercato ${mac>0?'rialzista':'ribassista'}</span>`;
- return (mac>0)==(cot>0)?`<span class="tag ok">Mercato conferma</span>`:`<span class="tag ko">Mercato contro</span>`;}
-const split=(cot,mac)=>`<div class="split"><div>COT (${Math.round((1-M.mw)*100)}%)<b>${fmt(cot)}</b></div><div>Mercato (${Math.round(M.mw*100)}%)<b>${mac==null?'n/d':fmt(mac)}</b></div></div>`;
-const meter=s=>`<div class="meter"><i style="left:${pos(s)}%"></i></div><div class="scale"><span>-100 vendi</span><span>finale <b style="color:var(--ink)">${fmt(s)}</b></span><span>compra +100</span></div>`;
+try{
 
 (function kpis(){const strong=D.pairs.filter(p=>p.label.startsWith("STRONG")).length+Object.values(D.assets).filter(a=>a.key!="USD"&&a.group!="Valute"&&a.label.startsWith("STRONG")).length;
  const act=D.pairs.filter(p=>p.label!="NEUTRO").length+Object.values(D.assets).filter(a=>a.key!="USD"&&a.group!="Valute"&&a.label!="NEUTRO").length;
@@ -82,39 +110,40 @@ const meter=s=>`<div class="meter"><i style="left:${pos(s)}%"></i></div><div cla
  <div class="card kpi"><h3>Clima di rischio</h3><div class="big" style="color:${r>=30?'var(--b)':r<=-30?'var(--s)':'var(--ink)'}">${rl}</div><div class="note">VIX, spread e rendimenti reali, 4 settimane</div></div>
  <div class="card kpi"><h3>Mutuo fisso Italia</h3><div class="big">${mo&&mo.fix!=null?fx(mo.fix)+"%":"n/d"}</div><div class="note">${mo?fd(mo.last):""}${pf?` &middot; stima ${fd(pf.month)}: <b>${fx(pf.value)}%</b>`:""}</div></div>
  <div class="card kpi"><h3>Prossimo COT</h3><div class="big" style="font-size:20px;margin-top:12px">${cot.next}</div><div class="note">dati al ${cot.last}</div></div>`;})();
-function fd(s){if(!s)return"";const m=["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];if(s.length==7)return m[+s.slice(5,7)-1]+" "+s.slice(0,4);return s.slice(8,10)+"/"+s.slice(5,7)+"/"+s.slice(0,4);}
 
 $("sectors").innerHTML=SEC.filter(g=>byS[g]).map(g=>{const l=byS[g],avg=l.reduce((x,a)=>x+a.score,0)/l.length;
  const up=l.filter(a=>a.score>=M.normal).length,dn=l.filter(a=>a.score<=-M.normal).length;
  return `<div class="sec" data-g="${g}" style="background:${COL[lab(avg*1.6)]}"><b>${g}</b><span>${fmt(avg)}</span><small>${up} in acquisto &middot; ${dn} in vendita</small></div>`}).join("");
 document.querySelectorAll(".sec").forEach(x=>x.onclick=()=>{go("assets");selS(x.dataset.g);});
-const L5=["STRONG BUY","BUY","NEUTRO","SELL","STRONG SELL"];
+var L5=["STRONG BUY","BUY","NEUTRO","SELL","STRONG SELL"];
 $("summary").innerHTML=L5.map(l=>`<div class="sum" style="background:${COL[l]}"><b>${D.pairs.filter(p=>p.label==l).length}</b><small>${l}</small></div>`).join("");
 function sideRow(k){const a=D.assets[k]||{score:0};const v=verb(a.score);return `<div class="r"><span>${k} <span class="small">${nm(k)}</span></span><span class="${v[1]}">${v[2]} ${v[0]} (${fmt(a.score)})</span></div>`;}
 function why(p){const b=verb(D.assets[p.base].score)[0],q=verb(D.assets[p.quote].score)[0];
  const dir=p.score>=M.normal?"tende a SALIRE":p.score<=-M.normal?"tende a SCENDERE":"non ha una direzione chiara";
  if(p.div)return `Speculatori: ${b} ${p.base} e ${q} ${p.quote}. Spingono in direzioni opposte, quindi ${p.pair} ${dir}.`;
  return `Su ${p.base} sono ${b.toLowerCase()}, su ${p.quote} ${q.toLowerCase()}: nessuna divergenza netta, ${p.pair} ${dir} (segnale meno forte).`;}
-function card(p){return `<div class="card"><div class="pairhead"><span class="pair">${p.pair}</span>${badge(p.label)}</div>${meter(p.score)}${split(p.cot,p.macro)}
+function card(p){return `<div class="card clic" data-tv="p:${p.pair}" title="Clic: grafico a candele"><div class="pairhead"><span class="pair">${p.pair}</span>${badge(p.label)}</div>${meter(p.score)}${split(p.cot,p.macro)}
  <div class="rows">${sideRow(p.base)}${sideRow(p.quote)}</div>
  <div class="tags">${p.div?'<span class="tag div">Divergenza</span>':''}${mtag(p.cot,p.macro)}${p.new?`<span class="tag new">Nuovo (prima ${p.prev})</span>`:''}</div>
  <div class="why">${why(p)}</div></div>`;}
-const act=D.pairs.filter(p=>p.label!="NEUTRO");
+var act=D.pairs.filter(p=>p.label!="NEUTRO");
 $("cards").innerHTML=act.length?act.map(card).join(""):`<div class="card">Nessun segnale attivo sulle valute questa settimana.</div>`;
-function acard(a){const v=verb(a.score),m=a.mkt;return `<div class="card"><div class="pairhead"><span class="pair" style="font-size:19px">${a.name}</span>${badge(a.label)}</div>
+function acard(a){const v=verb(a.score),m=a.mkt;return `<div class="card clic" data-tv="a:${a.key}" title="Clic: grafico a candele"><div class="pairhead"><span class="pair" style="font-size:19px">${a.name}</span>${badge(a.label)}</div>
  <div class="small" style="margin-top:2px">${a.group} &middot; ${a.key} &middot; COT Index ${a.idx}/100</div>${meter(a.score)}${split(a.cot,a.macro)}
  <div class="tags">${mtag(a.cot,a.macro)}${a.new?`<span class="tag new">Nuovo (prima ${a.prev_label})</span>`:''}${a.crowded?'<span class="tag ko">affollato</span>':''}</div>
  <div class="why">Speculatori: <b class="${v[1]}">${v[0]}</b>, ${fmt(a.d_net)} contratti in settimana, ${fmt(a.d_net4)} in 4 settimane.${m?` Mercato: ${m.status.toLowerCase()}.`:''}${NOTE[a.key]||NOTE[a.group]?' '+(NOTE[a.key]||NOTE[a.group]):''}</div></div>`;}
-const oth=Object.values(D.assets).filter(a=>a.group!="Valute"&&a.label!="NEUTRO").sort((x,y)=>Math.abs(y.score)-Math.abs(x.score));
+var oth=Object.values(D.assets).filter(a=>a.group!="Valute"&&a.label!="NEUTRO").sort((x,y)=>Math.abs(y.score)-Math.abs(x.score));
 $("acards").innerHTML=oth.length?oth.map(acard).join(""):`<div class="card">Nessun segnale attivo.</div>`;
+}catch(e){fail('Segnali','sig',e);}
 
 /* ---------- coppie ----------
    Tabella completa con filtri; drawTable() la ridisegna a ogni clic su un filtro. */
-let F="Tutti";
+try{
+var F="Tutti";
 function drawTable(){const rows=D.pairs.filter(p=>F=="Tutti"||(F=="Divergenze"?p.div:p.label.includes(F))).slice().sort((a,b)=>b.score-a.score);
  $("ptable").innerHTML=`<tr><th>Coppia</th><th>Segnale</th><th class="num">Finale</th><th></th><th class="num">COT</th><th class="num">Mercato</th><th>Base</th><th>Quotata</th><th>Divergenza</th><th class="num">Corr. flussi</th></tr>`+
  rows.map(p=>{const s=p.score,w=Math.abs(s)/2,vb=verb(D.assets[p.base].score),vq=verb(D.assets[p.quote].score);
- return `<tr><td><b>${p.pair}</b>${p.new?' <span class="tag new">nuovo</span>':''}</td><td>${badge(p.label)}</td><td class="num"><b>${fmt(s)}</b></td>
+ return `<tr class="clic" data-tv="p:${p.pair}"><td><b>${p.pair}</b>${p.new?' <span class="tag new">nuovo</span>':''}</td><td>${badge(p.label)}</td><td class="num"><b>${fmt(s)}</b></td>
  <td><div class="bar"><i style="left:${s<0?50-w:50}%;width:${w}%;background:${s<0?'var(--s)':'var(--b)'}"></i></div></td>
  <td class="num">${fmt(p.cot)}</td><td class="num">${p.macro==null?'n/d':fmt(p.macro)}</td>
  <td class="${vb[1]}">${vb[2]} ${p.base}</td><td class="${vq[1]}">${vq[2]} ${p.quote}</td><td>${p.div?'<span class="tag div">si\'</span>':'<span class="small">no</span>'}</td>
@@ -122,10 +151,12 @@ function drawTable(){const rows=D.pairs.filter(p=>F=="Tutti"||(F=="Divergenze"?p
 $("filters").innerHTML=["Tutti","STRONG","BUY","SELL","NEUTRO","Divergenze"].map(x=>`<button class="${x==F?'on':''}">${x}</button>`).join("");
 document.querySelectorAll("#filters button").forEach(b=>b.onclick=()=>{F=b.textContent;document.querySelectorAll("#filters button").forEach(x=>x.classList.toggle("on",x==b));drawTable();});
 drawTable();
+}catch(e){fail('Coppie','pairs',e);}
 
 /* ---------- strumenti ----------
    Una riga per strumento, raggruppati per settore. selS(settore) filtra (usato anche dai riquadri dei settori). */
-let SF="Tutti";
+try{
+var SF="Tutti";
 function selS(g){SF=g;document.querySelectorAll("#sfilters button").forEach(x=>x.classList.toggle("on",x.textContent==g));drawAssets();}
 $("sfilters").innerHTML=["Tutti",...SEC.filter(g=>byS[g])].map(g=>`<button class="${g==SF?'on':''}">${g}</button>`).join("");
 document.querySelectorAll("#sfilters button").forEach(b=>b.onclick=()=>selS(b.textContent));
@@ -137,14 +168,16 @@ function drawAssets(){const groups={};D.order.forEach(k=>{const a=D.assets[k];if
    `<b>Speculatori:</b> ${a.d_net==0?'nessuna variazione':(a.d_net>0?'comprato ':'venduto ')+fmt(Math.abs(a.d_net)).replace('+','')+' contratti netti'} in settimana, ${fmt(a.d_net4)} in 4 settimane; netto ${fmt(a.net)} (${a.pct_oi}% open interest), COT Index ${a.idx}/100.`;
   if(a.mkt)t+=` <b>Mercato:</b> ${a.mkt.status.toLowerCase()} (R² ${fx(a.mkt.r2)}).`;
   if(a.crowded)t+=` <b style="color:var(--warn)">Posizionamento affollato: rischio inversione.</b>`;
-  return `<div class="asset"><div class="nm"><b>${a.name}</b><small>${a.key}</small></div>
+  return `<div class="asset clic" data-tv="a:${a.key}"><div class="nm"><b>${a.name}</b><small>${a.key}</small></div>
   <div class="abar"><i style="left:${s<0?50-w:50}%;width:${w}%;background:${s<0?'var(--s)':'var(--b)'}"></i></div>
   <div style="text-align:right"><b style="font-size:17px">${fmt(s)}</b><br>${badge(a.label||lab(s))}</div><div class="txt">${t}</div></div>`}).join("")+
   (NOTE[g]?`<p class="small" style="margin:0 0 8px">${NOTE[g]}</p>`:'')).join("");}
 drawAssets();
+}catch(e){fail('Strumenti','assets',e);}
 
 /* ---------- mercato e macro ----------
    Schede dei driver (valore, variazioni, forza del movimento) e tabella "quanto e' gia' scontato". */
+try{
 (function(){const X=D.market,el=$("mtop");
  if(!X){el.innerHTML=`<h2>Mercato e macro</h2><div class="card">Dati di mercato (FRED) non disponibili: i segnali usano solo il COT.</div>`;return;}
  const r=X.risk,env=r>=30?["FAVOREVOLE agli asset di rischio","var(--sb)"]:r<=-30?["SFAVOREVOLE agli asset di rischio","var(--ss)"]:["NEUTRO per gli asset di rischio","var(--n)"];
@@ -166,13 +199,15 @@ drawAssets();
  const rows=Object.values(D.assets).filter(a=>a.mkt&&a.key!="USD").sort((a,b)=>Math.abs(b.mkt.score)-Math.abs(a.mkt.score));
  $("mtable").innerHTML=`<tr><th>Strumento</th><th class="num">R²</th><th>Driver principale</th><th class="num">Mossa implicita 4s</th><th class="num">Mossa reale 4s</th><th class="num">Differenza</th><th>Lettura</th><th class="num">Punteggio</th></tr>`+
  rows.map(a=>{const m=a.mkt,t=m.top[0];const st=m.r2<.05?'<span class="small">poco legato al macro</span>':Math.abs(m.gz)<.5?'<span class="tag">gia\' scontato</span>':m.gz>0?'<span class="tag ok">spazio al rialzo</span>':'<span class="tag ko">spazio al ribasso</span>';
- return `<tr><td><b>${a.name}</b> <span class="small">${a.key}</span></td><td class="num">${fx(m.r2)}</td><td>${t?`${t.name} <span class="${t.c>0?'up':'down'}">${sg(t.c)}%</span>`:''}</td>
+ return `<tr class="clic" data-tv="a:${a.key}"><td><b>${a.name}</b> <span class="small">${a.key}</span></td><td class="num">${fx(m.r2)}</td><td>${t?`${t.name} <span class="${t.c>0?'up':'down'}">${sg(t.c)}%</span>`:''}</td>
  <td class="num">${sg(m.impl)}%</td><td class="num">${sg(m.act)}%</td><td class="num"><b>${sg(m.gap)}%</b></td><td>${st}</td><td class="num"><b class="${m.score>=25?'up':m.score<=-25?'down':'flat'}">${fmt(m.score)}</b></td></tr>`}).join("");
 })();
+}catch(e){fail('Mercato e macro','mkt',e);}
 
 /* ---------- mutui ----------
    Tassi Italia, stime, grafico 5 anni, calcolatore della rata (ammortamento francese), confronto europeo.
    Formula della rata: R = C * i / (1 - (1+i)^-n) con i = tasso annuo/12/100 e n = numero di mesi. */
+try{
 (function(){const X=D.mortgage,el=$("mortgage");
  if(!X){el.innerHTML=`<h2>Mutui</h2><div class="card">Dati BCE sui mutui non disponibili in questo momento.</div>`;return;}
  const pf=X.proj_fix,pv=X.proj_var,lp=p=>p&&p.points.length?p.points[p.points.length-1]:null,lf=lp(pf),lv=lp(pv);
@@ -208,10 +243,12 @@ drawAssets();
   <div class="card kpi" style="box-shadow:none;background:var(--soft);border:0"><h3>Differenza al mese</h3><div class="big">${eu(f-v)}</div><div class="note">Con +1 punto il variabile diventa ${eu(rata(+$("cV").value+1))}</div></div>`;}
  ["cA","cN","cF","cV"].forEach(i=>$(i).oninput=calc);calc();
 })();
+}catch(e){fail('Mutui','mortg',e);}
 
 /* ---------- correlazioni ----------
    Mappa di calore: verde = si muovono insieme, rosso = in direzioni opposte, intensita' = forza. */
-const KA=D.corr.keys,MA=D.corr.m;let K,Mx,CF="Valute";
+try{
+var KA=D.corr.keys,MA=D.corr.m;let K,Mx,CF="Valute";
 function hcol(c){if(c==null)return"transparent";const a=Math.min(1,Math.abs(c));return c>0?`rgba(34,163,90,${a})`:`rgba(224,82,77,${a})`;}
 function selC(g){CF=g;document.querySelectorAll("#cfilters button").forEach(x=>x.classList.toggle("on",x.textContent==g));
  const idx=KA.map((k,i)=>i).filter(i=>{const a=D.assets[KA[i]];return CF=="Tutto"||(a&&a.group==CF);});
@@ -226,10 +263,12 @@ function drawCorr(){$("heat").innerHTML=`<tr><th></th>${K.map(k=>`<th>${k}</th>`
  $("together").innerHTML=`<h3>Si muovono insieme</h3>${li(pl.slice(0,6))}<div class="small">Quando gli speculatori comprano uno, comprano anche l'altro.</div>`;
  $("opposite").innerHTML=`<h3>Si muovono al contrario</h3>${li(pl.slice(-6).reverse())}<div class="small">Quando comprano uno vendono l'altro: qui nascono le divergenze.</div>`;}
 selC("Valute");
+}catch(e){fail('Correlazioni','corr',e);}
 
 /* ---------- metodo ----------
    Testo della guida: i numeri (pesi, soglie) arrivano da D.meta, cosi' restano allineati a config.py. */
-const w=M.w;
+try{
+var w=M.w;
 $("guide").innerHTML=`<h2>Come funziona</h2>
 <h3>1. Le tre fonti</h3><p><b>CFTC</b> (venerdi' 21:30 italiane, dati del martedi'): quanti contratti hanno in acquisto e in vendita i grandi speculatori. <b>FRED</b>, Fed di St. Louis (ogni giorno): tassi, rendimenti reali, inflazione attesa, VIX, spread high yield, cambi, indici, petrolio, bilancio Fed. <b>BCE</b> (ogni giorno i tassi di mercato, ogni mese i mutui): tassi sui nuovi mutui, Euribor, ESTR, curva dei rendimenti. Ogni fonte ha il suo stato in alto: verde aggiornato, giallo dati salvati, rosso in ritardo.</p>
 <h3>2. Punteggio COT (${Math.round((1-M.mw)*100)}% del finale)</h3><ul><li><b>${w.posizione*100}% posizione</b>: COT Index a 3 anni (0 = mai cosi' short, 100 = mai cosi' long).</li><li><b>${w.flusso_1w*100}% flusso della settimana</b> e <b>${w.flusso_4w*100}% flusso a 4 settimane</b>, misurati in z-score a 52 settimane.</li><li>Se il posizionamento e' gia' estremo (oltre 95 o sotto 5) la forza viene ridotta del 30%.</li></ul>
@@ -239,3 +278,59 @@ $("guide").innerHTML=`<h2>Come funziona</h2>
 <h3>6. Aggiornamenti</h3><p>Ogni apertura scarica tutto. Aggiornamento automatico ogni venerdi': nel Prompt dei comandi <code>python cot_radar.py --pianifica</code>.</p>
 <h3>7. Limiti</h3><ul><li>Sono stime statistiche, non certezze: le relazioni cambiano nel tempo.</li><li>Il COT ha 3 giorni di ritardo; i mutui circa 5 settimane.</li><li>Oro, materie agricole e altri strumenti senza prezzo gratuito su FRED usano solo il COT.</li><li>Non e' una consulenza finanziaria.</li></ul>`;
 $("foot").innerHTML=`Fonti: CFTC Commitments of Traders (Legacy, Futures Only) &middot; FRED, Federal Reserve Bank of St. Louis &middot; Banca Centrale Europea, ECB Data Portal. Generato il ${M.now}.`;
+}catch(e){fail('Metodo','guide',e);}
+
+/* ---------- grafico a candele (TradingView) ----------
+   Clic su una scheda, una riga di tabella o uno strumento -> si apre un pannello con il grafico a candele.
+   Il widget gratuito di TradingView si carica SOLO al primo clic (la dashboard resta veloce e funziona offline).
+   Timeframe: D (giornaliero), H4, H1, W. Pulsante "Schermo intero" e link per aprire il grafico su tradingview.com.
+   Simboli: config.py -> TV_SYMBOLS (strumenti) e TV_PAIRS (coppie speciali); le altre coppie usano "FX:NOME". */
+try{
+var TV={spec:null,iv:"D",caricato:null};
+function tvInfo(spec){const t=spec.slice(0,1),k=spec.slice(2);
+ if(t=="p"){const p=D.pairs.find(x=>x.pair==k)||{};return {sym:(D.tvp&&D.tvp[k])||("FX:"+k),nome:k,label:p.label,score:p.score,inv:false,sotto:p.base&&p.quote?`${nm(p.base)} contro ${nm(p.quote)}`:""};}
+ const a=D.assets[k]||{},tv=(D.tv&&D.tv[k])||{};return {sym:tv.s,nome:a.name||k,label:a.label,score:a.score,inv:!!tv.inv,sotto:`${a.group||""} · ${k}`};}
+function caricaTV(){if(TV.caricato)return TV.caricato;
+ TV.caricato=new Promise((ok,ko)=>{const s=document.createElement("script");s.src="https://s3.tradingview.com/tv.js";s.async=true;
+  s.onload=()=>window.TradingView?ok():ko(new Error("TradingView non disponibile"));s.onerror=()=>{TV.caricato=null;ko(new Error("impossibile caricare TradingView (sei offline?)"));};document.head.appendChild(s);});
+ return TV.caricato;}
+function disegnaTV(){const info=tvInfo(TV.spec),box=$("tvchart");box.innerHTML="";
+ if(!info.sym){box.innerHTML=`<div class="tvmsg">Nessun grafico associato a questo strumento.</div>`;return;}
+ const scuro=matchMedia("(prefers-color-scheme: dark)").matches;
+ caricaTV().then(()=>{new TradingView.widget({container_id:"tvchart",autosize:true,symbol:info.sym,interval:TV.iv,range:TV.iv=="W"?"12M":"3M",
+   timezone:"Europe/Rome",theme:scuro?"dark":"light",style:"1",locale:"it",allow_symbol_change:true,withdateranges:true,hide_side_toolbar:false,save_image:true});})
+ .catch(e=>{box.innerHTML=`<div class="tvmsg">${esc(e.message)}. <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(info.sym)}" target="_blank" rel="noopener">Apri il grafico su TradingView</a></div>`;console.error("[COT Radar] grafico:",e);});}
+function apriGrafico(spec){TV.spec=spec;const info=tvInfo(spec),m=$("tvmodal");
+ $("tvtitolo").innerHTML=`<span class="pair">${esc(info.nome)}</span> ${info.label?badge(info.label):""} <span class="small">punteggio ${fmt(info.score)}</span>`;
+ $("tvsotto").innerHTML=`${esc(info.sotto)} &middot; simbolo <b>${esc(info.sym||"n/d")}</b>`+(info.inv?` &middot; <b style="color:var(--warn)">grafico quotato al contrario: BUY sul segnale = grafico che SCENDE</b>`:"");
+ $("tvlink").href="https://www.tradingview.com/chart/?symbol="+encodeURIComponent(info.sym||"");
+ document.querySelectorAll("#tviv button").forEach(b=>b.classList.toggle("on",b.dataset.iv==TV.iv));
+ m.hidden=false;document.body.style.overflow="hidden";disegnaTV();}
+function chiudiGrafico(){const m=$("tvmodal");if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});m.hidden=true;document.body.style.overflow="";$("tvchart").innerHTML="";}
+document.addEventListener("click",ev=>{const el=ev.target.closest("[data-tv]");if(el&&!ev.target.closest("button,a,input")){try{apriGrafico(el.dataset.tv);}catch(e){fail("Grafico",null,e);}}});
+$("tvchiudi").onclick=chiudiGrafico;
+$("tvmodal").addEventListener("click",ev=>{if(ev.target.id=="tvmodal")chiudiGrafico();});
+document.addEventListener("keydown",ev=>{if(ev.key=="Escape"&&!$("tvmodal").hidden)chiudiGrafico();});
+$("tvfull").onclick=()=>{const p=$("tvpannello");document.fullscreenElement?document.exitFullscreen():(p.requestFullscreen?p.requestFullscreen():null);};
+document.querySelectorAll("#tviv button").forEach(b=>b.onclick=()=>{TV.iv=b.dataset.iv;document.querySelectorAll("#tviv button").forEach(x=>x.classList.toggle("on",x==b));disegnaTV();});
+}catch(e){fail('Grafico',null,e);}
+
+/* ---------- registro ----------
+   Riepilogo dell'ultima esecuzione (D.stato, lo stesso contenuto di stato.json) + errori avvenuti nel browser. */
+try{
+(function(){const S=D.stato||{},el=$("registro");
+ const colE={ok:"var(--sb)",avvisi:"var(--warn)",errori:"var(--s)",fallito:"var(--ss)"}[S.esito]||"var(--n)";
+ const colL={WARNING:"var(--warn)",ERROR:"var(--s)",CRITICAL:"var(--ss)"};
+ const fonti=Object.entries(S.fonti||{}).map(([k,v])=>`<span class="tag ${v=="online"?"ok":"ko"}">${k.toUpperCase()}: ${v}</span>`).join(" ");
+ const voci=(S.voci||[]).map(v=>`<tr><td class="small">${esc(v.ora||"")}</td><td><b style="color:${colL[v.livello]||"var(--ink)"}">${esc(v.livello)}</b></td><td class="small">${esc(v.modulo||"")}</td><td style="white-space:normal">${esc(v.messaggio)}</td></tr>`).join("");
+ const brow=window.__errori.map(v=>`<tr><td class="small">browser</td><td><b style="color:var(--s)">ERROR</b></td><td class="small">${esc(v.sezione)}</td><td style="white-space:normal">${esc(v.errore).slice(0,400)}</td></tr>`).join("");
+ el.innerHTML=`<h2>Registro di monitoraggio</h2><p class="sub">Esito dell'ultimo aggiornamento, fonti, avvisi ed errori. Lo stesso riepilogo e' nel file <a href="stato.json" target="_blank">stato.json</a>; il dettaglio completo in <code>dati/registro.log</code> (sul PC) o nella scheda Actions di GitHub (sul sito).</p>
+ <div class="grid k4"><div class="card kpi"><h3>Esito</h3><div class="big" style="color:${colE}">${esc((S.esito||"n/d").toUpperCase())}</div><div class="note">${esc(S.creato||"")}</div></div>
+ <div class="card kpi"><h3>Errori</h3><div class="big" style="color:${S.errori?"var(--s)":"var(--ink)"}">${S.errori??"n/d"}</div><div class="note">parti non calcolate o dati impossibili</div></div>
+ <div class="card kpi"><h3>Avvisi</h3><div class="big" style="color:${S.avvisi?"var(--warn)":"var(--ink)"}">${S.avvisi??"n/d"}</div><div class="note">dati vecchi, fonti non raggiunte</div></div>
+ <div class="card kpi"><h3>Durata</h3><div class="big">${S.durata_s??"n/d"} s</div><div class="note">${S.strumenti??"?"} strumenti, ${S.coppie??"?"} coppie</div></div></div>
+ <h2>Fonti</h2><div class="card">${fonti||"n/d"}</div>
+ <h2>Avvisi ed errori di questa esecuzione</h2><div class="tablewrap"><table><tr><th>Ora</th><th>Livello</th><th>Modulo</th><th>Messaggio</th></tr>${voci+brow||'<tr><td colspan="4">Nessun avviso: tutto regolare.</td></tr>'}</table></div>`;
+})();
+}catch(e){fail('Registro','registro',e);}
+

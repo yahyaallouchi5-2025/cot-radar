@@ -18,9 +18,11 @@ from datetime import datetime
 
 from .analisi import analyse
 from .calendario import sources_status
-from .config import ASSETS, DIVERGENCE_MIN, MACRO_WEIGHT, NORMAL, REG_WEEKS, SECTORS, STRONG, WEB_DIR, WEIGHTS
+from .config import (ASSETS, DIVERGENCE_MIN, MACRO_WEIGHT, NORMAL, REG_WEEKS, SECTORS, STRONG, TV_PAIRS, TV_SYMBOLS,
+                     WEB_DIR, WEIGHTS)
+from .controlli import controlla
 from .fonti import load_all
-from .log import log
+from .log import log, raccoglitore
 from .mercato import fed_liquidity
 from .mutui import mortgages
 
@@ -45,8 +47,10 @@ def template():
 
 
 def build(data_source=load_all, demo=False):
-    """Scarica (o riceve) i dati, calcola tutto e restituisce l'HTML finale.
-    data_source si puo' sostituire: la modalita' --demo passa dati finti invece di scaricarli."""
+    """Scarica (o riceve) i dati, calcola tutto e restituisce (html, stato).
+    data_source si puo' sostituire: la modalita' --demo passa dati finti invece di scaricarli.
+    stato = riepilogo dell'esecuzione (fonti, avvisi, errori): finisce nella scheda "Registro" e in stato.json."""
+    t0 = datetime.now()
     cache, status, errors = data_source()
     fred = cache.get("fred", {}).get("data", {}) or {}
     ecb = cache.get("ecb", {}).get("data", {}) or {}
@@ -64,16 +68,35 @@ def build(data_source=load_all, demo=False):
     except Exception:
         log.warning("liquidita' Fed non calcolata:\n%s", traceback.format_exc())
         fed = None
-    meta = {"now": datetime.now().strftime("%d/%m/%Y %H:%M"), "w": WEIGHTS, "strong": STRONG, "normal": NORMAL,
-            "divmin": DIVERGENCE_MIN, "mw": MACRO_WEIGHT, "regw": REG_WEEKS, "demo": demo}
-    data = {"meta": meta, "sources": sources_status(cache, status, errors, assets, mort, fred),
-            "assets": assets, "pairs": pairs, "corr": corr, "market": market, "fed": fed, "mortgage": mort,
-            "order": [a[0] for a in ASSETS] + ["USD"], "sectors": SECTORS}
-    payload = json.dumps(clean(data), ensure_ascii=False)
+    try:
+        sources = sources_status(cache, status, errors, assets, mort, fred)
+    except Exception:
+        log.exception("stato delle fonti non calcolato")
+        sources = []
+    controlli = controlla(assets, pairs, fred, ecb, mort)        # qualita' dei dati (errori "invisibili")
     log.info("Calcolo fatto: %d strumenti, %d coppie, mercato %s, mutui %s",
              len(assets), len(pairs), "si" if market else "no", "si" if mort else "no")
+
+    n_err = raccoglitore.conta("ERROR") + raccoglitore.conta("CRITICAL")
+    n_warn = raccoglitore.conta("WARNING")
+    stato = {
+        "creato": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "durata_s": round((datetime.now() - t0).total_seconds(), 1),
+        "esito": "errori" if n_err else ("avvisi" if n_warn else "ok"),
+        "errori": n_err, "avvisi": n_warn, "fonti": status,
+        "strumenti": len(assets), "coppie": len(pairs), "mercato": bool(market), "mutui": bool(mort),
+        "voci": raccoglitore.voci[-200:],             # ultimi avvisi/errori di questa esecuzione
+        "controlli": controlli, "demo": demo,
+    }
+    meta = {"now": datetime.now().strftime("%d/%m/%Y %H:%M"), "w": WEIGHTS, "strong": STRONG, "normal": NORMAL,
+            "divmin": DIVERGENCE_MIN, "mw": MACRO_WEIGHT, "regw": REG_WEEKS, "demo": demo}
+    data = {"meta": meta, "sources": sources,
+            "assets": assets, "pairs": pairs, "corr": corr, "market": market, "fed": fed, "mortgage": mort,
+            "order": [a[0] for a in ASSETS] + ["USD"], "sectors": SECTORS, "stato": stato,
+            "tv": {k: {"s": v[0], "inv": v[1]} for k, v in TV_SYMBOLS.items()}, "tvp": TV_PAIRS}
+    payload = json.dumps(clean(data), ensure_ascii=False)
     # "</" dentro <script> chiuderebbe il tag per errore: lo "spezziamo" in "<\/"
-    return template().replace("{{DATA}}", payload.replace("</", "<\\/"))
+    return template().replace("{{DATA}}", payload.replace("</", "<\\/")), clean(stato)
 
 
 def error_page(msg):

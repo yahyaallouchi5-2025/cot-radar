@@ -65,11 +65,19 @@ def get_fred(sid, since):
          anche dai server di GitHub. Su GitHub la chiave sta in Settings -> Secrets -> FRED_API_KEY.
       2) senza chiave: file CSV pubblico (va bene dal PC di casa, ma dai server cloud spesso va in timeout).
     I giorni festivi hanno "." come valore: li saltiamo."""
-    key = os.environ.get("FRED_API_KEY", "").strip()
+    key = os.environ.get("FRED_API_KEY", "").strip().strip('"').strip("'")
+    if key.upper().startswith("FRED_API_KEY="):      # chiave incollata insieme al suo nome: la ripuliamo
+        key = key.split("=", 1)[1].strip()
     out = []
     if key:
         q = urllib.parse.urlencode({"series_id": sid, "api_key": key, "file_type": "json", "observation_start": since})
-        data = json.loads(http(FRED_API_URL + "?" + q))
+        text = http(FRED_API_URL + "?" + q)
+        if "Site Maintenance" in text[:600]:
+            raise RuntimeError("FRED e' in manutenzione (pagina 'Site Maintenance'): riprovare piu' tardi")
+        try:
+            data = json.loads(text)
+        except ValueError:
+            raise RuntimeError("l'API FRED non ha risposto con dati JSON (inizio risposta: %r)" % text[:80])
         for o in data.get("observations", []):
             if valid_date(o.get("date", "")):
                 try:
@@ -85,6 +93,8 @@ def get_fred(sid, since):
                     out.append([p[0], float(p[1]) * FRED_IDS[sid]])
                 except ValueError:
                     pass
+        if not out and "Site Maintenance" in text[:600]:
+            raise RuntimeError("FRED e' in manutenzione (pagina 'Site Maintenance'): riprovare piu' tardi")
         if not out and "<" in text[:300]:
             raise RuntimeError("FRED ha risposto con una pagina web invece dei dati")
     if not out:

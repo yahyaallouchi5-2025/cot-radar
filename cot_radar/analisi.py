@@ -38,7 +38,12 @@ def analyse(cot_rows, fred, ecb):
         log.debug("strumenti senza dati COT sufficienti: %s", ", ".join(missing))
 
     # ---- 2. punteggio Mercato e punteggio finale
-    market, mk = market_model(fred, ecb) if fred else (None, {})
+    # isolato: se il modello di mercato ha un problema, i segnali COT restano validi (solo senza la parte "Mercato")
+    try:
+        market, mk = market_model(fred, ecb) if fred else (None, {})
+    except Exception:
+        log.exception("modello di mercato non calcolato: i segnali usano solo il COT")
+        market, mk = None, {}
     for k, a in assets.items():
         m = mk.get(k)
         a["mkt"] = m

@@ -18,7 +18,7 @@
 <div class="alerts" id="alerts"></div>
 <nav id="nav">
 <button data-t="sig" class="on">Segnali</button><button data-t="pairs">Coppie</button><button data-t="assets">Strumenti</button>
-<button data-t="mkt">Mercato e macro</button><button data-t="mortg">Mutui</button><button data-t="corr">Correlazioni</button><button data-t="guide">Metodo</button></nav>
+<button data-t="mkt">Mercato e macro</button><button data-t="mortg">Mutui</button><button data-t="corr">Correlazioni</button><button data-t="registro">Registro</button><button data-t="guide">Metodo</button></nav>
 
 <section id="sig" class="on">
  <div class="grid k4" id="kpis"></div>
@@ -35,8 +35,15 @@
 <div class="filters" id="cfilters"></div><div class="grid k2" style="margin-bottom:20px"><div class="card" id="together"></div><div class="card" id="opposite"></div></div>
 <div class="tablewrap" style="padding:16px"><table class="heat" id="heat"></table></div></section>
 <section id="guide" class="guide"></section>
+<section id="registro"></section>
 <div class="foot" id="foot"></div>
 </div>
+<!-- pannello del grafico a candele (si apre al clic su una scheda: vedi app.js, sezione "grafico") -->
+<div id="tvmodal" class="tvmodal" hidden><div id="tvpannello" class="tvpannello">
+ <div class="tvtesta"><div><div id="tvtitolo"></div><div id="tvsotto" class="small"></div></div>
+  <div class="tvcomandi"><div class="filters" id="tviv" style="margin:0"><button data-iv="60">H1</button><button data-iv="240">H4</button><button data-iv="D" class="on">D</button><button data-iv="W">W</button></div>
+  <button id="tvfull" class="tvbtn" title="Schermo intero">&#x26F6; Schermo intero</button><a id="tvlink" class="tvbtn" target="_blank" rel="noopener">TradingView &#x2197;</a><button id="tvchiudi" class="tvbtn" title="Chiudi (Esc)">&#x2715;</button></div></div>
+ <div id="tvchart" class="tvchart"></div></div></div>
 <script>
 /* dati inseriti da Python (pagina.py) */
 const D={{DATA}};

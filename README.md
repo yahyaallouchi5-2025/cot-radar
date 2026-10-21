@@ -27,8 +27,9 @@ cot-radar/
 │   ├── analisi.py           unisce tutto: strumenti, coppie, correlazioni
 │   ├── calendario.py        orari di uscita, ritardi, stato delle fonti
 │   ├── pagina.py            crea la pagina HTML
+│   ├── controlli.py         controlli di qualità dei dati (errori "invisibili")
 │   ├── demo.py              dati finti per provare senza internet
-│   └── log.py               messaggi a schermo
+│   └── log.py               registro: schermo + dati/registro.log + riepilogo
 ├── web/                     ← la grafica
 │   ├── index.html           struttura della pagina
 │   ├── stile.css            colori, spazi, versione telefono, tema scuro
@@ -71,6 +72,32 @@ Su Windows puoi anche fare doppio clic su `avvia.pyw` (nessuna finestra nera).
 Esercizio per imparare: in `config.py` cambia `MACRO_WEIGHT = 0.25` in `0.5`, lancia `python main.py --demo` e guarda come cambiano i segnali.
 
 ---
+
+## Grafico a candele
+
+Clic su una scheda, una riga delle tabelle o uno strumento: si apre il grafico di **TradingView** (gratuito) con
+timeframe **H1 / H4 / D / W**, ultimi 3 mesi, strumenti di disegno, **schermo intero** e link a tradingview.com.
+I simboli sono in `cot_radar/config.py` → `TV_SYMBOLS` / `TV_PAIRS` (modificabili). Alcuni strumenti sono quotati
+"al contrario" (es. segnale su JPY → grafico USDJPY; tassi → grafico del rendimento): il pannello lo segnala.
+
+## Registro di monitoraggio e protezione anti-crollo
+
+| Dove | Cosa |
+|---|---|
+| `dati/registro.log` | tutti i messaggi (DEBUG → CRITICAL), a rotazione 1 MB × 3 |
+| `dati/stato.json` (e `stato.json` sul sito) | riepilogo dell'ultima esecuzione: esito, fonti, avvisi, errori |
+| scheda **Registro** della dashboard | lo stesso riepilogo + errori avvenuti nel browser |
+| GitHub → **Issues** | aperta in automatico se l'aggiornamento fallisce o i dati hanno errori; chiusa quando torna tutto ok |
+
+- Ogni sezione della pagina è isolata: se una si rompe compare "Sezione non disponibile" e le altre funzionano.
+- `cot_radar/controlli.py` scova gli errori "invisibili": dati vecchi, mercati spariti, valori impossibili, salti anomali.
+- Le chiavi API non finiscono mai nei registri: vengono sostituite con `***`.
+
+## Chiave FRED (gratuita)
+
+FRED dai server cloud funziona in modo affidabile solo con la chiave API (richiedila su fred.stlouisfed.org).
+**Mai** scriverla nel codice o nel README. Su GitHub: Settings → Secrets and variables → Actions →
+`FRED_API_KEY` (solo i 32 caratteri della chiave). Sul PC: `setx FRED_API_KEY "la-tua-chiave"` nel Prompt dei comandi.
 
 ## Pubblicarlo su internet (GitHub Pages)
 

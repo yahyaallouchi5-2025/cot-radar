@@ -93,8 +93,9 @@ class TestPagina(unittest.TestCase):
         """Prova completa: dati finti -> calcoli -> HTML. Se passa, tutta la catena funziona."""
         from cot_radar.demo import demo_data
         from cot_radar.pagina import build
-        html = build(demo_data, demo=True)
+        html, stato = build(demo_data, demo=True)
         self.assertIn("const D=", html)
+        self.assertIn(stato["esito"], ("ok", "avvisi", "errori"))
         self.assertNotIn("{{", html)                                 # nessun segnaposto rimasto
 
 
