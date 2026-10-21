@@ -30,6 +30,8 @@ TIMEOUT = 45                     # secondi massimi di attesa per ogni download
 CFTC_URL = "https://publicreporting.cftc.gov/resource/6dca-aqww.json"
 # FRED (Fed di St. Louis): ogni serie si scarica come CSV con il suo codice (id)
 FRED_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}&cosd={since}"
+# API ufficiale FRED (serve una chiave gratuita, vedi README): piu' affidabile dai server cloud
+FRED_API_URL = "https://api.stlouisfed.org/fred/series/observations"
 # BCE: API SDMX del Data Portal, in formato CSV
 ECB_URL = "https://data-api.ecb.europa.eu/service/data/{flow}/{key}?startPeriod={since}&format=csvdata"
 

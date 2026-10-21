@@ -19,7 +19,8 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta
 
-from .config import (ASSETS, CACHE, CFTC_URL, ECB_REQ, ECB_URL, FRED_IDS, FRED_URL, HISTORY_WEEKS, TIMEOUT)
+from .config import (ASSETS, CACHE, CFTC_URL, ECB_REQ, ECB_URL, FRED_API_URL, FRED_IDS, FRED_URL, HISTORY_WEEKS,
+                     TIMEOUT)
 from .log import log
 
 DATE_RE = re.compile(r"^\d{4}-\d{2}(-\d{2})?$")   # accetta "2026-10-14" (giorno) e "2026-08" (mese)
@@ -58,19 +59,36 @@ def get_cftc():
 
 def get_fred(sid, since):
     """Una serie FRED -> lista ordinata [[data, valore], ...].
-    Il CSV di FRED e' "data,valore" con una riga di intestazione; i giorni festivi hanno "." come valore."""
-    text = http(FRED_URL.format(sid=sid, since=since))
+
+    Due modi:
+      1) con la chiave API gratuita (variabile d'ambiente FRED_API_KEY): API ufficiale, affidabile
+         anche dai server di GitHub. Su GitHub la chiave sta in Settings -> Secrets -> FRED_API_KEY.
+      2) senza chiave: file CSV pubblico (va bene dal PC di casa, ma dai server cloud spesso va in timeout).
+    I giorni festivi hanno "." come valore: li saltiamo."""
+    key = os.environ.get("FRED_API_KEY", "").strip()
     out = []
-    for line in text.splitlines():
-        p = [x.strip().strip('"') for x in line.split(",")]
-        if len(p) >= 2 and len(p[0]) == 10 and valid_date(p[0]):   # scarta intestazione e righe non valide
-            try:
-                out.append([p[0], float(p[1]) * FRED_IDS[sid]])
-            except ValueError:
-                pass                                                 # "." = dato mancante
+    if key:
+        q = urllib.parse.urlencode({"series_id": sid, "api_key": key, "file_type": "json", "observation_start": since})
+        data = json.loads(http(FRED_API_URL + "?" + q))
+        for o in data.get("observations", []):
+            if valid_date(o.get("date", "")):
+                try:
+                    out.append([o["date"], float(o["value"]) * FRED_IDS[sid]])
+                except (ValueError, KeyError):
+                    pass
+    else:
+        text = http(FRED_URL.format(sid=sid, since=since))
+        for line in text.splitlines():
+            p = [x.strip().strip('"') for x in line.split(",")]
+            if len(p) >= 2 and len(p[0]) == 10 and valid_date(p[0]):   # scarta intestazione e righe non valide
+                try:
+                    out.append([p[0], float(p[1]) * FRED_IDS[sid]])
+                except ValueError:
+                    pass
+        if not out and "<" in text[:300]:
+            raise RuntimeError("FRED ha risposto con una pagina web invece dei dati")
     if not out:
-        web = "<" in text[:300]                                      # "<" = e' arrivata una pagina HTML
-        raise RuntimeError("FRED non ha restituito dati CSV" + (" (ha risposto con una pagina web)" if web else ""))
+        raise RuntimeError("FRED non ha restituito dati")
     return sorted(out)
 
 
@@ -122,7 +140,9 @@ def load_all():
     with ThreadPoolExecutor(max_workers=10) as ex:
         # 1) lancio tutti i download insieme ...
         f_cot = ex.submit(get_cftc)
-        f_fred = {sid: ex.submit(get_fred, sid, since) for sid in FRED_IDS}
+        # FRED: al massimo 4 richieste alla volta (pool separato), per non farsi rallentare dal server
+        fred_pool = ThreadPoolExecutor(max_workers=4)
+        f_fred = {sid: fred_pool.submit(get_fred, sid, since) for sid in FRED_IDS}
         f_ecb = [(fl, k, ex.submit(get_ecb, fl, k, since_ecb)) for fl, k in ECB_REQ]
 
         # 2) ... poi raccolgo i risultati uno per uno. .result() "rilancia" l'eventuale errore del download.
@@ -146,6 +166,7 @@ def load_all():
                 bad += 1
                 errors.setdefault("fred", []).append(f"{sid}: {e}")
                 log.warning("FRED %s non scaricato: %s", sid, e)
+        fred_pool.shutdown()
         if ok:
             fred["saved"] = now
         cache["fred"] = fred
