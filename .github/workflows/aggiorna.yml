@@ -1,0 +1,44 @@
+# aggiorna.yml - USA UNA VOLTA SOLA: applica la modifica "chiave API FRED" a fonti.py e config.py.
+name: Aggiorna codice (una tantum)
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  aggiorna:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Applica la modifica
+        run: |
+          cat > p.b64 <<'FINE'
+          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
+          FINE
+          base64 -d p.b64 | gunzip > p.diff
+          git apply p.diff
+          rm p.b64 p.diff
+          git config user.name "github-actions[bot]"
+          git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
+          git commit -am "FRED: usa l'API ufficiale con chiave (piu' affidabile dai server GitHub)"
+          git push
