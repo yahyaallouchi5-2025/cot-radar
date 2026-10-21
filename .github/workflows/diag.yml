@@ -1,0 +1,18 @@
+# diag.yml - diagnosi una tantum della chiave FRED (la chiave resta nascosta: GitHub la sostituisce con ***)
+name: Diagnosi FRED (una tantum)
+on: workflow_dispatch
+jobs:
+  diagnosi:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prova API FRED
+        env:
+          K: ${{ secrets.FRED_API_KEY }}
+        run: |
+          echo "lunghezza chiave: ${#K}  (deve essere 32)"
+          echo "solo caratteri a-z0-9: $( [[ "$K" =~ ^[a-z0-9]+$ ]] && echo si || echo NO )"
+          curl -sS -m 30 -o r.txt -w "HTTP %{http_code}  tipo %{content_type}\n" "https://api.stlouisfed.org/fred/series/observations?series_id=DGS10&api_key=$K&file_type=json&limit=2&sort_order=desc"
+          head -c 400 r.txt; echo
+          echo "--- CSV pubblico:"
+          curl -sS -m 30 -o c.txt -w "HTTP %{http_code}  tipo %{content_type}\n" "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10&cosd=2026-10-01" || true
+          head -c 200 c.txt; echo
