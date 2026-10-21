@@ -137,7 +137,8 @@ def load_all():
 
     Restituisce (cache, status, errors):
       cache  = {"cot": {...}, "fred": {"saved": ..., "data": {serie: punti}}, "ecb": {...}}
-      status = per gruppo: "online" (tutto ok), "parziale", "cache" (uso la copia salvata), "assente"
+      status = per gruppo: "online" (tutto ok), "parziale", "cache" (uso la copia salvata), "assente",
+               "manutenzione" (solo FRED: sito fermo per lavori, nessun altro tentativo)
       errors = messaggi di errore per gruppo, mostrati nella dashboard
     """
     t0 = time.time()
@@ -151,9 +152,23 @@ def load_all():
         # 1) lancio tutti i download insieme ...
         f_cot = ex.submit(get_cftc)
         # FRED: al massimo 4 richieste alla volta (pool separato), per non farsi rallentare dal server
-        fred_pool = ThreadPoolExecutor(max_workers=4)
-        f_fred = {sid: fred_pool.submit(get_fred, sid, since) for sid in FRED_IDS}
         f_ecb = [(fl, k, ex.submit(get_ecb, fl, k, since_ecb)) for fl, k in ECB_REQ]
+        fred_pool = ThreadPoolExecutor(max_workers=4)
+        # "Sonda": scarico PRIMA una sola serie. Se FRED e' in manutenzione non insistiamo con le altre
+        # (sarebbero solo richieste inutili): usiamo la copia salvata e il controllo orario su GitHub
+        # (job "sonda" in sito.yml) rilancera' l'aggiornamento da solo appena FRED torna online.
+        ids = list(FRED_IDS)
+        f_fred = {ids[0]: fred_pool.submit(get_fred, ids[0], since)}
+        fred_manut = False
+        try:
+            f_fred[ids[0]].result()
+        except Exception as e:
+            fred_manut = "manutenzione" in str(e)
+        if fred_manut:
+            log.warning("FRED e' in manutenzione: salto le altre %d serie e uso i dati salvati "
+                        "(riprovo da solo al prossimo controllo automatico)", len(ids) - 1)
+        else:
+            f_fred.update({sid: fred_pool.submit(get_fred, sid, since) for sid in ids[1:]})
 
         # 2) ... poi raccolgo i risultati uno per uno. .result() "rilancia" l'eventuale errore del download.
         try:
@@ -175,12 +190,16 @@ def load_all():
             except Exception as e:
                 bad += 1
                 errors.setdefault("fred", []).append(f"{sid}: {e}")
-                log.warning("FRED %s non scaricato: %s", sid, e)
+                if not fred_manut:                    # in manutenzione il messaggio e' gia' stato scritto sopra
+                    log.warning("FRED %s non scaricato: %s", sid, e)
         fred_pool.shutdown()
         if ok:
             fred["saved"] = now
         cache["fred"] = fred
-        status["fred"] = "online" if bad == 0 else ("parziale" if ok else ("cache" if fred["data"] else "assente"))
+        if fred_manut:
+            status["fred"] = "manutenzione"
+        else:
+            status["fred"] = "online" if bad == 0 else ("parziale" if ok else ("cache" if fred["data"] else "assente"))
 
         ecb = cache.get("ecb", {"saved": None, "data": {}})
         ok = bad = 0

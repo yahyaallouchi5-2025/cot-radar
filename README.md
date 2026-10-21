@@ -99,6 +99,10 @@ FRED dai server cloud funziona in modo affidabile solo con la chiave API (richie
 **Mai** scriverla nel codice o nel README. Su GitHub: Settings → Secrets and variables → Actions →
 `FRED_API_KEY` (solo i 32 caratteri della chiave). Sul PC: `setx FRED_API_KEY "la-tua-chiave"` nel Prompt dei comandi.
 
+**Se FRED e' in manutenzione** il programma non insiste: prova una sola serie, salta le altre e usa i dati salvati
+(scheda Registro: "FRED in manutenzione"). Su GitHub il job `sonda` di `sito.yml` controlla **ogni ora** con una sola
+richiesta leggera (senza chiave) e, appena FRED torna online, rilancia da solo l'aggiornamento completo.
+
 ## Pubblicarlo su internet (GitHub Pages)
 
 1. Crea un account su **github.com** → **New repository** → nome `cot-radar` → **Public** → *Create*.

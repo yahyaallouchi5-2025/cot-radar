@@ -122,6 +122,10 @@ def sources_status(cache, status, errors, assets, mort, fred):
 
     # errori di download, riassunti in una riga per fonte
     for grp, nm in (("cot", "CFTC"), ("fred", "FRED"), ("ecb", "BCE")):
+        if status.get(grp) == "manutenzione":
+            out.append({"name": f"Download {nm}", "last": "", "next": "", "st": "cache",
+                        "msg": "sito in manutenzione: non insisto, uso i dati salvati e ricontrollo da solo ogni ora."})
+            continue
         if status.get(grp) in ("cache", "assente", "parziale") and errors.get(grp):
             e = errors[grp]
             lst = [e] if isinstance(e, str) else e

@@ -70,6 +70,7 @@ def segnala_a_github(stato):
     if uscita:
         with open(uscita, "a", encoding="utf-8") as f:
             f.write(f"esito={stato['esito']}\nerrori={stato.get('errori', 0)}\navvisi={stato.get('avvisi', 0)}\n")
+            f.write(f"fred={(stato.get('fonti') or {}).get('fred', '?')}\n")   # usato dal job "segnala"
 
 
 def main(argv):
