@@ -1,0 +1,86 @@
+# sito.yml - aggiorna e pubblica la dashboard su GitHub Pages (orari in UTC; Italia = UTC+1/+2).
+# A mano: Actions -> Sito -> Run workflow.  DEBUG: apri un'esecuzione -> job "build".
+name: Sito
+on:
+  schedule:
+    - cron: "5 20 * * 5"     # venerdi', dopo il COT (ora legale USA)
+    - cron: "5 21 * * 5"     # venerdi', ora solare USA
+    - cron: "0 22 * * 4"     # giovedi', bilancio Fed
+    - cron: "30 5 * * 1-5"   # mattine feriali: mercati e BCE
+    - cron: "40 * * * *"     # ogni ora: solo controllo leggero se FRED era in manutenzione
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:                  # un aggiornamento alla volta (il nuovo aspetta)
+  group: pages
+  cancel-in-progress: false
+jobs:
+  # Refresh autonomo FRED: il giro orario prosegue SOLO se l'ultimo stato era "manutenzione"
+  # e una richiesta di prova (senza chiave) dice che FRED e' tornato. Gli altri avvii passano sempre.
+  sonda:
+    runs-on: ubuntu-latest
+    outputs:
+      vai: ${{ steps.d.outputs.vai }}
+    steps:
+      - id: d
+        env:
+          ORARIO: ${{ github.event.schedule }}
+          SITO: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/stato.json
+        run: |
+          if [ "$ORARIO" != "40 * * * *" ]; then echo "vai=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          F=$(curl -s -m 20 "$SITO" | python3 -c "import sys,json;print(json.load(sys.stdin)['fonti']['fred'])" 2>/dev/null || echo "?")
+          echo "FRED ultimo stato: $F"
+          if [ "$F" != "manutenzione" ]; then echo "vai=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          P=$(curl -s -m 20 "https://api.stlouisfed.org/fred/series/observations?series_id=DGS2&file_type=json" || echo "nessuna risposta")
+          if echo "$P" | grep -qi "maintenance\|nessuna risposta"; then echo "ancora giu'"; echo "vai=false" >> "$GITHUB_OUTPUT"
+          else echo "FRED tornato: aggiorno"; echo "vai=true" >> "$GITHUB_OUTPUT"; fi
+  build:
+    needs: sonda
+    if: needs.sonda.outputs.vai == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      esito: ${{ steps.crea.outputs.esito }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/cache@v4      # copia dei dati: se una fonte non risponde si usano gli ultimi salvati
+        with:
+          path: dati
+          key: dati-${{ github.run_id }}
+          restore-keys: dati-
+      - run: python -m unittest discover -s tests
+      - id: crea
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}    # dai Secrets del repository, mai nel codice
+        run: python main.py --out public --debug
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+  deploy:
+    needs: build                  # se build fallisce resta online la versione precedente
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+  # Avviso PRIVATO: con esito critico/errori/scartato questo job fallisce apposta e GitHub
+  # manda una mail solo al proprietario. Nessuna segnalazione pubblica.
+  avviso-admin:
+    needs: [sonda, build, deploy]
+    if: always() && needs.sonda.outputs.vai == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          B: ${{ needs.build.result }}
+          D: ${{ needs.deploy.result }}
+          E: ${{ needs.build.outputs.esito }}
+        run: |
+          echo "build=$B pubblicazione=$D esito=${E:-?}"
+          if [ "$B" = success ] && [ "$D" = success ] && [ "$E" != errori ] && [ "$E" != critico ]; then echo "Tutto regolare."
+          else echo "::error::COT Radar CRITICO (esito=${E:-?}): il sito mostra gli ultimi dati validi. Dettagli nel job build."; exit 1; fi
