@@ -367,12 +367,23 @@ function apriGrafico(spec){TV.spec=spec;const info=tvInfo(spec),m=$("tvmodal");d
  $("tvlink").href="https://www.tradingview.com/chart/?symbol="+encodeURIComponent(info.sym||"");
  document.querySelectorAll("#tviv button").forEach(b=>b.classList.toggle("on",b.dataset.iv==TV.iv));
  m.hidden=false;document.body.style.overflow="hidden";disegnaTV();}
-function chiudiGrafico(){const m=$("tvmodal");if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});m.hidden=true;document.body.style.overflow="";$("tvchart").innerHTML="";}
+function chiudiGrafico(){const m=$("tvmodal");if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
+ if($("tvpannello").classList.contains("pieno"))schermoPieno();m.hidden=true;document.body.style.overflow="";$("tvchart").innerHTML="";}
 document.addEventListener("click",ev=>{const el=ev.target.closest("[data-tv]");if(el&&!ev.target.closest("button,a,input")){try{apriGrafico(el.dataset.tv);}catch(e){fail("Grafico",null,e);}}});
 $("tvchiudi").onclick=chiudiGrafico;
 $("tvmodal").addEventListener("click",ev=>{if(ev.target.id=="tvmodal")chiudiGrafico();});
 document.addEventListener("keydown",ev=>{if(ev.key=="Escape"&&!$("tvmodal").hidden)chiudiGrafico();});
-$("tvfull").onclick=()=>{const p=$("tvpannello");document.fullscreenElement?document.exitFullscreen():(p.requestFullscreen?p.requestFullscreen():null);};
+/* SCHERMO INTERO. iPhone (Safari e Chrome su iOS) NON permette lo schermo intero vero sugli elementi della pagina
+   (solo sui video): li' usiamo un "finto" schermo intero via CSS (classe .pieno = pannello su tutta la finestra).
+   Sugli altri browser si prova quello vero; se il browser lo rifiuta si ripiega sullo stesso metodo CSS. */
+function schermoPieno(){const p=$("tvpannello"),on=p.classList.toggle("pieno");$("tvfull").classList.toggle("on",on);
+ document.documentElement.classList.toggle("bloccato",on);}
+$("tvfull").onclick=()=>{const p=$("tvpannello"),fs=document.fullscreenElement||document.webkitFullscreenElement;
+ if(p.classList.contains("pieno"))return schermoPieno();                 // esco dal finto schermo intero
+ if(fs){(document.exitFullscreen||document.webkitExitFullscreen).call(document);return;}
+ const vero=p.requestFullscreen||p.webkitRequestFullscreen;
+ if(!vero)return schermoPieno();                                          // iPhone: niente API -> CSS
+ try{const r=vero.call(p);if(r&&r.catch)r.catch(()=>schermoPieno());}catch(e){schermoPieno();}};
 document.querySelectorAll("#tviv button").forEach(b=>b.onclick=()=>{TV.iv=b.dataset.iv;document.querySelectorAll("#tviv button").forEach(x=>x.classList.toggle("on",x==b));disegnaTV();});
 }catch(e){fail('Grafico',null,e);}
 

@@ -113,6 +113,11 @@ tr.clic:hover td{background:var(--soft)}
 .tvmodal[hidden]{display:none}
 .tvpannello{background:var(--card);border:1px solid var(--line);border-radius:16px;width:min(1200px,100%);height:min(820px,100%);display:flex;flex-direction:column;overflow:hidden}
 .tvpannello:fullscreen{width:100%;height:100%;border-radius:0}
+/* finto schermo intero (iPhone): il pannello copre tutta la finestra visibile; 100dvh tiene conto delle barre di Safari */
+.tvpannello.pieno{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;max-width:none;border-radius:0;border:0;z-index:70;
+ padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+.tvbtn.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+html.bloccato,html.bloccato body{overflow:hidden;overscroll-behavior:none}
 .tvtesta{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;padding:16px 20px;border-bottom:1px solid var(--line)}
 .tvtesta .pair{font-size:22px;margin-right:6px}
 .tvcomandi{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
