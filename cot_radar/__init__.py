@@ -13,6 +13,7 @@ Mappa dei moduli (in ordine di "viaggio" dei dati):
   calendario.py  orari di uscita, ritardi, stato delle fonti
   pagina.py      costruisce la pagina HTML (usa i file in web/)
   controlli.py   controlli di qualita' dei dati (dati vecchi, valori impossibili, mercati spariti)
+  paracadute.py  il sito non peggiora mai: confronto con l'ultimo aggiornamento buono + esito CRITICO
   riserva.py     fonti di riserva se FRED e' fermo (Tesoro USA, NY Fed, CBOE, Freddie Mac, BCE, Coinbase)
   demo.py        dati finti per provare senza internet
   log.py         registro: schermo + dati/registro.log + riepilogo per la scheda "Registro"

@@ -27,6 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from cot_radar.config import OUT, REGISTRO, STATO     # noqa: E402
 from cot_radar.log import log, raccoglitore, setup   # noqa: E402
 from cot_radar.pagina import build, error_page       # noqa: E402
+from cot_radar import paracadute                     # noqa: E402
 
 
 def install_task():
@@ -55,14 +56,15 @@ def scrivi_stato(stato, cartelle):
 
 
 def segnala_a_github(stato):
-    """Solo su GitHub Actions: riepilogo leggibile nella pagina dell'esecuzione + valori per il passo successivo
-    (che apre o chiude in automatico una "Issue" quando ci sono problemi)."""
+    """Solo su GitHub Actions: riepilogo leggibile nella pagina dell'esecuzione + valori per il job
+    "avviso-admin" (che con esito critico/errori fa partire la mail privata di GitHub al proprietario)."""
     riepilogo = os.environ.get("GITHUB_STEP_SUMMARY")
     if riepilogo:
         righe = [f"## COT Radar: esito **{stato['esito'].upper()}**", "",
                  f"- creato: {stato.get('creato')} (durata {stato.get('durata_s')} s)",
                  f"- fonti: {stato.get('fonti')}",
                  f"- errori: {stato.get('errori')}, avvisi: {stato.get('avvisi')}", ""]
+        righe += [f"- **CRITICO** {c}" for c in stato.get("critici", [])]
         righe += [f"- `{v['livello']}` {v['modulo']}: {v['messaggio'][:300]}" for v in stato.get("voci", [])[:40]]
         with open(riepilogo, "a", encoding="utf-8") as f:
             f.write("\n".join(righe) + "\n")
@@ -108,6 +110,21 @@ def main(argv):
             return 1          # sul sito NON pubblichiamo una pagina di errore: resta online l'ultima versione buona
         page = error_page(err)
     else:
+        # PARACADUTE: confronto con l'ultimo aggiornamento buono (vedi cot_radar/paracadute.py)
+        pubblica, critici = (True, []) if "--demo" in argv else paracadute.valuta(stato, paracadute.ultimo_buono(STATO))
+        if critici:
+            stato["critici"] = critici
+            stato["esito"] = "critico"
+        if not pubblica:
+            stato["esito"] = "scartato"
+            scrivi_stato(stato, [])                                   # niente sovrascritture: resta il riferimento buono
+            with open(os.path.join(os.path.dirname(STATO), "stato_scartato.json"), "w", encoding="utf-8") as f:
+                json.dump(stato, f, ensure_ascii=False, indent=1)      # per il debug: cosa e' stato scartato
+            segnala_a_github(stato)
+            if site:
+                return 1      # niente pubblicazione: online resta l'ultima versione buona (e parte la mail all'admin)
+            log.critical("Pagina NON aggiornata: tengo quella precedente (%s)", out)
+            return 1
         scrivi_stato(stato, [os.path.dirname(STATO)] + ([os.path.dirname(out)] if site else []))
         segnala_a_github(stato)
         log.info("Esito: %s (%d errori, %d avvisi)", stato["esito"].upper(), stato["errori"], stato["avvisi"])

@@ -322,7 +322,7 @@ document.querySelectorAll("#tviv button").forEach(b=>b.onclick=()=>{TV.iv=b.data
    Riepilogo dell'ultima esecuzione (D.stato, lo stesso contenuto di stato.json) + errori avvenuti nel browser. */
 try{
 (function(){const S=D.stato||{},el=$("registro");
- const colE={ok:"var(--sb)",avvisi:"var(--warn)",errori:"var(--s)",fallito:"var(--ss)"}[S.esito]||"var(--n)";
+ const colE={ok:"var(--sb)",avvisi:"var(--warn)",errori:"var(--s)",critico:"var(--ss)",fallito:"var(--ss)"}[S.esito]||"var(--n)";
  const colL={WARNING:"var(--warn)",ERROR:"var(--s)",CRITICAL:"var(--ss)"};
  const fonti=Object.entries(S.fonti||{}).map(([k,v])=>k=="fred_riserva"   // serie FRED prese da Tesoro USA, NY Fed, BCE...
    ?`<span class="tag ok">RISERVA FRED: ${v} serie</span>`:`<span class="tag ${v=="online"?"ok":"ko"}">${k.toUpperCase()}: ${v}</span>`).join(" ");

@@ -87,8 +87,12 @@ I simboli sono in `cot_radar/config.py` → `TV_SYMBOLS` / `TV_PAIRS` (modificab
 | `dati/registro.log` | tutti i messaggi (DEBUG → CRITICAL), a rotazione 1 MB × 3 |
 | `dati/stato.json` (e `stato.json` sul sito) | riepilogo dell'ultima esecuzione: esito, fonti, avvisi, errori |
 | scheda **Registro** della dashboard | lo stesso riepilogo + errori avvenuti nel browser |
-| GitHub → **Issues** | aperta in automatico se l'aggiornamento fallisce o i dati hanno errori; chiusa quando torna tutto ok |
+| **mail privata di GitHub** (solo all'amministratore) | se l'aggiornamento fallisce, viene scartato dal paracadute o ha esito CRITICO (job `avviso-admin`) |
 
+- **Paracadute** (`cot_radar/paracadute.py`): ogni aggiornamento è confrontato con l'ultimo buono. Se mancano pezzi
+  (strumenti, coppie, mercati, mutui) la pagina **non** viene pubblicata e resta online quella precedente; se una
+  fonte è giù si pubblicano gli ultimi dati salvati. In entrambi i casi: riga CRITICAL nel registro e mail a te.
+  (Nota: il repository è pubblico, quindi anche i log di Actions sono leggibili; non contengono segreti.)
 - Ogni sezione della pagina è isolata: se una si rompe compare "Sezione non disponibile" e le altre funzionano.
 - `cot_radar/controlli.py` scova gli errori "invisibili": dati vecchi, mercati spariti, valori impossibili, salti anomali.
 - Le chiavi API non finiscono mai nei registri: vengono sostituite con `***`.
