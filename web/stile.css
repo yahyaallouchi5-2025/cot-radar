@@ -124,5 +124,12 @@ tr.clic:hover td{background:var(--soft)}
 .tvcot .riga b{color:var(--ink)}
 .tvcot svg{display:block;width:100%;height:64px}
 .tvcot .assi{display:flex;justify-content:space-between;font-size:11px;color:var(--ink2);margin-top:4px}
-@media (max-width:600px){.tvmodal{padding:0}.tvpannello{height:100%;border-radius:0}.tvtesta{padding:12px 14px}.tvcot{padding:8px 12px}.tvcot svg{height:48px}}
+.corto{display:none}
+/* TELEFONO: testata del grafico su una riga sola, pulsanti compatti, pannello COT essenziale */
+@media (max-width:600px){.tvmodal{padding:0}.tvpannello{height:100%;border-radius:0}
+ .tvtesta{padding:10px 12px;gap:8px}.tvtesta .pair{font-size:18px}.tvtesta .small{font-size:11px}
+ .tvcomandi{gap:4px;flex-wrap:nowrap;width:100%}.tvcomandi .filters{gap:4px;flex-wrap:nowrap}
+ .tvcomandi .filters button,.tvbtn{padding:6px 9px;font-size:12px}.tvcomandi #tvchiudi{margin-left:auto}
+ .lungo{display:none}.corto{display:inline}
+ .tvcot{padding:8px 12px 10px}.tvcot .riga{font-size:11px;margin-bottom:4px}.tvcot svg{height:44px}.tvcot .assi{font-size:10px}}
 

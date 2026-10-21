@@ -10,7 +10,7 @@ Flusso:
   flussi settimanali  -> matrice delle correlazioni
 """
 from .calcoli import clip, pearson
-from .config import ASSETS, EXTRA_PAIRS, FX_ORDER, MACRO_WEIGHT, PAIR_NAMES
+from .config import ASSETS, EXTRA_PAIRS, FX_ORDER, MACRO_WEIGHT, NOMI_EN, PAIR_NAMES
 from .cot import cot_series, cot_strength, is_divergence, label
 from .log import log
 from .mercato import market_model
@@ -38,7 +38,7 @@ def analyse(cot_rows, fred, ecb):
         now, prev = cot_strength(ser, len(ser) - 1), cot_strength(ser, len(ser) - 2)
         if not now:
             continue
-        now.update(key=k, name=name, group=group, cot_prev=prev["cot"] if prev else None, mkt=None,
+        now.update(key=k, name=NOMI_EN.get(k, name), it=name, group=group, cot_prev=prev["cot"] if prev else None, mkt=None,
                    flussi=flussi(ser))
         assets[k] = now
         hist[k] = ser
@@ -73,7 +73,7 @@ def analyse(cot_rows, fred, ecb):
         inv_c = -sum(assets[c]["cot"] for c in majors) / len(majors)
         inv_p = -sum(assets[c]["prev"] or 0 for c in majors) / len(majors)
         u = dict(dxy) if dxy else {"idx": None, "crowded": False, "net": None, "d_net": None}
-        u.update(key="USD", name="Dollaro USA (composito)", group="Valute", composite=True, crowded=False,
+        u.update(key="USD", name="U.S. Dollar (composite)", it="Dollaro USA (composito)", group="Valute", composite=True, crowded=False,
                  score=round(0.5 * dxy["score"] + 0.5 * inv, 1) if dxy else round(inv, 1),
                  cot=round(0.5 * dxy["cot"] + 0.5 * inv_c, 1) if dxy else round(inv_c, 1),
                  prev=round(0.5 * (dxy["prev"] or 0) + 0.5 * inv_p, 1) if dxy else round(inv_p, 1),

@@ -61,7 +61,7 @@ ASSETS = [
     ("PALLADIUM", "075651", "Palladio", "Metalli"),
     ("CORN", "002602", "Mais", "Cereali"), ("SOY", "005602", "Soia", "Cereali"),
     ("SOYOIL", "007601", "Olio di soia", "Cereali"), ("SOYMEAL", "026603", "Farina di soia", "Cereali"),
-    ("WHEAT", "001602", "Grano (Chicago)", "Cereali"), ("KCWHEAT", "001612", "Grano duro (Kansas)", "Cereali"),
+    ("WHEAT", "001602", "Grano (Chicago)", "Cereali"), ("KCWHEAT", "001612", "Grano rosso duro (Kansas)", "Cereali"),
     ("RICE", "039601", "Riso", "Cereali"),
     ("SUGAR", "080732", "Zucchero", "Soft"), ("COFFEE", "083731", "Caffe'", "Soft"),
     ("COCOA", "073732", "Cacao", "Soft"), ("COTTON", "033661", "Cotone", "Soft"),
@@ -70,6 +70,25 @@ ASSETS = [
     ("HOGS", "054642", "Suini magri", "Bestiame"), ("MILK", "052641", "Latte (Classe III)", "Bestiame"),
     ("BTC", "133741", "Bitcoin", "Crypto"), ("ETH", "146021", "Ether", "Crypto"),
 ]
+# Nomi ORIGINALI in inglese (come su CFTC / CME / ICE e su TradingView): sono quelli mostrati in pagina.
+# Il nome italiano di ASSETS resta come sottotitolo, per capire al volo di cosa si tratta.
+NOMI_EN = {
+    "EUR": "Euro FX", "GBP": "British Pound", "JPY": "Japanese Yen", "CHF": "Swiss Franc",
+    "CAD": "Canadian Dollar", "AUD": "Australian Dollar", "NZD": "New Zealand Dollar", "MXN": "Mexican Peso",
+    "BRL": "Brazilian Real", "ZAR": "South African Rand", "DXY": "U.S. Dollar Index",
+    "SP500": "E-mini S&P 500", "NASDAQ": "Nasdaq-100", "DOW": "Dow Jones Industrial Average",
+    "RUSSELL": "Russell 2000", "EAFE": "MSCI EAFE", "EM": "MSCI Emerging Markets", "VIX": "VIX Futures",
+    "US2Y": "2-Year T-Note", "US5Y": "5-Year T-Note", "US10Y": "10-Year T-Note", "USBOND": "U.S. Treasury Bond",
+    "ULTRA": "Ultra U.S. Treasury Bond", "FEDFUNDS": "30-Day Fed Funds", "SOFR": "3-Month SOFR",
+    "WTI": "WTI Crude Oil", "BRENT": "Brent Crude Oil", "NATGAS": "Natural Gas (Henry Hub)",
+    "HEATOIL": "NY Harbor ULSD (Heating Oil)", "GASOLINE": "RBOB Gasoline",
+    "GOLD": "Gold", "SILVER": "Silver", "COPPER": "Copper", "PLATINUM": "Platinum", "PALLADIUM": "Palladium",
+    "CORN": "Corn", "SOY": "Soybeans", "SOYOIL": "Soybean Oil", "SOYMEAL": "Soybean Meal",
+    "WHEAT": "Chicago SRW Wheat", "KCWHEAT": "KC HRW Wheat", "RICE": "Rough Rice",
+    "SUGAR": "Sugar No. 11", "COFFEE": "Coffee C", "COCOA": "Cocoa", "COTTON": "Cotton No. 2",
+    "OJ": "Frozen Orange Juice", "CATTLE": "Live Cattle", "FEEDER": "Feeder Cattle", "HOGS": "Lean Hogs",
+    "MILK": "Class III Milk", "BTC": "Bitcoin", "ETH": "Ether",
+}
 SECTORS = ["Valute", "Indici azionari", "Tassi USA", "Energia", "Metalli", "Cereali", "Soft", "Bestiame", "Crypto"]
 
 # Ordine "di mercato" delle valute: decide quale sta davanti nel nome della coppia (EURUSD e non USDEUR)

@@ -52,6 +52,17 @@ function fail(sezione,contenitore,e){
 }
 function bannerErrore(msg){const a=document.getElementById("alerts");if(a&&!a.querySelector(".js-err"))a.insertAdjacentHTML("afterbegin",`<div class="alert red js-err"><b>Errore imprevisto nella pagina:</b> ${esc(msg)}. Ricarica la pagina; se si ripete controlla la scheda "Registro".</div>`);}
 window.addEventListener("error",ev=>{window.__errori.push({sezione:"pagina",errore:String(ev.message)});bannerErrore(ev.message);});
+/* VERSIONE NUOVA? Il browser (o GitHub Pages, ~10 minuti) puo' tenere in memoria la pagina vecchia.
+   Ogni 10 minuti leggiamo stato.json "fresco": se e' piu' recente dei dati di questa pagina, compare
+   un avviso con il pulsante per ricaricare. Solo sul sito (http/https), non sul file aperto dal PC. */
+function controllaVersione(){if(!/^https?:/.test(location.protocol)||!D.stato||!D.stato.creato)return;
+ fetch("stato.json?v="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(s=>{
+  if(!s||!s.creato||s.creato<=D.stato.creato||s.esito=="scartato"||document.getElementById("nuovaversione"))return;
+  const d=document.createElement("div");d.id="nuovaversione";d.className="alert";
+  d.style.cssText="position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:60;display:flex;gap:12px;align-items:center;box-shadow:0 6px 24px rgba(0,0,0,.18)";
+  d.innerHTML=`<span>&Egrave; disponibile una versione pi&ugrave; recente della dashboard.</span><button class="tvbtn" onclick="location.reload()">Aggiorna</button>`;
+  document.body.appendChild(d);}).catch(()=>{});}   // senza rete: nessun avviso, nessun errore
+controllaVersione();setInterval(controllaVersione,10*60*1000);
 window.addEventListener("unhandledrejection",ev=>{window.__errori.push({sezione:"pagina",errore:String(ev.reason)});bannerErrore(ev.reason);});
 
 /* ---------- stato fonti e avvisi ----------
@@ -129,7 +140,7 @@ function card(p){return `<div class="card clic" data-tv="p:${p.pair}" title="Cli
 var act=D.pairs.filter(p=>p.label!="NEUTRO");
 $("cards").innerHTML=act.length?act.map(card).join(""):`<div class="card">Nessun segnale attivo sulle valute questa settimana.</div>`;
 function acard(a){const v=verb(a.score),m=a.mkt;return `<div class="card clic" data-tv="a:${a.key}" title="Clic: grafico a candele"><div class="pairhead"><span class="pair" style="font-size:19px">${a.name}</span>${badge(a.label)}</div>
- <div class="small" style="margin-top:2px">${a.group} &middot; ${a.key} &middot; COT Index ${a.idx}/100</div>${meter(a.score)}${split(a.cot,a.macro)}
+ <div class="small" style="margin-top:2px">${a.it?esc(a.it)+" &middot; ":""}${a.group} &middot; ${a.key} &middot; COT Index ${a.idx}/100</div>${meter(a.score)}${split(a.cot,a.macro)}
  <div class="tags">${mtag(a.cot,a.macro)}${a.new?`<span class="tag new">Nuovo (prima ${a.prev_label})</span>`:''}${a.crowded?'<span class="tag ko">affollato</span>':''}</div>
  <div class="why">Speculatori: <b class="${v[1]}">${v[0]}</b>, ${fmt(a.d_net)} contratti in settimana, ${fmt(a.d_net4)} in 4 settimane.${m?` Mercato: ${m.status.toLowerCase()}.`:''}${NOTE[a.key]||NOTE[a.group]?' '+(NOTE[a.key]||NOTE[a.group]):''}</div></div>`;}
 var oth=Object.values(D.assets).filter(a=>a.group!="Valute"&&a.label!="NEUTRO").sort((x,y)=>Math.abs(y.score)-Math.abs(x.score));
@@ -168,7 +179,7 @@ function drawAssets(){const groups={};D.order.forEach(k=>{const a=D.assets[k];if
    `<b>Speculatori:</b> ${a.d_net==0?'nessuna variazione':(a.d_net>0?'comprato ':'venduto ')+fmt(Math.abs(a.d_net)).replace('+','')+' contratti netti'} in settimana, ${fmt(a.d_net4)} in 4 settimane; netto ${fmt(a.net)} (${a.pct_oi}% open interest), COT Index ${a.idx}/100.`;
   if(a.mkt)t+=` <b>Mercato:</b> ${a.mkt.status.toLowerCase()} (R² ${fx(a.mkt.r2)}).`;
   if(a.crowded)t+=` <b style="color:var(--warn)">Posizionamento affollato: rischio inversione.</b>`;
-  return `<div class="asset clic" data-tv="a:${a.key}"><div class="nm"><b>${a.name}</b><small>${a.key}</small></div>
+  return `<div class="asset clic" data-tv="a:${a.key}"><div class="nm"><b>${a.name}</b><small>${a.key}${a.it?" &middot; "+esc(a.it):""}</small></div>
   <div class="abar"><i style="left:${s<0?50-w:50}%;width:${w}%;background:${s<0?'var(--s)':'var(--b)'}"></i></div>
   <div style="text-align:right"><b style="font-size:17px">${fmt(s)}</b><br>${badge(a.label||lab(s))}</div><div class="txt">${t}</div></div>`}).join("")+
   (NOTE[g]?`<p class="small" style="margin:0 0 8px">${NOTE[g]}</p>`:'')).join("");}
@@ -288,8 +299,8 @@ $("foot").innerHTML=`Fonti: CFTC Commitments of Traders (Legacy, Futures Only) &
 try{
 var TV={spec:null,iv:"D",caricato:null};
 function tvInfo(spec){const t=spec.slice(0,1),k=spec.slice(2);
- if(t=="p"){const p=D.pairs.find(x=>x.pair==k)||{};return {sym:(D.tvp&&D.tvp[k])||("FX:"+k),nome:k,label:p.label,score:p.score,inv:false,sotto:p.base&&p.quote?`${nm(p.base)} contro ${nm(p.quote)}`:""};}
- const a=D.assets[k]||{},tv=(D.tv&&D.tv[k])||{};return {sym:tv.s,nome:a.name||k,label:a.label,score:a.score,inv:!!tv.inv,sotto:`${a.group||""} · ${k}`};}
+ if(t=="p"){const p=D.pairs.find(x=>x.pair==k)||{};return {sym:(D.tvp&&D.tvp[k])||("FX:"+k),nome:k,label:p.label,score:p.score,inv:false,sotto:p.base&&p.quote?`${nm(p.base)} / ${nm(p.quote)}`:""};}
+ const a=D.assets[k]||{},tv=(D.tv&&D.tv[k])||{};return {sym:tv.s,nome:a.name||k,label:a.label,score:a.score,inv:!!tv.inv,sotto:`${a.it?a.it+" · ":""}${a.group||""} · ${k}`};}
 function caricaTV(){if(TV.caricato)return TV.caricato;
  TV.caricato=new Promise((ok,ko)=>{const s=document.createElement("script");s.src="https://s3.tradingview.com/tv.js";s.async=true;
   s.onload=()=>window.TradingView?ok():ko(new Error("TradingView non disponibile"));s.onerror=()=>{TV.caricato=null;ko(new Error("impossibile caricare TradingView (sei offline?)"));};document.head.appendChild(s);});
@@ -318,10 +329,10 @@ function disegnaCOT(spec){const box=$("tvcot");try{
   return `<rect x="${(i*bw+bw*0.15).toFixed(1)}" y="${y.toFixed(1)}" width="${(bw*0.7).toFixed(1)}" height="${Math.max(h,0.8).toFixed(1)}" rx="1.5"
    fill="${v>=0?"var(--sb)":"var(--ss)"}" opacity="${ultima?1:0.55}"><title>martedi' ${fd(d)}: ${v>=0?"+":""}${fx(v)}% open interest</title></rect>`;}).join("");
  const [ud,uv]=f[f.length-1],ven=new Date(ud);ven.setDate(ven.getDate()+3);
- box.innerHTML=`<div class="riga"><span><b>COT Non Commercial</b> &middot; variazione settimanale del netto (% open interest) &middot; ultime ${f.length} settimane</span>
-  <span>Ultimo: <b style="color:${uv>=0?"var(--sb)":"var(--ss)"}">${uv>=0?"acquisti":"vendite"} ${uv>=0?"+":""}${fx(uv)}%</b> &middot; dato di marted&igrave; ${fd(ud)}, pubblicato venerd&igrave; ${fd(ven.toISOString().slice(0,10))}</span></div>
+ box.innerHTML=`<div class="riga"><span><b>COT Non Commercial</b><span class="lungo"> &middot; variazione settimanale del netto (% open interest) &middot; ultime ${f.length} settimane</span></span>
+  <span>Ultimo: <b style="color:${uv>=0?"var(--sb)":"var(--ss)"}">${uv>=0?"acquisti":"vendite"} ${uv>=0?"+":""}${fx(uv)}%</b> &middot; <span class="lungo">dato di marted&igrave; ${fd(ud)}, pubblicato venerd&igrave; ${fd(ven.toISOString().slice(0,10))}</span><span class="corto">mar ${fd(ud).slice(0,5)}</span></span></div>
   <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Flussi COT settimanali"><line x1="0" x2="${W}" y1="${H/2}" y2="${H/2}" stroke="var(--line)"/>${barre}</svg>
-  <div class="assi"><span>${fd(f[0][0])}</span><span>verde = comprano &middot; rosso = vendono${spec[0]=="p"?" (base contro quotata)":""}</span><span>${fd(ud)}</span></div>`;
+  <div class="assi"><span>${fd(f[0][0])}</span><span class="lungo">verde = comprano &middot; rosso = vendono${spec[0]=="p"?" (base contro quotata)":""}</span><span>${fd(ud)}</span></div>`;
  }catch(e){box.innerHTML="";console.error("[COT Radar] pannello COT:",e);}}   // se si rompe sparisce il pannello, non il grafico
 function apriGrafico(spec){TV.spec=spec;const info=tvInfo(spec),m=$("tvmodal");disegnaCOT(spec);
  $("tvtitolo").innerHTML=`<span class="pair">${esc(info.nome)}</span> ${info.label?badge(info.label):""} <span class="small">punteggio ${fmt(info.score)}</span>`;
