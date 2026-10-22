@@ -72,6 +72,18 @@ def coppia(pb, pq):
     return [(d, v / q[d]) for d, v in pb if q.get(d)]
 
 
+def prezzo_coppia(prezzi, b, q):
+    """Prezzi della coppia b/q. Il dollaro non ha una serie sua (1 dollaro = 1 dollaro):
+    EURUSD = prezzo dell'euro in dollari, USDJPY = 1 / prezzo dello yen in dollari. None se manca un prezzo."""
+    if q == "USD":
+        return prezzi.get(b)
+    if b == "USD":
+        return [(d, 1 / v) for d, v in prezzi[q]] if q in prezzi else None
+    if b in prezzi and q in prezzi:
+        return coppia(prezzi[b], prezzi[q])
+    return None
+
+
 # --------------------------------------------------------------------------- 1) finestra delle prossime 4 settimane
 def _rend(s, inizio_iso, giorni=FINESTRA):
     i = s.da(inizio_iso)
@@ -246,13 +258,24 @@ def backtest(hist, prezzi, pairs):
     """Segnali COT passati divisi in: stagionalita' a favore / contraria / neutra (calcolata con i soli anni
     precedenti al segnale). Restituisce le % di successo in 4 settimane e il PESO da usare."""
     storici = {k: conferme.punteggi_storici(s) for k, s in hist.items()}
+    # dollaro composito, come nella dashboard (vedi conferme.affidabilita): 50% DXY + 50% inverso delle altre valute
+    majors = [c for c in ("EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD") if c in storici]
+    if majors:
+        usd = {}
+        for d in storici[majors[0]]:
+            v = [storici[c][d] for c in majors if d in storici[c]]
+            if len(v) == len(majors):
+                inv = -sum(v) / len(v)
+                usd[d] = 0.5 * storici["DXY"][d] + 0.5 * inv if d in storici.get("DXY", {}) else inv
+        storici["USD"] = usd
     casi = []                                              # (prezzi, {data: punteggio del segnale})
     for k, st in storici.items():
-        if k in prezzi:
+        if k in prezzi and k != "USD":
             casi.append((prezzi[k], {d: sc for d, sc in st.items() if abs(sc) >= NORMAL}))
     for p in pairs:
         b, q = p.get("base"), p.get("quote")
-        if b in prezzi and q in prezzi and b in storici and q in storici:
+        pts = prezzo_coppia(prezzi, b, q)
+        if pts and b in storici and q in storici:
             sig = {}
             for d, sb in storici[b].items():
                 if d in storici[q]:
@@ -260,7 +283,7 @@ def backtest(hist, prezzi, pairs):
                     sc = (sb - sq) / 2
                     if label(sc, is_divergence(sb, sq)) != "NEUTRO":
                         sig[d] = sc
-            casi.append((coppia(prezzi[b], prezzi[q]), sig))
+            casi.append((pts, sig))
     conta = {"accordo": [0, 0], "contrasto": [0, 0]}       # [segnali, successi]
     for pts, sig in casi:
         if len(pts) < 250 * ANNI_MIN:
@@ -297,9 +320,9 @@ def calcola(hist, prezzi, pairs, assets, oggi=None):
             if r:
                 tab[k] = r
     for p in pairs:
-        b, q = p["base"], p["quote"]
-        if b in prezzi and q in prezzi:
-            r = analizza(coppia(prezzi[b], prezzi[q]), oggi)
+        pts = prezzo_coppia(prezzi, p["base"], p["quote"])
+        if pts:
+            r = analizza(pts, oggi)
             if r:
                 tab[p["pair"]] = r
     meta = backtest(hist, prezzi, pairs)

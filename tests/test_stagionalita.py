@@ -99,3 +99,12 @@ class TestStagionalita(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestCoppieDollaro(unittest.TestCase):
+    def test_prezzo_coppia_con_dollaro(self):
+        prezzi = {"EUR": [("2020-01-01", 1.10)], "JPY": [("2020-01-01", 0.009)]}
+        self.assertEqual(stagionalita.prezzo_coppia(prezzi, "EUR", "USD"), [("2020-01-01", 1.10)])      # EURUSD
+        self.assertAlmostEqual(stagionalita.prezzo_coppia(prezzi, "USD", "JPY")[0][1], 1 / 0.009)     # USDJPY
+        self.assertAlmostEqual(stagionalita.prezzo_coppia(prezzi, "EUR", "JPY")[0][1], 1.10 / 0.009)  # EURJPY
+        self.assertIsNone(stagionalita.prezzo_coppia(prezzi, "GOLD", "USD"))                           # oro: nessun prezzo
