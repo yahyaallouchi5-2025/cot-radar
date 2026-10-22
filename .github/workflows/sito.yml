@@ -1,0 +1,116 @@
+# sito.yml - aggiorna e pubblica la dashboard (orari UTC; Italia = UTC+1/+2). A mano: Actions -> Sito -> Run workflow.
+name: Sito
+on:
+  schedule:
+    - cron: "5 20 * * 5"     # venerdi', dopo il COT (ora legale USA)
+    - cron: "5 21 * * 5"     # venerdi', ora solare USA
+    - cron: "0 22 * * 4"     # giovedi', bilancio Fed
+    - cron: "30 5 * * 1-5"   # mattine feriali: mercati e BCE
+    - cron: "15 22 * * 1-5"  # FINE GIORNATA: tentativo 1 (+ archivio storico)
+    - cron: "20 22 * * 1-5"  # tentativo 2: solo se il primo non e' andato bene
+    - cron: "25 22 * * 1-5"  # tentativo 3: se fallisce anche questo arriva la mail all'admin
+    - cron: "40 * * * *"     # ogni ora: solo se FRED era in manutenzione
+  workflow_dispatch:
+permissions:
+  contents: write            # per salvare l'archivio storico nel ramo "storico"
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  # Decide se partire: orario = solo se FRED era in manutenzione ed e' tornato;
+  # tentativi 2 e 3 = solo se il sito non e' gia' stato aggiornato bene oggi.
+  sonda:
+    runs-on: ubuntu-latest
+    outputs:
+      vai: ${{ steps.d.outputs.vai }}
+    steps:
+      - id: d
+        env:
+          ORARIO: ${{ github.event.schedule }}
+          SITO: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/stato.json
+        run: |
+          S=$(curl -s -m 20 "$SITO" || echo "{}")
+          leggi() { echo "$S" | python3 -c "import sys,json;d=json.load(sys.stdin);print($1)" 2>/dev/null || echo "?"; }
+          case "$ORARIO" in
+            "20 22 * * 1-5"|"25 22 * * 1-5")
+              if [ "$(leggi "d['esito']=='ok' and d['creato']>='$(date -u +%F) 22:10'")" = "True" ]; then
+                echo "gia' aggiornato bene stasera"; echo "vai=false" >> "$GITHUB_OUTPUT"
+              else echo "vai=true" >> "$GITHUB_OUTPUT"; fi ;;
+            "40 * * * *")
+              F=$(leggi "d['fonti']['fred']"); echo "FRED: $F"
+              P=$(curl -s -m 20 "https://api.stlouisfed.org/fred/series/observations?series_id=DGS2&file_type=json" || echo "nessuna")
+              if [ "$F" = "manutenzione" ] && ! echo "$P" | grep -qi "maintenance\|nessuna"; then echo "vai=true" >> "$GITHUB_OUTPUT"
+              else echo "vai=false" >> "$GITHUB_OUTPUT"; fi ;;
+            *) echo "vai=true" >> "$GITHUB_OUTPUT" ;;
+          esac
+  build:
+    needs: sonda
+    if: needs.sonda.outputs.vai == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      esito: ${{ steps.crea.outputs.esito }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/cache@v4      # copia dei dati: se una fonte non risponde si usano gli ultimi salvati
+        with:
+          path: dati
+          key: dati-${{ github.run_id }}
+          restore-keys: dati-
+      - name: Archivio storico (ramo "storico" -> cartella storico/)
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin storico >/dev/null; then
+            git fetch -q origin storico && git worktree add -q -B storico storico origin/storico
+          else
+            git worktree add -q --detach storico && cd storico && git checkout -q --orphan storico && git rm -rfq .
+          fi
+      - run: pip install -q cryptography
+      - run: python -m unittest discover -s tests
+      - id: crea
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: python main.py --out public
+      - name: Salva l'archivio storico (solo dati controllati, mai riscritti)
+        if: always()
+        run: |
+          cd storico 2>/dev/null || exit 0
+          git add -A -- . ':!*.tmp'
+          if git diff --cached --quiet; then echo "archivio invariato"; exit 0; fi
+          git commit -qm "storico: aggiornamento $(date -u +%F)"
+          git push -q origin storico || echo "::warning::archivio non salvato, riprovo al prossimo giro"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+  deploy:
+    needs: build                  # se build fallisce resta online la versione precedente
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+  # Avviso PRIVATO: se qualcosa non va questo job fallisce apposta e GitHub manda una mail solo al proprietario.
+  # Tentativi 1 e 2 di fine giornata: niente mail, ci pensa il tentativo successivo (5 minuti dopo).
+  avviso-admin:
+    needs: [sonda, build, deploy]
+    if: always() && needs.sonda.outputs.vai == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          B: ${{ needs.build.result }}
+          D: ${{ needs.deploy.result }}
+          E: ${{ needs.build.outputs.esito }}
+          ORARIO: ${{ github.event.schedule }}
+        run: |
+          echo "build=$B pubblicazione=$D esito=${E:-?}"
+          if [ "$B" = success ] && [ "$D" = success ] && [ "$E" != errori ] && [ "$E" != critico ]; then echo "Tutto regolare."; exit 0; fi
+          if [ "$ORARIO" = "15 22 * * 1-5" ] || [ "$ORARIO" = "20 22 * * 1-5" ]; then echo "Non riuscito: riprovo tra 5 minuti."; exit 0; fi
+          echo "::error::COT Radar CRITICO (esito=${E:-?}): online restano gli ultimi dati validi. Dettagli nel registro admin."; exit 1
