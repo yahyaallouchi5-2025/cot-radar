@@ -153,7 +153,9 @@ html.bloccato,html.bloccato body{overflow:hidden;overscroll-behavior:none}
 /* schede segnali: piu' larghe, cosi' i tre riquadri stanno affiancati */
 #cards,#acards{grid-template-columns:repeat(auto-fill,minmax(330px,1fr))}
 /* anello del punteggio (vedi app.js, anello): cerchio di fondo + arco colorato, numero al centro */
-.anello{position:relative;width:62px;height:62px;flex:none}.anello svg{width:100%;height:100%;display:block}
+/* misura iniziale; app.js (allineaAnelli) la rende uguale all'altezza di nome + pillola,
+   cosi' il bordo basso dell'anello e' allineato alla pillola SELL/BUY */
+.anello{position:relative;flex:none;width:62px;height:62px}.anello svg{width:100%;height:100%;display:block}
 .anello circle{fill:none;stroke-width:6}.anello .fondo{stroke:var(--line)}.anello .arco{stroke-linecap:round}
 .anello b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;padding-bottom:6px}
 .anello small{position:absolute;left:0;right:0;bottom:15px;text-align:center;font-size:9px;color:var(--mute)}
@@ -176,4 +178,4 @@ html.bloccato,html.bloccato body{overflow:hidden;overscroll-behavior:none}
 .ev.banca{border-color:var(--warn)}
 /* TELEFONO: riquadri piu' compatti, cosi' "SCONTATO" e le note non vengono tagliati */
 @media (max-width:600px){.trio{gap:6px}.r3{padding:8px 8px}.r3 span{font-size:11px}.r3 b{font-size:12.5px;letter-spacing:0}.r3 small{font-size:10.5px;white-space:normal}
- .anello{width:54px;height:54px}.anello b{font-size:16px}.anello small{bottom:12px}}
+ .anello b{font-size:16px}.anello small{bottom:12px}}

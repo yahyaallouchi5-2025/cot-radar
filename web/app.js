@@ -186,6 +186,12 @@ function acard(a){const v=verb(a.score),m=a.mkt;return `<div class="card clic" d
  <div class="why">Speculatori: <b class="${v[1]}">${v[0]}</b>, ${fmt(a.d_net)} contratti in settimana, ${fmt(a.d_net4)} in 4 settimane.${m?` Mercato: ${m.status.toLowerCase()}.`:''}${NOTE[a.key]||NOTE[a.group]?' '+(NOTE[a.key]||NOTE[a.group]):''}</div></div>`;}
 var oth=Object.values(D.assets).filter(a=>a.group!="Valute"&&a.label!="NEUTRO").sort((x,y)=>Math.abs(y.score)-Math.abs(x.score));
 $("acards").innerHTML=oth.length?oth.map(acard).join(""):`<div class="card">Nessun segnale attivo.</div>`;
+/* ANELLI ALLINEATI: il diametro dell'anello = altezza del blocco a sinistra (nome + pillola).
+   ResizeObserver ricalcola quando la scheda diventa visibile, cambia larghezza o il nome va a capo. */
+(function(){const allinea=sx=>{const a=sx.parentElement.querySelector(".anello"),h=Math.round(sx.getBoundingClientRect().height);
+  if(a&&h>=40){a.style.width=a.style.height=h+"px";}};      // h<40: scheda nascosta o misura non pronta
+ const ro=window.ResizeObserver?new ResizeObserver(v=>v.forEach(x=>allinea(x.target))):null;
+ document.querySelectorAll(".pairhead").forEach(h=>{const sx=h.firstElementChild;if(!sx||!h.querySelector(".anello"))return;allinea(sx);if(ro)ro.observe(sx);});})();
 }catch(e){fail('Segnali','sig',e);}
 
 /* ---------- coppie ----------
