@@ -111,14 +111,25 @@ Le card delle coppie hanno 3 righe: **Smart money** (COT), **Macro** (modello di
 | Dove | Cosa |
 |---|---|
 | `dati/registro.log` | tutti i messaggi (DEBUG → CRITICAL), a rotazione 1 MB × 3 |
-| `dati/stato.json` (e `stato.json` sul sito) | riepilogo dell'ultima esecuzione: esito, fonti, avvisi, errori |
-| scheda **Registro** della dashboard | lo stesso riepilogo + errori avvenuti nel browser |
+| `dati/stato.json` | riepilogo COMPLETO dell'ultima esecuzione: esito, fonti, avvisi, errori (privato) |
+| `stato.json` sul sito | versione "vetrina": solo esito generico e stato delle fonti, nessun messaggio interno |
+| scheda **Registro** | sul PC: visibile. Sul sito: **solo admin**, cifrata (vedi sotto) |
 | **mail privata di GitHub** (solo all'amministratore) | se l'aggiornamento fallisce, viene scartato dal paracadute o ha esito CRITICO (job `avviso-admin`) |
+
+### Registro riservato all'amministratore (`cot_radar/admin.py`)
+Il sito è pubblico: tutto ciò che è nella pagina lo può leggere chiunque. Per questo il registro completo viene
+**cifrato** (AES-GCM 256, chiave da password con PBKDF2-SHA256) prima di essere pubblicato.
+1. GitHub → repository → *Settings* → *Secrets and variables* → *Actions* → *New repository secret*:
+   nome `ADMIN_PASSWORD`, valore = una password solo tua (lunga, non usata altrove).
+2. Apri il sito aggiungendo `#admin` in fondo all'indirizzo (es. `.../cot-radar/#admin`), scrivi la password:
+   la pagina decifra il registro nel browser. La password non viene inviata da nessuna parte.
+3. Senza il Secret il registro semplicemente non viene pubblicato (resta la mail di GitHub).
 
 - **Paracadute** (`cot_radar/paracadute.py`): ogni aggiornamento è confrontato con l'ultimo buono. Se mancano pezzi
   (strumenti, coppie, mercati, mutui) la pagina **non** viene pubblicata e resta online quella precedente; se una
   fonte è giù si pubblicano gli ultimi dati salvati. In entrambi i casi: riga CRITICAL nel registro e mail a te.
-  (Nota: il repository è pubblico, quindi anche i log di Actions sono leggibili; non contengono segreti.)
+  (Nota: il repository è pubblico, quindi la pagina Actions è leggibile da tutti: contiene solo l'esito e i
+  messaggi essenziali, mai chiavi né il registro dettagliato.)
 - Ogni sezione della pagina è isolata: se una si rompe compare "Sezione non disponibile" e le altre funzionano.
 - `cot_radar/controlli.py` scova gli errori "invisibili": dati vecchi, mercati spariti, valori impossibili, salti anomali.
 - Le chiavi API non finiscono mai nei registri: vengono sostituite con `***`.

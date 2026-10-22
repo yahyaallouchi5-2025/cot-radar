@@ -19,5 +19,6 @@ Mappa dei moduli (in ordine di "viaggio" dei dati):
   riserva.py     fonti di riserva se FRED e' fermo (Tesoro USA, NY Fed, CBOE, Freddie Mac, BCE, Coinbase)
   demo.py        dati finti per provare senza internet
   log.py         registro: schermo + dati/registro.log + riepilogo per la scheda "Registro"
+  admin.py       registro riservato: sul sito cifrato con la password admin (Secret ADMIN_PASSWORD)
 """
-__version__ = "5.0"
+__version__ = "5.1"

@@ -19,7 +19,7 @@ const fx=(n,d=2)=>n==null||isNaN(n)?"n/d":n.toLocaleString("it-IT",{minimumFract
 const sg=(n,d=2)=>n==null||isNaN(n)?"n/d":(n>0?"+":"")+fx(n,d);
 const c2=v=>{const t=v.toFixed(2);return t=="-0.00"?"0.00":t;};const c1=v=>{const t=v.toFixed(1);return t=="-0.0"?"0.0":t;};
 const verb=s=>s>=20?["COMPRANO","up","▲"]:s<=-20?["VENDONO","down","▼"]:["neutri","flat","■"];
-const badge=l=>`<span class="badge" style="background:${COL[l]}">${l}</span>`;
+const badge=l=>`<span class="badge" style="--bc:${COL[l]}">${l}</span>`;   // pillola: bordo e testo nel colore del segnale
 const pos=s=>Math.max(0,Math.min(100,(s+100)/2));
 const nm=k=>(D.assets[k]||{}).name||k;
 const esc=t=>String(t).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
@@ -34,6 +34,12 @@ function mtag(cot,mac){if(mac==null)return`<span class="tag">mercato: n/d</span>
  if(Math.abs(cot)<10)return`<span class="tag">mercato ${mac>0?'rialzista':'ribassista'}</span>`;
  return (mac>0)==(cot>0)?`<span class="tag ok">Mercato conferma</span>`:`<span class="tag ko">Mercato contro</span>`;}
 const split=(cot,mac)=>`<div class="split"><div>COT (${Math.round((1-M.mw)*100)}%)<b>${fmt(cot)}</b></div><div>Mercato (${Math.round(M.mw*100)}%)<b>${mac==null?'n/d':fmt(mac)}</b></div></div>`;
+/* ANELLO del punteggio: il numero e' l'intensita' (0-100, senza segno), il colore la direzione
+   (verde = acquisto, rosso = vendita, grigio = neutro). L'arco pieno = punteggio 100. */
+const anello=s=>{const v=Math.min(100,Math.abs(Math.round(s||0))),r=24,c=2*Math.PI*r,
+ col=s>=M.normal?"var(--b)":s<=-M.normal?"var(--s)":"var(--n)";
+ return `<div class="anello" title="Punteggio finale ${fmt(s)} (intensita' ${v}/100)"><svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="${r}" class="fondo"/>`+
+  `<circle cx="30" cy="30" r="${r}" class="arco" style="stroke:${col}" stroke-dasharray="${(c*v/100).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 30 30)"/></svg><b>${v}</b><small>/100</small></div>`;};
 const meter=s=>`<div class="meter"><i style="left:${pos(s)}%"></i></div><div class="scale"><span>-100 vendi</span><span>finale <b style="color:var(--ink)">${fmt(s)}</b></span><span>compra +100</span></div>`;
 function fd(s){if(!s)return"";const m=["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];if(s.length==7)return m[+s.slice(5,7)-1]+" "+s.slice(0,4);return s.slice(8,10)+"/"+s.slice(5,7)+"/"+s.slice(0,4);}
 
@@ -50,7 +56,7 @@ function fail(sezione,contenitore,e){
  const el=contenitore&&document.getElementById(contenitore);
  if(el)el.insertAdjacentHTML("afterbegin",box);else{const a=document.getElementById("alerts");if(a)a.insertAdjacentHTML("beforeend",box);}
 }
-function bannerErrore(msg){const a=document.getElementById("alerts");if(a&&!a.querySelector(".js-err"))a.insertAdjacentHTML("afterbegin",`<div class="alert red js-err"><b>Errore imprevisto nella pagina:</b> ${esc(msg)}. Ricarica la pagina; se si ripete controlla la scheda "Registro".</div>`);}
+function bannerErrore(msg){const a=document.getElementById("alerts");if(a&&!a.querySelector(".js-err"))a.insertAdjacentHTML("afterbegin",`<div class="alert red js-err"><b>Errore imprevisto nella pagina:</b> ${esc(msg)}. Ricarica la pagina.</div>`);}
 window.addEventListener("error",ev=>{window.__errori.push({sezione:"pagina",errore:String(ev.message)});bannerErrore(ev.message);});
 /* VERSIONE NUOVA? Il browser (o GitHub Pages, ~10 minuti) puo' tenere in memoria la pagina vecchia.
    Ogni 10 minuti leggiamo stato.json "fresco": se e' piu' recente dei dati di questa pagina, compare
@@ -75,7 +81,7 @@ var STX={ok:"aggiornato",cache:"dati salvati (offline)",late:"IN RITARDO",err:"e
 $("status").innerHTML=D.sources.filter(s=>s.st!="err").map(s=>`<div class="src"><div class="t"><i style="background:${DOT[s.st]}"></i>${s.name}</div>
  <div class="d"><b>${s.last}</b><span class="x"> &middot; ${STX[s.st]}</span><span class="nx"><br>Prossimo: ${s.next}</span></div></div>`).join("");
 var al=[];D.sources.forEach(s=>{if(s.msg)al.push(`<div class="alert ${s.st=='late'||s.st=='err'?'red':''}"><b>${s.name}:</b> ${esc(s.msg)}</div>`);
- if(s.next_ms&&Date.now()>s.next_ms)al.push(`<div class="alert red"><b>${s.name}:</b> sono usciti dati nuovi (${s.next}) dopo questo aggiornamento. Riapri cot_radar.py per scaricarli.</div>`);});
+ if(s.next_ms&&Date.now()>s.next_ms)al.push(`<div class="alert red"><b>${s.name}:</b> sono usciti dati nuovi (${s.next}) dopo questo aggiornamento. ${/^https?:/.test(location.protocol)?"Il sito si aggiorna in automatico a breve.":"Riapri cot_radar.py per scaricarli."}</div>`);});
 if(M.demo)al.unshift(`<div class="alert red"><b>DATI DIMOSTRATIVI:</b> pagina creata con --demo, i numeri sono finti.</div>`);
 $("alerts").innerHTML=al.join("");
 }catch(e){fail('Stato fonti e avvisi','alerts',e);}
@@ -128,10 +134,10 @@ try{const ev=D.eventi||[];$("eventi").innerHTML=ev.length?`<div class="card"><h3
  <div class="note" style="margin-top:8px">Il giorno del dato la volatilit&agrave; sale: per lo swing conviene valutare l'ingresso dopo l'uscita. Dopo il dato la riga "Notizie" delle card mostra se la sorpresa rafforza o penalizza il segnale.</div></div>`:"";}catch(e){fail("Prossimi eventi","eventi",e);}
 $("sectors").innerHTML=SEC.filter(g=>byS[g]).map(g=>{const l=byS[g],avg=l.reduce((x,a)=>x+a.score,0)/l.length;
  const up=l.filter(a=>a.score>=M.normal).length,dn=l.filter(a=>a.score<=-M.normal).length;
- return `<div class="sec" data-g="${g}" style="background:${COL[lab(avg*1.6)]}"><b>${g}</b><span>${fmt(avg)}</span><small>${up} in acquisto &middot; ${dn} in vendita</small></div>`}).join("");
+ return `<div class="sec" data-g="${g}" style="--bc:${COL[lab(avg*1.6)]}"><b>${g}</b><span>${fmt(avg)}</span><small>${up} in acquisto &middot; ${dn} in vendita</small></div>`}).join("");
 document.querySelectorAll(".sec").forEach(x=>x.onclick=()=>{go("assets");selS(x.dataset.g);});
 var L5=["STRONG BUY","BUY","NEUTRO","SELL","STRONG SELL"];
-$("summary").innerHTML=L5.map(l=>`<div class="sum" style="background:${COL[l]}"><b>${D.pairs.filter(p=>p.label==l).length}</b><small>${l}</small></div>`).join("");
+$("summary").innerHTML=L5.map(l=>`<div class="sum" style="--bc:${COL[l]}"><b>${D.pairs.filter(p=>p.label==l).length}</b><small>${l}</small></div>`).join("");
 function sideRow(k){const a=D.assets[k]||{score:0};const v=verb(a.score);return `<div class="r"><span>${k} <span class="small">${nm(k)}</span></span><span class="${v[1]}">${v[2]} ${v[0]} (${fmt(a.score)})</span></div>`;}
 function why(p){const b=verb(D.assets[p.base].score)[0],q=verb(D.assets[p.quote].score)[0];
  const dir=p.score>=M.normal?"tende a SALIRE":p.score<=-M.normal?"tende a SCENDERE":"non ha una direzione chiara";
@@ -146,31 +152,36 @@ function atag(e){if(!e)return "";const c=e.pochi?"":e.hit>=60?"ok":e.hit<50?"ko"
  return `<span class="tag ${c}" title="Backtest: ${e.n} segnali passati, resa media ${e.resa>=0?"+":""}${fx(e.resa)}% in 4 settimane">storico ${e.hit}%${e.pochi?" (pochi dati)":""}</span>`;}
 /* CARD A 3 RIGHE: Smart money (COT) / Macro (modello di mercato) / Notizie (motore notizie).
    Verde = spinge la coppia su, rosso = giu', grigio = neutro. Il dettaglio resta nel pannello sotto il grafico. */
-function riga(nome,txt,v,nota){const c=v>0?"up":v<0?"down":"flat";
- return `<div class="r3"><span>${nome}</span><b class="${c}">${txt}</b><small>${nota||""}</small></div>`;}
+function riga(nome,txt,v,breve){const c=v>0?"up":v<0?"down":"flat";
+ return `<div class="r3 ${c}"><span><i></i>${nome}</span><b class="${c}">${txt}</b><small>${breve||"&nbsp;"}</small></div>`;}
 function flussi3(p){const fb=new Map((D.assets[p.base]||{}).flussi||[]),fq=new Map((D.assets[p.quote]||{}).flussi||[]);
  const d=[...fb.keys()].filter(x=>fq.has(x)).sort().slice(-3).map(x=>fb.get(x)-fq.get(x));
  if(d.length<3)return "";const su=d.filter(x=>x>0).length;return su==3?"flussi 3/3 in acquisto":su==0?"flussi 3/3 in vendita":`flussi ${Math.max(su,3-su)}/3`;}
-function trio(p){const n=p.news,cot=p.cot,mac=p.macro;
- const sm=riga("Smart money",cot>=M.normal?"LONG":cot<=-M.normal?"SHORT":"NEUTRO",cot>=M.normal?1:cot<=-M.normal?-1:0,`COT ${fmt(cot)} &middot; ${flussi3(p)}`);
+/* TRE RIQUADRI affiancati (Smart money / Macro / Notizie): etichetta, verdetto, valore breve.
+   Le spiegazioni lunghe vanno nella riga "det" sotto, cosi' i riquadri restano leggibili anche stretti. */
+function trio(p){const n=p.news,cot=p.cot,mac=p.macro,det=[];
+ const sm=riga("Smart money",cot>=M.normal?"LONG":cot<=-M.normal?"SHORT":"NEUTRO",cot>=M.normal?1:cot<=-M.normal?-1:0,`COT ${fmt(cot)}`);
+ const f3=flussi3(p);if(f3)det.push(f3);
  const mtop=((D.assets[p.base]||{}).mkt||{}).top;
- const ma=mac==null?riga("Macro","n/d",0,"modello non disponibile"):riga("Macro",Math.abs(mac)<25?"SCONTATO":mac>0?"LONG":"SHORT",Math.abs(mac)<25?0:mac,
-   `${fmt(mac)}${mtop&&mtop[0]?" &middot; "+esc(mtop[0].name):""}`);
+ const ma=mac==null?riga("Macro","n/d",0,"non disponibile"):riga("Macro",Math.abs(mac)<25?"SCONTATO":mac>0?"LONG":"SHORT",Math.abs(mac)<25?0:mac,fmt(mac));
+ if(mac!=null&&mtop&&mtop[0])det.push("driver macro: "+esc(mtop[0].name));
  let ne;
- if(!n)ne=riga("Notizie","&mdash;",0,"nessun evento rilevante");
+ if(!n)ne=riga("Notizie","&mdash;",0,"nessun evento");
  else{const ultimo=(n.eventi||[]).filter(e=>e.z!=null).slice(-1)[0];
-  const txt=n.oggi.length?"&#9889; "+esc(n.oggi[0]):ultimo?`${n.effetto.toUpperCase()}`:"&mdash;";
-  const nota=(ultimo?`${esc(ultimo.nome.split(" ").slice(0,-2).join(" ")||ultimo.nome)} sorpresa ${ultimo.z>=0?"+":""}${fx(ultimo.z,1)}&sigma; &middot; ${n.adj>=0?"+":""}${fx(n.adj,0)} &rarr; ${fmt(n.score)}`:"")+(n.oggi.length?(ultimo?" &middot; ":"")+"evento ad alto impatto: valuta l'ingresso dopo il dato":"");
-  ne=riga("Notizie",txt,n.oggi.length?0:n.effetto=="rafforza"?Math.sign(p.score):n.effetto=="penalizza"?-Math.sign(p.score):0,nota);}
- return `<div class="trio">${sm}${ma}${ne}</div>`;}
-function card(p){return `<div class="card clic" data-tv="p:${p.pair}" title="Clic: grafico a candele"><div class="pairhead"><span class="pair">${p.pair}</span>${badge(p.label)}</div>${meter(p.score)}${trio(p)}
+  const txt=n.oggi.length?"&#9889; OGGI":ultimo?n.effetto.toUpperCase():"&mdash;";
+  const breve=ultimo?`${ultimo.z>=0?"+":""}${fx(ultimo.z,1)}&sigma; &middot; ${n.adj>=0?"+":""}${fx(n.adj,0)}`:"";
+  if(ultimo)det.push(`${esc(ultimo.nome.split(" ").slice(0,-2).join(" ")||ultimo.nome)}: punteggio corretto ${fmt(n.score)}`);
+  if(n.oggi.length)det.push(`${esc(n.oggi[0])}: valuta l'ingresso dopo il dato`);
+  ne=riga("Notizie",txt,n.oggi.length?0:n.effetto=="rafforza"?Math.sign(p.score):n.effetto=="penalizza"?-Math.sign(p.score):0,breve||"nessun evento");}
+ return `<div class="trio">${sm}${ma}${ne}</div>${det.length?`<div class="det">${det.join(" &middot; ")}</div>`:""}`;}
+function card(p){return `<div class="card clic" data-tv="p:${p.pair}" title="Clic: grafico a candele"><div class="pairhead"><div><span class="pair">${p.pair}</span><div class="sotto">${badge(p.label)}</div></div>${anello(p.score)}</div>${trio(p)}
  <div class="rows">${sideRow(p.base)}${sideRow(p.quote)}</div>
  <div class="tags">${p.div?'<span class="tag div">Divergenza</span>':''}${mtag(p.cot,p.macro)}${p.new?`<span class="tag new">Nuovo (prima ${p.prev})</span>`:''}${ctag(p.comm_acc)}${atag(p.affid)}</div>
  <div class="why">${why(p)}</div></div>`;}
 var act=D.pairs.filter(p=>p.label!="NEUTRO");
 $("cards").innerHTML=act.length?act.map(card).join(""):`<div class="card">Nessun segnale attivo sulle valute questa settimana.</div>`;
-function acard(a){const v=verb(a.score),m=a.mkt;return `<div class="card clic" data-tv="a:${a.key}" title="Clic: grafico a candele"><div class="pairhead"><span class="pair" style="font-size:19px">${a.name}</span>${badge(a.label)}</div>
- <div class="small" style="margin-top:2px">${a.it?esc(a.it)+" &middot; ":""}${a.group} &middot; ${a.key} &middot; COT Index ${a.idx}/100</div>${meter(a.score)}${split(a.cot,a.macro)}
+function acard(a){const v=verb(a.score),m=a.mkt;return `<div class="card clic" data-tv="a:${a.key}" title="Clic: grafico a candele"><div class="pairhead"><div><span class="pair" style="font-size:19px">${a.name}</span><div class="sotto">${badge(a.label)}</div></div>${anello(a.score)}</div>
+ <div class="small" style="margin-top:8px">${a.it?esc(a.it)+" &middot; ":""}${a.group} &middot; ${a.key} &middot; COT Index ${a.idx}/100</div>${split(a.cot,a.macro)}
  <div class="tags">${mtag(a.cot,a.macro)}${a.new?`<span class="tag new">Nuovo (prima ${a.prev_label})</span>`:''}${a.crowded?'<span class="tag ko">affollato</span>':''}${ctag(a.comm_acc)}${atag(a.affid)}</div>
  <div class="why">Speculatori: <b class="${v[1]}">${v[0]}</b>, ${fmt(a.d_net)} contratti in settimana, ${fmt(a.d_net4)} in 4 settimane.${m?` Mercato: ${m.status.toLowerCase()}.`:''}${NOTE[a.key]||NOTE[a.group]?' '+(NOTE[a.key]||NOTE[a.group]):''}</div></div>`;}
 var oth=Object.values(D.assets).filter(a=>a.group!="Valute"&&a.label!="NEUTRO").sort((x,y)=>Math.abs(y.score)-Math.abs(x.score));
@@ -230,7 +241,7 @@ try{
   return `<div class="card"><h3>${d.name}</h3><div class="kpi"><div class="big">${val}</div></div>
   <div class="kv"><span>1 settimana</span><b>${sg(d.d1,1)}${u}</b><span>4 settimane</span><b class="${cls}">${sg(d.d4,1)}${u}</b><span>Forza del movimento</span><b>${Math.abs(d.z4)>=1.5?'forte':Math.abs(d.z4)>=.75?'media':'debole'} (z ${sg(d.z4,1)})</b></div>${spark(d.spark,"var(--c1)")}</div>`;};
  let h=`<h2>Il mercato in questo momento</h2><p class="sub">Solo indicatori prezzati ogni giorno dal mercato: anticipano le notizie invece di inseguirle. Ultimo dato: ${fd(X.anchor)}.</p>
- <div class="env" style="background:${env[1]}"><b>Clima ${env[0]}</b>Combina VIX, spread delle obbligazioni high yield e rendimenti reali delle ultime 4 settimane (punteggio ${fmt(r)}).</div>
+ <div class="env" style="--bc:${env[1]}"><b>Clima ${env[0]}</b>Combina VIX, spread delle obbligazioni high yield e rendimenti reali delle ultime 4 settimane (punteggio ${fmt(r)}).</div>
  <div class="grid k3">${X.drivers.map(dcard).join("")}</div>
  <h2>Quanto e' gia' scontato nei prezzi</h2><p class="sub">Per ogni strumento con un prezzo pubblico: una regressione su ${M.regw} settimane stima quanto i driver qui sopra muovono il prezzo.
  Poi confronta la mossa che i driver <b>implicavano</b> nelle ultime 4 settimane con quella che il prezzo ha <b>fatto davvero</b>. Se coincidono la notizia e' gia' nel prezzo; se il prezzo e' rimasto indietro resta uno spazio, che diventa il punteggio "Mercato".</p>
@@ -342,7 +353,7 @@ function caricaTV(){if(TV.caricato)return TV.caricato;
  return TV.caricato;}
 function disegnaTV(){const info=tvInfo(TV.spec),box=$("tvchart");box.innerHTML="";
  if(!info.sym){box.innerHTML=`<div class="tvmsg">Nessun grafico associato a questo strumento.</div>`;return;}
- const scuro=matchMedia("(prefers-color-scheme: dark)").matches;
+ const scuro=true;   // tema unico blu notte: grafico sempre scuro
  caricaTV().then(()=>{new TradingView.widget({container_id:"tvchart",autosize:true,symbol:info.sym,interval:TV.iv,
    // "range" = periodo visibile. ATTENZIONE: TradingView adatta il timeframe al range (3M->1h, 12M->D, 60M->W),
    // quindi lo abbiniamo solo dove coincide; per H4 nessun range (mostra le ultime ~300 candele).
@@ -448,23 +459,48 @@ $("tvfull").onclick=()=>{const p=$("tvpannello"),fs=document.fullscreenElement||
 document.querySelectorAll("#tviv button").forEach(b=>b.onclick=()=>{TV.iv=b.dataset.iv;document.querySelectorAll("#tviv button").forEach(x=>x.classList.toggle("on",x==b));disegnaTV();});
 }catch(e){fail('Grafico',null,e);}
 
-/* ---------- registro ----------
-   Riepilogo dell'ultima esecuzione (D.stato, lo stesso contenuto di stato.json) + errori avvenuti nel browser. */
+/* ---------- registro (SOLO AMMINISTRATORE) ----------
+   Il sito e' pubblico, quindi il registro completo NON e' in chiaro nella pagina:
+   - sul PC (pagina locale) D.admin = {chiaro:{...}} -> scheda "Registro" visibile;
+   - sul sito D.admin = {salt,iv,ct,iter} cifrato con la password admin (Secret ADMIN_PASSWORD, vedi cot_radar/admin.py):
+     la scheda compare solo aprendo l'indirizzo con  #admin  in fondo, e si legge solo con la password;
+   - D.admin = null (nessuna password impostata) -> nessuna scheda.
+   La password non viene mai inviata da nessuna parte: la decifratura avviene nel browser (Web Crypto). */
 try{
-(function(){const S=D.stato||{},el=$("registro");
- const colE={ok:"var(--sb)",avvisi:"var(--warn)",errori:"var(--s)",critico:"var(--ss)",fallito:"var(--ss)"}[S.esito]||"var(--n)";
- const colL={WARNING:"var(--warn)",ERROR:"var(--s)",CRITICAL:"var(--ss)"};
- const fonti=Object.entries(S.fonti||{}).map(([k,v])=>k=="fred_riserva"   // serie FRED prese da Tesoro USA, NY Fed, BCE...
-   ?`<span class="tag ok">RISERVA FRED: ${v} serie</span>`:`<span class="tag ${v=="online"?"ok":"ko"}">${k.toUpperCase()}: ${v}</span>`).join(" ");
- const voci=(S.voci||[]).map(v=>`<tr><td class="small">${esc(v.ora||"")}</td><td><b style="color:${colL[v.livello]||"var(--ink)"}">${esc(v.livello)}</b></td><td class="small">${esc(v.modulo||"")}</td><td style="white-space:normal">${esc(v.messaggio)}</td></tr>`).join("");
- const brow=window.__errori.map(v=>`<tr><td class="small">browser</td><td><b style="color:var(--s)">ERROR</b></td><td class="small">${esc(v.sezione)}</td><td style="white-space:normal">${esc(v.errore).slice(0,400)}</td></tr>`).join("");
- el.innerHTML=`<h2>Registro di monitoraggio</h2><p class="sub">Esito dell'ultimo aggiornamento, fonti, avvisi ed errori. Lo stesso riepilogo e' nel file <a href="stato.json" target="_blank">stato.json</a>; il dettaglio completo in <code>dati/registro.log</code> (sul PC) o nella scheda Actions di GitHub (sul sito).</p>
- <div class="grid k4"><div class="card kpi"><h3>Esito</h3><div class="big" style="color:${colE}">${esc((S.esito||"n/d").toUpperCase())}</div><div class="note">${esc(S.creato||"")}</div></div>
- <div class="card kpi"><h3>Errori</h3><div class="big" style="color:${S.errori?"var(--s)":"var(--ink)"}">${S.errori??"n/d"}</div><div class="note">parti non calcolate o dati impossibili</div></div>
- <div class="card kpi"><h3>Avvisi</h3><div class="big" style="color:${S.avvisi?"var(--warn)":"var(--ink)"}">${S.avvisi??"n/d"}</div><div class="note">dati vecchi, fonti non raggiunte</div></div>
- <div class="card kpi"><h3>Durata</h3><div class="big">${S.durata_s??"n/d"} s</div><div class="note">${S.strumenti??"?"} strumenti, ${S.coppie??"?"} coppie</div></div></div>
- <h2>Fonti</h2><div class="card">${fonti||"n/d"}</div>
- <h2>Avvisi ed errori di questa esecuzione</h2><div class="tablewrap"><table><tr><th>Ora</th><th>Livello</th><th>Modulo</th><th>Messaggio</th></tr>${voci+brow||'<tr><td colspan="4">Nessun avviso: tutto regolare.</td></tr>'}</table></div>`;
+(function(){const A=D.admin,el=$("registro"),bt=document.querySelector('nav button[data-t="registro"]');
+ const mostra=on=>{if(bt)bt.style.display=on?"":"none";};
+ function disegna(S){
+  const colE={ok:"var(--sb)",avvisi:"var(--warn)",errori:"var(--s)",critico:"var(--ss)",fallito:"var(--ss)"}[S.esito]||"var(--n)";
+  const colL={WARNING:"var(--warn)",ERROR:"var(--s)",CRITICAL:"var(--ss)"};
+  const fonti=Object.entries(S.fonti||{}).map(([k,v])=>k=="fred_riserva"   // serie FRED prese da Tesoro USA, NY Fed, BCE...
+    ?`<span class="tag ok">RISERVA FRED: ${v} serie</span>`:`<span class="tag ${v=="online"?"ok":"ko"}">${k.toUpperCase()}: ${v}</span>`).join(" ");
+  const crit=(S.critici||[]).map(c=>`<tr><td class="small">paracadute</td><td><b style="color:var(--ss)">CRITICAL</b></td><td class="small">fonti</td><td style="white-space:normal">${esc(c)}</td></tr>`).join("");
+  const voci=(S.voci||[]).map(v=>`<tr><td class="small">${esc(v.ora||"")}</td><td><b style="color:${colL[v.livello]||"var(--ink)"}">${esc(v.livello)}</b></td><td class="small">${esc(v.modulo||"")}</td><td style="white-space:normal">${esc(v.messaggio)}</td></tr>`).join("");
+  const brow=window.__errori.map(v=>`<tr><td class="small">browser</td><td><b style="color:var(--s)">ERROR</b></td><td class="small">${esc(v.sezione)}</td><td style="white-space:normal">${esc(v.errore).slice(0,400)}</td></tr>`).join("");
+  el.innerHTML=`<h2>Registro di monitoraggio <span class="tag ko">solo admin</span></h2><p class="sub">Esito dell'ultimo aggiornamento, fonti, avvisi ed errori. Il dettaglio completo e' in <code>dati/registro.log</code> sul PC.</p>
+  <div class="grid k4"><div class="card kpi"><h3>Esito</h3><div class="big" style="color:${colE}">${esc((S.esito||"n/d").toUpperCase())}</div><div class="note">${esc(S.creato||"")}</div></div>
+  <div class="card kpi"><h3>Errori</h3><div class="big" style="color:${S.errori?"var(--s)":"var(--ink)"}">${S.errori??"n/d"}</div><div class="note">parti non calcolate o dati impossibili</div></div>
+  <div class="card kpi"><h3>Avvisi</h3><div class="big" style="color:${S.avvisi?"var(--warn)":"var(--ink)"}">${S.avvisi??"n/d"}</div><div class="note">dati vecchi, fonti non raggiunte</div></div>
+  <div class="card kpi"><h3>Durata</h3><div class="big">${S.durata_s??"n/d"} s</div><div class="note">${S.strumenti??"?"} strumenti, ${S.coppie??"?"} coppie</div></div></div>
+  <h2>Fonti</h2><div class="card">${fonti||"n/d"}</div>
+  <h2>Avvisi ed errori di questa esecuzione</h2><div class="tablewrap"><table><tr><th>Ora</th><th>Livello</th><th>Modulo</th><th>Messaggio</th></tr>${crit+voci+brow||'<tr><td colspan="4">Nessun avviso: tutto regolare.</td></tr>'}</table></div>`;}
+ // decifra con la password: PBKDF2-SHA256 -> chiave AES-GCM 256 (stessi parametri di admin.py)
+ async function decifra(pw){const b=x=>Uint8Array.from(atob(x),c=>c.charCodeAt(0));
+  const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
+  const k=await crypto.subtle.deriveKey({name:"PBKDF2",salt:b(A.salt),iterations:A.iter,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"]);
+  return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:b(A.iv)},k,b(A.ct))));}
+ function chiedi(){el.innerHTML=`<h2>Registro di monitoraggio</h2><p class="sub">Area riservata all'amministratore.</p>
+  <form id="admform" class="card admin"><label for="admpw">Password</label><input id="admpw" type="password" autocomplete="current-password">
+  <button type="submit" class="tvbtn">Apri</button><div id="admmsg" class="small"></div></form>`;
+  $("admform").onsubmit=ev=>{ev.preventDefault();const pw=$("admpw").value;$("admmsg").textContent="Verifica...";
+   decifra(pw).then(S=>{try{sessionStorage.setItem("cotAdmin",pw);}catch(e){}disegna(S);})
+   .catch(()=>{$("admmsg").textContent="Password errata.";});};}
+ function admin(){if(!A||A.chiaro||location.hash!="#admin")return;
+  mostra(true);let pw=null;try{pw=sessionStorage.getItem("cotAdmin");}catch(e){}
+  if(pw)decifra(pw).then(disegna).catch(chiedi);else chiedi();go("registro");}
+ if(!A){mostra(false);el.remove();return;}           // nessun registro pubblicato
+ if(A.chiaro){disegna(A.chiaro);return;}             // pagina locale sul PC
+ mostra(false);admin();window.addEventListener("hashchange",admin);
 })();
 }catch(e){fail('Registro','registro',e);}
 

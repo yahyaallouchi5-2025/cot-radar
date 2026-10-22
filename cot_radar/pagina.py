@@ -26,6 +26,7 @@ from .log import log, raccoglitore
 from .mercato import fed_liquidity
 from .mutui import mortgages
 from . import notizie
+from .admin import pubblico
 
 
 def clean(o):
@@ -99,8 +100,10 @@ def build(data_source=load_all, demo=False):
             "divmin": DIVERGENCE_MIN, "mw": MACRO_WEIGHT, "regw": REG_WEEKS, "demo": demo}
     data = {"meta": meta, "sources": sources,
             "assets": assets, "pairs": pairs, "corr": corr, "market": market, "fed": fed, "mortgage": mort,
-            "order": [a[0] for a in ASSETS] + ["USD"], "sectors": SECTORS, "stato": stato, "eventi": news["prossimi"],
+            "order": [a[0] for a in ASSETS] + ["USD"], "sectors": SECTORS, "stato": pubblico(stato), "admin": "__ADMIN__", "eventi": news["prossimi"],
             "tv": {k: {"s": v[0], "inv": v[1]} for k, v in TV_SYMBOLS.items()}, "tvp": TV_PAIRS}
+    # "stato" pubblico = solo esito e fonti; "admin" = segnaposto che main.py sostituisce con il registro
+    # completo (cifrato sul sito, in chiaro sul PC). Vedi cot_radar/admin.py
     payload = json.dumps(clean(data), ensure_ascii=False)
     # "</" dentro <script> chiuderebbe il tag per errore: lo "spezziamo" in "<\/"
     return template().replace("{{DATA}}", payload.replace("</", "<\\/")), clean(stato)

@@ -25,6 +25,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from cot_radar.config import OUT, REGISTRO, STATO     # noqa: E402
+from cot_radar import admin                           # noqa: E402
 from cot_radar.log import log, raccoglitore, setup   # noqa: E402
 from cot_radar.pagina import build, error_page       # noqa: E402
 from cot_radar import paracadute                     # noqa: E402
@@ -44,13 +45,16 @@ def install_task():
           else "Non riuscito: apri il Prompt dei comandi come amministratore e riprova.")
 
 
-def scrivi_stato(stato, cartelle):
-    """Salva il riepilogo dell'esecuzione (stato.json) in ognuna delle cartelle indicate."""
-    for c in cartelle:
+def scrivi_stato(stato, cartelle, pubblica=None):
+    """Salva il riepilogo dell'esecuzione (stato.json).
+    cartelle = copie PRIVATE (stato completo, es. dati/ sul PC o nella cache di GitHub);
+    pubblica = cartella del sito: li' va solo la versione "vetrina" (esito e fonti, nessun messaggio interno)."""
+    copie = [(c, stato) for c in cartelle] + ([(pubblica, admin.pubblico(stato))] if pubblica else [])
+    for c, contenuto in copie:
         try:
             os.makedirs(c, exist_ok=True)
             with open(os.path.join(c, "stato.json"), "w", encoding="utf-8") as f:
-                json.dump(stato, f, ensure_ascii=False, indent=1)
+                json.dump(contenuto, f, ensure_ascii=False, indent=1)
         except Exception as e:
             log.warning("stato.json non salvato in %s: %s", c, e)
 
@@ -64,8 +68,9 @@ def segnala_a_github(stato):
                  f"- creato: {stato.get('creato')} (durata {stato.get('durata_s')} s)",
                  f"- fonti: {stato.get('fonti')}",
                  f"- errori: {stato.get('errori')}, avvisi: {stato.get('avvisi')}", ""]
-        righe += [f"- **CRITICO** {c}" for c in stato.get("critici", [])]
-        righe += [f"- `{v['livello']}` {v['modulo']}: {v['messaggio'][:300]}" for v in stato.get("voci", [])[:40]]
+        # NB: il repository e' pubblico, quindi anche questa pagina: i messaggi dettagliati (avvisi, critici)
+        # NON si scrivono qui ma solo nel registro cifrato del sito (.../#admin) e in dati/registro.log
+        righe += [f"- critici: {len(stato.get('critici', []))} (dettaglio nel registro admin)"]
         with open(riepilogo, "a", encoding="utf-8") as f:
             f.write("\n".join(righe) + "\n")
     uscita = os.environ.get("GITHUB_OUTPUT")
@@ -125,10 +130,18 @@ def main(argv):
                 return 1      # niente pubblicazione: online resta l'ultima versione buona (e parte la mail all'admin)
             log.critical("Pagina NON aggiornata: tengo quella precedente (%s)", out)
             return 1
-        scrivi_stato(stato, [os.path.dirname(STATO)] + ([os.path.dirname(out)] if site else []))
+        scrivi_stato(stato, [os.path.dirname(STATO)], os.path.dirname(out) if site else None)
         segnala_a_github(stato)
         log.info("Esito: %s (%d errori, %d avvisi)", stato["esito"].upper(), stato["errori"], stato["avvisi"])
 
+    # REGISTRO ADMIN (vedi cot_radar/admin.py): sul sito cifrato con il Secret ADMIN_PASSWORD
+    # (senza password: non pubblicato), sul PC in chiaro perche' la pagina resta locale.
+    reg = {k: stato.get(k) for k in ("creato", "esito", "errori", "avvisi", "durata_s", "fonti", "strumenti",
+                                       "coppie", "critici", "voci")}
+    blocco = admin.cifra(reg, os.environ.get("ADMIN_PASSWORD", "")) if site else {"chiaro": reg}
+    if site and blocco is None:
+        log.info("Registro admin non pubblicato (manca il Secret ADMIN_PASSWORD o la libreria cryptography)")
+    page = page.replace('"__ADMIN__"', json.dumps(blocco, ensure_ascii=False).replace("</", "<\\/"), 1)
     with open(out, "w", encoding="utf-8") as f:
         f.write(page)
     log.info("Pagina creata: %s  |  registro: %s", out, REGISTRO)
