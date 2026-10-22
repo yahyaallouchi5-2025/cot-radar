@@ -216,3 +216,20 @@ table.compatta th,table.compatta td{padding:9px 10px}
 .evc.extra{display:none}.aperto .evc.extra{display:block}
 .evtutti{margin-top:14px}
 @media (max-width:600px){.top{margin-bottom:24px}.status{margin-bottom:24px}.evgrid{grid-template-columns:1fr 1fr}.info div{left:auto;right:-60px}}
+/* pulsante Guida e pannello laterale */
+.topdx{display:flex;align-items:center;gap:10px}
+.guida{position:fixed;inset:0;z-index:60;background:rgba(3,10,22,0);transition:background .25s}
+.guida.on{background:rgba(3,10,22,.6)}
+.gpannello{position:absolute;top:0;right:0;height:100%;width:min(600px,100%);background:var(--bg);border-left:1px solid var(--line);
+ overflow-y:auto;overscroll-behavior:contain;transform:translateX(100%);transition:transform .25s;padding:0 26px 60px;box-shadow:-20px 0 40px rgba(0,0,0,.35)}
+.guida.on .gpannello{transform:none}
+.gpannello{position:absolute}.gtop{position:sticky;top:0;z-index:2;background:var(--bg)}
+.gtesta{display:flex;justify-content:space-between;align-items:center;padding:18px 0 12px}
+.gtesta b{font-size:19px}
+.gindice{display:flex;flex-wrap:wrap;gap:6px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.gindice a{font-size:12.5px;padding:5px 10px;border:1px solid var(--line);border-radius:99px;color:var(--ink2);text-decoration:none}
+.gindice a:hover{border-color:var(--acc);color:var(--acc)}
+.guida .guide{max-width:none;position:relative}
+html.guidaon,html.guidaon body{overflow:hidden}
+@media (max-width:600px){.gpannello{padding:0 16px 60px}.topdx{width:100%;justify-content:space-between}
+ .gindice{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.gindice a{white-space:nowrap;flex:none}}

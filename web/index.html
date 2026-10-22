@@ -13,12 +13,12 @@
 {{CSS}}
 </style></head><body><div class="wrap">
 <div class="top"><div><h1>Edge Board</h1><p class="lead">Posizionamento dei grandi speculatori (CFTC), macro, notizie e stagionalit&agrave; in un'unica schermata.</p></div>
-<div class="updated" id="updated"></div></div>
+<div class="topdx"><button id="gapri" class="tvbtn gbtn" title="Come funziona">&#9432; Guida</button><div class="updated" id="updated"></div></div></div>
 <div class="status" id="status"></div>
 <div class="alerts" id="alerts"></div>
 <nav id="nav">
 <button data-t="sig" class="on">Segnali</button><button data-t="pairs">Coppie</button><button data-t="assets">Strumenti</button>
-<button data-t="mkt">Mercato e macro</button><button data-t="mortg">Mutui</button><button data-t="corr">Correlazioni</button><button data-t="stag">Stagionalit&agrave;</button><button data-t="registro">Registro</button><button data-t="guide">Metodo</button></nav>
+<button data-t="mkt">Mercato e macro</button><button data-t="mortg">Mutui</button><button data-t="corr">Correlazioni</button><button data-t="stag">Stagionalit&agrave;</button><button data-t="registro">Registro</button></nav>
 
 <section id="sig" class="on">
  <div class="grid k4" id="kpis"></div>
@@ -36,10 +36,12 @@
 <div class="filters" id="cfilters"></div><div class="grid k2" style="margin-bottom:20px"><div class="card" id="together"></div><div class="card" id="opposite"></div></div>
 <div class="tablewrap" style="padding:16px"><table class="heat" id="heat"></table></div></section>
 <section id="stag"></section>
-<section id="guide" class="guide"></section>
 <section id="registro"></section>
 <div class="foot" id="foot"></div>
 </div>
+<!-- guida laterale: si apre dal pulsante "Guida" in alto (vedi app.js, sezione "guida laterale") -->
+<aside id="guida" class="guida" hidden><div class="gpannello"><div class="gtop"><div class="gtesta"><b>Come funziona</b><button id="gchiudi" class="tvbtn" title="Chiudi (Esc)">&#x2715;</button></div>
+<nav id="gindice" class="gindice"></nav></div><div id="guide" class="guide"></div></div></aside>
 <!-- pannello del grafico a candele (si apre al clic su una scheda: vedi app.js, sezione "grafico") -->
 <div id="tvmodal" class="tvmodal" hidden><div id="tvpannello" class="tvpannello">
  <div class="tvtesta"><div><div id="tvtitolo"></div><div id="tvsotto" class="small"></div></div>
