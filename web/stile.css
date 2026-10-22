@@ -233,3 +233,4 @@ table.compatta th,table.compatta td{padding:9px 10px}
 html.guidaon,html.guidaon body{overflow:hidden}
 @media (max-width:600px){.gpannello{padding:0 16px 60px}.topdx{width:100%;justify-content:space-between}
  .gindice{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.gindice a{white-space:nowrap;flex:none}}
+.foot .legale{margin-bottom:12px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--card) 60%,transparent);line-height:1.55;color:var(--ink2)}

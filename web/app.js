@@ -413,7 +413,16 @@ $("guide").innerHTML=`
 <h3>8. Mutui</h3><p>Tassi medi sui nuovi mutui per acquisto casa (statistica BCE MIR, fonte Banca d'Italia per l'Italia). La stima dei mesi non ancora pubblicati usa una regressione delle variazioni mensili del tasso sulle variazioni del rendimento a 10 anni (fisso) o dell'ESTR (variabile), del mese stesso e di quello prima. L'intervallo &plusmn; e' l'errore tipico del modello.</p>
 <h3>9. Aggiornamenti</h3><p>${/^https?:/.test(location.protocol)?"Il sito si aggiorna da solo: venerdi' sera dopo il COT, ogni mattina feriale (mercati e BCE) e ogni sera feriale a fine giornata (fino a 3 tentativi a 5 minuti di distanza). Se una fonte non risponde restano online gli ultimi dati validi.":"Ogni apertura scarica tutto. Aggiornamento automatico ogni venerdi': nel Prompt dei comandi <code>python cot_radar.py --pianifica</code>."}</p>
 <h3>10. Limiti</h3><ul><li>Sono stime statistiche, non certezze: le relazioni cambiano nel tempo.</li><li>Il COT ha 3 giorni di ritardo; i mutui circa 5 settimane.</li><li>Oro, materie agricole e altri strumenti senza prezzo gratuito su FRED usano solo il COT.</li><li>Non e' una consulenza finanziaria.</li></ul>`;
-$("foot").innerHTML=`Fonti: CFTC Commitments of Traders (Legacy, Futures Only) &middot; FRED, Federal Reserve Bank of St. Louis &middot; Banca Centrale Europea, ECB Data Portal. Generato il ${M.now}.`;
+/* AVVERTENZA LEGALE: testo fisso in fondo a ogni pagina (tutela: il sito e' informativo, non consulenza) */
+$("foot").innerHTML=`<div class="legale"><b>Avvertenza importante.</b> Edge Board ha finalit&agrave; esclusivamente informative, didattiche e di studio.
+ I contenuti (segnali, punteggi, statistiche, stagionalit&agrave;, analisi e qualsiasi altra informazione) <b>non costituiscono consulenza finanziaria,
+ consulenza in materia di investimenti, raccomandazione personalizzata, sollecitazione o offerta</b> all'acquisto o alla vendita di strumenti finanziari,
+ ai sensi della normativa vigente (tra cui D.Lgs. 58/1998 - TUF e direttiva MiFID II). L'autore non e' un consulente finanziario abilitato e non presta servizi di investimento.
+ I dati provengono da fonti pubbliche di terzi e possono contenere errori, ritardi o omissioni; i modelli sono stime statistiche e i risultati passati non sono indicativi di quelli futuri.
+ Il trading su futures, forex, CFD e criptovalute comporta un rischio elevato di perdita, anche superiore al capitale investito.
+ Ogni decisione di investimento &egrave; presa in autonomia e sotto la propria esclusiva responsabilit&agrave;: l'autore declina ogni responsabilit&agrave; per perdite o danni, diretti o indiretti,
+ derivanti dall'uso di queste informazioni. Prima di investire valuta la tua situazione e, se necessario, rivolgiti a un consulente abilitato.</div>
+ <div>Fonti: CFTC Commitments of Traders (Legacy, Futures Only) &middot; FRED, Federal Reserve Bank of St. Louis &middot; Banca Centrale Europea, ECB Data Portal. Generato il ${M.now}.</div>`;
 }catch(e){fail('Metodo','guide',e);}
 
 /* ---------- guida laterale ----------
