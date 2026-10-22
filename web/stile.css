@@ -234,3 +234,44 @@ html.guidaon,html.guidaon body{overflow:hidden}
 @media (max-width:600px){.gpannello{padding:0 16px 60px}.topdx{width:100%;justify-content:space-between}
  .gindice{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.gindice a{white-space:nowrap;flex:none}}
 .foot .legale{margin-bottom:12px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--card) 60%,transparent);line-height:1.55;color:var(--ink2)}
+/* ===== SIDEBAR collassabile ===== */
+.app{display:flex;min-height:100vh}
+.app>.wrap{flex:1;min-width:0}
+.side{position:sticky;top:0;height:100vh;width:264px;flex:none;display:flex;flex-direction:column;gap:22px;padding:20px 16px;
+ background:linear-gradient(180deg,rgba(15,33,64,.85),rgba(10,22,40,.92));border-right:1px solid var(--line);overflow-y:auto;overflow-x:hidden;
+ transition:width .22s ease,transform .22s ease;z-index:40}
+.side svg,.sbtn svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sbrand{display:flex;align-items:center;gap:10px}
+.slogo{width:34px;height:34px;flex:none;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;letter-spacing:.5px;
+ color:#eaf6ff;background:linear-gradient(135deg,rgba(46,196,182,.35),rgba(91,155,255,.25));border:1px solid rgba(190,225,255,.25);text-shadow:0 0 10px rgba(200,235,255,.6)}
+.snome{flex:1;white-space:nowrap;font-size:16px;color:#eef6ff;text-shadow:0 0 14px rgba(185,225,255,.35)}
+.sbtn{flex:none;width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:none;color:var(--mute);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.sbtn:hover{color:var(--ink);border-color:var(--acc)}
+.stit{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--mute);margin-bottom:10px;white-space:nowrap}
+.sstato{display:grid;gap:4px}
+.srow{display:flex;gap:10px;align-items:flex-start;padding:8px 8px;border-radius:10px}.srow:hover{background:var(--soft)}
+.srow i{width:8px;height:8px;border-radius:50%;flex:none;margin-top:6px;box-shadow:0 0 8px currentColor}
+.stx{min-width:0}.stx b{display:block;font-size:13px;white-space:nowrap}.stx small{display:block;font-size:11.5px;color:var(--mute);line-height:1.4}
+.sitem{width:100%;display:flex;align-items:center;gap:12px;padding:10px 10px;border-radius:10px;border:1px solid transparent;background:none;color:var(--ink2);font:600 14px system-ui;cursor:pointer;text-align:left;white-space:nowrap}
+.sitem:hover:not(:disabled){background:var(--soft);color:var(--ink)}.sitem:disabled{opacity:.55;cursor:default}
+.sitem small{font-size:10.5px;font-weight:700;color:var(--acc);border:1px solid color-mix(in srgb,var(--acc) 45%,transparent);border-radius:6px;padding:0 5px;margin-left:4px}
+.sfondo{margin-top:auto}
+/* barra ridotta: solo icone e pallini */
+html.ridotta .side{width:72px;padding:20px 12px}
+html.ridotta .snome,html.ridotta .stx,html.ridotta .stit span,html.ridotta .sitem span{display:none}
+html.ridotta .sbrand{flex-direction:column}
+html.ridotta .sbtn svg{transform:rotate(180deg)}
+html.ridotta .srow{justify-content:center}html.ridotta .sitem{justify-content:center}
+/* titolo "bianco ghiaccio": luminoso ma morbido */
+h1.ghiaccio{color:#eef6ff;text-shadow:0 0 18px rgba(185,225,255,.32),0 0 2px rgba(255,255,255,.25);letter-spacing:-.4px}
+.toptit{display:flex;align-items:flex-start;gap:12px}
+.smenu{display:none;margin-top:4px}
+.sombra{position:fixed;inset:0;z-index:35;background:rgba(3,10,22,.6)}
+/* telefono e tablet: sidebar fuori schermo, si apre dal menu */
+@media (max-width:900px){
+ .side{position:fixed;left:0;top:0;bottom:0;height:auto;transform:translateX(-105%);box-shadow:20px 0 40px rgba(0,0,0,.4)}
+ html.sideon .side{transform:none}
+ html.ridotta .side{width:264px;padding:20px 16px}
+ html.ridotta .snome,html.ridotta .stx,html.ridotta .stit span,html.ridotta .sitem span{display:revert}
+ html.ridotta .sbrand{flex-direction:row}html.ridotta .sbtn svg{transform:none}
+ .smenu{display:flex}}

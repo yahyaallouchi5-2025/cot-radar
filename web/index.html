@@ -11,10 +11,23 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a1628'/%3E%3Cpath d='M12 44 L26 30 L36 38 L52 18' stroke='%232ec4b6' stroke-width='6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
 {{CSS}}
-</style></head><body><div class="wrap">
-<div class="top"><div><h1>Edge Board</h1><p class="lead">Posizionamento dei grandi speculatori (CFTC), macro, notizie e stagionalit&agrave; in un'unica schermata.</p></div>
-<div class="topdx"><button id="gapri" class="tvbtn gbtn" title="Come funziona">&#9432; Guida</button><div class="updated" id="updated"></div></div></div>
-<div class="status" id="status"></div>
+</style></head><body><div class="app">
+<!-- SIDEBAR (collassabile): stato dei dati, guida e, in futuro, account utente e impostazioni.
+     Su PC: freccia per ridurla a una colonna di icone (la scelta resta salvata nel browser).
+     Su telefono: si apre dal pulsante con le tre linee e si chiude toccando fuori. Vedi app.js, sezione "sidebar". -->
+<aside id="side" class="side">
+ <div class="sbrand"><span class="slogo">EB</span><b class="snome">Edge Board</b>
+  <button id="scomprimi" class="sbtn" title="Riduci / espandi la barra laterale" aria-label="Riduci o espandi"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button></div>
+ <div class="sgruppo"><div class="stit"><svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg><span>Stato dati</span></div><div id="status" class="sstato"></div></div>
+ <div class="sgruppo"><button id="gapri" class="sitem" title="Come funziona"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg><span>Guida</span></button></div>
+ <div class="sgruppo sfondo"><div class="stit"><span>Account</span></div>
+  <button class="sitem" disabled title="In arrivo"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>Accedi <small>presto</small></span></button>
+  <button class="sitem" disabled title="In arrivo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span>Impostazioni <small>presto</small></span></button></div>
+</aside>
+<div id="sombra" class="sombra" hidden></div>
+<div class="wrap">
+<div class="top"><div class="toptit"><button id="smenu" class="sbtn smenu" title="Menu" aria-label="Apri il menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><div><h1 class="ghiaccio">Edge Board</h1><p class="lead">Posizionamento dei grandi speculatori (CFTC), macro, notizie e stagionalit&agrave; in un'unica schermata.</p></div></div>
+<div class="topdx"><div class="updated" id="updated"></div></div></div>
 <div class="alerts" id="alerts"></div>
 <nav id="nav">
 <button data-t="sig" class="on">Segnali</button><button data-t="pairs">Coppie</button><button data-t="assets">Strumenti</button>
@@ -38,7 +51,7 @@
 <section id="stag"></section>
 <section id="registro"></section>
 <div class="foot" id="foot"></div>
-</div>
+</div></div>
 <!-- guida laterale: si apre dal pulsante "Guida" in alto (vedi app.js, sezione "guida laterale") -->
 <aside id="guida" class="guida" hidden><div class="gpannello"><div class="gtop"><div class="gtesta"><b>Come funziona</b><button id="gchiudi" class="tvbtn" title="Chiudi (Esc)">&#x2715;</button></div>
 <nav id="gindice" class="gindice"></nav></div><div id="guide" class="guide"></div></div></aside>

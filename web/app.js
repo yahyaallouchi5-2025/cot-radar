@@ -80,8 +80,9 @@ try{
 $("updated").innerHTML=`<span class="dataagg" title="Ultimo aggiornamento dei dati">${M.now}</span>`;
 var DOT={ok:"var(--b)",cache:"var(--warn)",late:"var(--s)",err:"var(--s)"};
 var STX={ok:"aggiornato",cache:"dati salvati (offline)",late:"IN RITARDO",err:"errore"};
-$("status").innerHTML=D.sources.filter(s=>s.st!="err").map(s=>`<div class="src"><div class="t"><i style="background:${DOT[s.st]}"></i>${s.name}</div>
- <div class="d"><b>${s.last}</b><span class="x"> &middot; ${STX[s.st]}</span><span class="nx"><br>Prossimo: ${s.next}</span></div></div>`).join("");
+/* stato delle fonti nella sidebar: pallino + nome, sotto data e prossimo aggiornamento (a barra ridotta resta il pallino) */
+$("status").innerHTML=D.sources.filter(s=>s.st!="err").map(s=>`<div class="srow" title="${esc(s.name)}: ${esc(s.last)} (${STX[s.st]}) - prossimo: ${esc(s.next)}"><i style="background:${DOT[s.st]};color:${DOT[s.st]}"></i>
+ <div class="stx"><b>${s.name}</b><small>${s.last} &middot; ${STX[s.st]}</small><small>Prossimo: ${s.next}</small></div></div>`).join("");
 var al=[];D.sources.forEach(s=>{if(s.msg)al.push(`<div class="alert ${s.st=='late'||s.st=='err'?'red':''}"><b>${s.name}:</b> ${esc(s.msg)}</div>`);
  if(s.next_ms&&Date.now()>s.next_ms&&!/^https?:/.test(location.protocol))al.push(`<div class="alert red"><b>${s.name}:</b> sono usciti dati nuovi (${s.next}) dopo questo aggiornamento. ${/^https?:/.test(location.protocol)?"Il sito si aggiorna in automatico a breve.":"Riapri cot_radar.py per scaricarli."}</div>`);});
 if(M.demo)al.unshift(`<div class="alert red"><b>DATI DIMOSTRATIVI:</b> pagina creata con --demo, i numeri sono finti.</div>`);
@@ -424,6 +425,18 @@ $("foot").innerHTML=`<div class="legale"><b>Avvertenza importante.</b> Edge Boar
  derivanti dall'uso di queste informazioni. Prima di investire valuta la tua situazione e, se necessario, rivolgiti a un consulente abilitato.</div>
  <div>Fonti: CFTC Commitments of Traders (Legacy, Futures Only) &middot; FRED, Federal Reserve Bank of St. Louis &middot; Banca Centrale Europea, ECB Data Portal. Generato il ${M.now}.</div>`;
 }catch(e){fail('Metodo','guide',e);}
+
+/* ---------- sidebar ----------
+   PC: il pulsante freccia la riduce a icone (classe "ridotta" su <html>, salvata in localStorage).
+   Telefono (<900px): resta nascosta; il pulsante menu la apre sopra la pagina, un tocco fuori la chiude. */
+try{(function(){const h=document.documentElement,mob=()=>matchMedia("(max-width:900px)").matches;
+ try{if(localStorage.getItem("ebSide")=="ridotta")h.classList.add("ridotta");}catch(e){}
+ $("scomprimi").onclick=()=>{if(mob())return chiudi();const r=h.classList.toggle("ridotta");try{localStorage.setItem("ebSide",r?"ridotta":"aperta");}catch(e){}};
+ function apri(){h.classList.add("sideon");$("sombra").hidden=false;}
+ function chiudi(){h.classList.remove("sideon");$("sombra").hidden=true;}
+ $("smenu").onclick=apri;$("sombra").onclick=chiudi;
+ $("gapri").addEventListener("click",()=>{if(mob())chiudi();});
+})();}catch(e){fail("Barra laterale",null,e);}
 
 /* ---------- guida laterale ----------
    La guida ("Come funziona") non e' piu' una scheda: si apre come pannello laterale dal pulsante "Guida" in alto.
