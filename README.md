@@ -106,6 +106,25 @@ a 2 anni nel giorno del dato in deviazioni standard). Correttivo: 10 punti per s
 dimezzamento ogni giorno (3 giorni per Fed/BCE). Il segnale COT non cambia: la card mostra il punteggio corretto accanto.
 Le card delle coppie hanno 3 righe: **Smart money** (COT), **Macro** (modello di mercato), **Notizie**.
 
+## Stagionalità (mesi, giorni della settimana, prossime 4 settimane)
+
+- **Archivio permanente** (`cot_radar/storico.py`): prezzi giornalieri FRED di decenni (cambi dal 1971/1999,
+  petrolio dal 1986, Nasdaq dal 1971...), un CSV per serie nel ramo **`storico`** del repository (sul PC nella
+  cartella `storico/`). Il primo giro scarica tutta la storia, poi si aggiungono solo i giorni nuovi già scaricati
+  per la dashboard: **nessuna chiamata in più** ai server. Lo storico salvato non viene mai riscritto; valori
+  impossibili o salti anomali non confermati non vengono salvati (CRITICAL nel registro admin + mail).
+- **Analisi** (`cot_radar/stagionalita.py`): prossime 4 settimane, 12 mesi (con mappa anni × mesi) e
+  lunedì-venerdì. Trend tolto e filtri anti-coincidenza (anni d'accordo, test t, stabilità nel tempo e nelle date):
+  sul puro rumore passano circa 1-3 casi su 100 (vedi `tests/test_stagionalita.py`).
+- **Peso nel punteggio** deciso dal backtest (segnali COT con stagionalità a favore vs contraria, calcolata solo con
+  gli anni precedenti). Il punteggio originale resta nell'anello; il "punteggio corretto" è nella riga sotto i riquadri.
+- Strumenti senza un prezzo storico gratuito (oro, grano, caffè...) mostrano "n/d".
+
+### Aggiornamento di fine giornata
+Ogni sera feriale (22:15 UTC) il sito si aggiorna; se qualcosa non va riprova alle 22:20 e alle 22:25.
+La mail all'admin parte **solo se falliscono tutti e 3** i tentativi. Nel frattempo online restano gli ultimi dati validi.
+(GitHub può ritardare gli avvii programmati di qualche minuto nelle ore di punta.)
+
 ## Registro di monitoraggio e protezione anti-crollo
 
 | Dove | Cosa |

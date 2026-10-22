@@ -151,7 +151,7 @@ html.bloccato,html.bloccato body{overflow:hidden;overscroll-behavior:none}
 
 
 /* schede segnali: piu' larghe, cosi' i tre riquadri stanno affiancati */
-#cards,#acards{grid-template-columns:repeat(auto-fill,minmax(330px,1fr))}
+#cards,#acards{grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}
 /* anello del punteggio (vedi app.js, anello): cerchio di fondo + arco colorato, numero al centro */
 /* misura iniziale; app.js (allineaAnelli) la rende uguale all'altezza di nome + pillola,
    cosi' il bordo basso dell'anello e' allineato alla pillola SELL/BUY */
@@ -160,7 +160,10 @@ html.bloccato,html.bloccato body{overflow:hidden;overscroll-behavior:none}
 .anello b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;padding-bottom:6px}
 .anello small{position:absolute;left:0;right:0;bottom:15px;text-align:center;font-size:9px;color:var(--mute)}
 /* tre riquadri affiancati (Smart money / Macro / Notizie) */
-.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.card{container-type:inline-size}
+/* 4 riquadri affiancati se la scheda e' larga, altrimenti 2 x 2 (container query: guarda la larghezza della scheda) */
+.trio{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
+@container (max-width:470px){.trio{grid-template-columns:1fr 1fr}}
 .r3{min-width:0;padding:10px 11px;border-radius:12px;background:color-mix(in srgb,var(--soft) 70%,transparent);border:1px solid var(--line)}
 .r3 span{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11.5px;color:var(--mute);white-space:nowrap}
 .r3 span i{order:2;width:7px;height:7px;border-radius:50%;background:var(--n);flex:none}
@@ -179,3 +182,17 @@ html.bloccato,html.bloccato body{overflow:hidden;overscroll-behavior:none}
 /* TELEFONO: riquadri piu' compatti, cosi' "SCONTATO" e le note non vengono tagliati */
 @media (max-width:600px){.trio{gap:6px}.r3{padding:8px 8px}.r3 span{font-size:11px}.r3 b{font-size:12.5px;letter-spacing:0}.r3 small{font-size:10.5px;white-space:normal}
  .anello b{font-size:16px}.anello small{bottom:12px}}
+/* scheda Stagionalita': barre dei mesi e mappa anni x mesi */
+.mesi{display:grid;grid-template-columns:repeat(12,1fr);gap:6px;margin-top:12px}
+.mese{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border-radius:10px;border:1px solid transparent;cursor:default}
+.mese.forte{border-color:var(--acc)}.mese.ora{background:var(--soft)}
+.mese .barra{position:relative;width:60%;height:90px}.mese .barra i{position:absolute;left:0;right:0;border-radius:4px;max-height:50%}
+.mese .barra:after{content:"";position:absolute;left:-20%;right:-20%;top:50%;border-top:1px solid var(--line)}
+.mese b{font-size:12px}.mese small{font-size:11px;color:var(--mute)}
+.mappa td,.mappa th{padding:5px 6px;text-align:center;font-size:11.5px}.mappa td{color:var(--ink)}
+.stagbtn{background:none;cursor:pointer;font:inherit}.stagbtn:hover{border-color:var(--acc)}
+#stagsel{max-width:100%}
+@media (max-width:600px){.mesi{grid-template-columns:repeat(6,1fr)}.mese .barra{height:60px}}
+.grid.stag2{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr)}
+table.compatta th,table.compatta td{padding:9px 10px}
+@media (max-width:900px){.grid.stag2{grid-template-columns:1fr}}

@@ -21,11 +21,12 @@ from .calendario import sources_status
 from .config import (ASSETS, DIVERGENCE_MIN, MACRO_WEIGHT, NORMAL, REG_WEEKS, SECTORS, STRONG, TV_PAIRS, TV_SYMBOLS,
                      WEB_DIR, WEIGHTS)
 from .controlli import controlla
-from .fonti import load_all
+from .cot import cot_series
+from .fonti import get_fred, load_all
 from .log import log, raccoglitore
 from .mercato import fed_liquidity
 from .mutui import mortgages
-from . import notizie
+from . import notizie, stagionalita, storico
 from .admin import pubblico
 
 
@@ -76,6 +77,26 @@ def build(data_source=load_all, demo=False):
     except Exception:
         log.warning("motore notizie non calcolato:\n%s", traceback.format_exc())
         news = {"prossimi": [], "valute": {}}
+    # STAGIONALITA' (vedi storico.py e stagionalita.py). Isolata: se qualcosa va storto mancano solo
+    # i riquadri "Stagionalita'", il resto della dashboard non cambia.
+    rie_storico, stag, stag_meta = None, {}, None
+    try:
+        if demo:
+            from .demo import storico_demo
+            archivio = storico_demo()
+        else:
+            archivio, rie_storico = storico.aggiorna(fred, scarica=get_fred,
+                                                     fred_giu=status.get("fred") == "manutenzione")
+        serie = cot_series(cache["cot"]["data"])
+        hist = {a[0]: serie[a[1]] for a in ASSETS if a[1] in serie and a[0] in assets}
+        stag, stag_meta = stagionalita.calcola(hist, storico.prezzi_usd(archivio), pairs, assets)
+        log.info("stagionalita': %d strumenti/coppie, peso dal backtest %s", len(stag), stag_meta.get("peso"))
+    except Exception:
+        log.warning("stagionalita' non calcolata:\n%s", traceback.format_exc())
+    # punteggio corretto = COT/mercato + notizie + stagionalita' (il punteggio originale resta quello mostrato nell'anello)
+    for p in pairs:
+        extra = ((p.get("news") or {}).get("adj") or 0) + ((p.get("stag") or {}).get("adj") or 0)
+        p["corretto"] = round(p["score"] + extra, 1) if extra else None
     try:
         sources = sources_status(cache, status, errors, assets, mort, fred)
     except Exception:
@@ -94,13 +115,14 @@ def build(data_source=load_all, demo=False):
         "errori": n_err, "avvisi": n_warn, "fonti": status,
         "strumenti": len(assets), "coppie": len(pairs), "mercato": bool(market), "mutui": bool(mort),
         "voci": raccoglitore.voci[-200:],             # ultimi avvisi/errori di questa esecuzione
-        "controlli": controlli, "demo": demo,
+        "controlli": controlli, "demo": demo, "storico": rie_storico,
     }
     meta = {"now": datetime.now().strftime("%d/%m/%Y %H:%M"), "w": WEIGHTS, "strong": STRONG, "normal": NORMAL,
             "divmin": DIVERGENCE_MIN, "mw": MACRO_WEIGHT, "regw": REG_WEEKS, "demo": demo}
     data = {"meta": meta, "sources": sources,
             "assets": assets, "pairs": pairs, "corr": corr, "market": market, "fed": fed, "mortgage": mort,
             "order": [a[0] for a in ASSETS] + ["USD"], "sectors": SECTORS, "stato": pubblico(stato), "admin": "__ADMIN__", "eventi": news["prossimi"],
+            "stag": stag, "stag_meta": stag_meta,
             "tv": {k: {"s": v[0], "inv": v[1]} for k, v in TV_SYMBOLS.items()}, "tvp": TV_PAIRS}
     # "stato" pubblico = solo esito e fonti; "admin" = segnaposto che main.py sostituisce con il registro
     # completo (cifrato sul sito, in chiaro sul PC). Vedi cot_radar/admin.py

@@ -112,3 +112,24 @@ def demo_data(seed=7):
     now = today.isoformat() + "T00:00"
     cache = {"cot": {"saved": now, "data": rows}, "fred": {"saved": now, "data": fred}, "ecb": {"saved": now, "data": ecb}}
     return cache, {"cot": "online", "fred": "online", "ecb": "online"}, {}
+
+
+def storico_demo(seed=11, anni=30):
+    """Archivio finto di 30 anni per provare la scheda Stagionalita' senza internet.
+    Ogni serie ha un piccolo effetto voluto (es. novembre in rialzo, venerdi' leggermente negativo)
+    cosi' si vede che i filtri trovano gli effetti veri e scartano il rumore."""
+    rnd = random.Random(seed)
+    today = date.today()
+    out = {}
+    for i, sid in enumerate(sorted({v[0] for v in PRICES.values()})):
+        v, pts, d = 100.0, [], today - timedelta(days=365 * anni)
+        mese_buono = 1 + i % 12                               # un mese "stagionale" diverso per ogni serie
+        while d < today:
+            if d.weekday() < 5:
+                drift = 0.0012 if d.month == mese_buono else 0.0
+                drift += -0.0006 if (d.weekday() == 4 and i % 3 == 0) else 0.0
+                v *= math.exp(drift + rnd.gauss(0, 0.006))
+                pts.append([d.isoformat(), round(v, 5)])
+            d += timedelta(days=1)
+        out[sid] = pts
+    return out

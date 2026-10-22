@@ -148,6 +148,9 @@ function why(p){const b=verb(D.assets[p.base].score)[0],q=verb(D.assets[p.quote]
    ctag = i Commercials (hedger) agli estremi confermano o contrastano il segnale
    atag = affidabilita' storica: % di volte in cui, dopo un segnale, il prezzo e' andato nel verso giusto in 4 settimane */
 function ctag(acc){return acc?`<span class="tag ${acc=="conferma"?"ok":"ko"}" title="Commercials (hedger) agli estremi">Commercials: ${acc}</span>`:"";}
+/* stagtag = stagionalita' delle prossime 4 settimane: verde se va nel verso del segnale, arancio se contro */
+function stagtag(st,score){if(!st||!st.robusto)return "";const su=st.score>0;
+ return `<span class="tag ${Math.sign(st.score)==Math.sign(score)?"ok":"ko"}" title="Stagionalita': ${su?"salito":"sceso"} ${su?st.su:st.n-st.su} anni su ${st.n} nelle prossime 4 settimane">stagione ${su?"&uarr;":"&darr;"} ${su?st.su:st.n-st.su}/${st.n}</span>`;}
 function atag(e){if(!e)return "";const c=e.pochi?"":e.hit>=60?"ok":e.hit<50?"ko":"";
  return `<span class="tag ${c}" title="Backtest: ${e.n} segnali passati, resa media ${e.resa>=0?"+":""}${fx(e.resa)}% in 4 settimane">storico ${e.hit}%${e.pochi?" (pochi dati)":""}</span>`;}
 /* CARD A 3 RIGHE: Smart money (COT) / Macro (modello di mercato) / Notizie (motore notizie).
@@ -173,7 +176,13 @@ function trio(p){const n=p.news,cot=p.cot,mac=p.macro,det=[];
   if(ultimo)det.push(`${esc(ultimo.nome.split(" ").slice(0,-2).join(" ")||ultimo.nome)}: punteggio corretto ${fmt(n.score)}`);
   if(n.oggi.length)det.push(`${esc(n.oggi[0])}: valuta l'ingresso dopo il dato`);
   ne=riga("Notizie",txt,n.oggi.length?0:n.effetto=="rafforza"?Math.sign(p.score):n.effetto=="penalizza"?-Math.sign(p.score):0,breve||"nessun evento");}
- return `<div class="trio">${sm}${ma}${ne}</div>${det.length?`<div class="det">${det.join(" &middot; ")}</div>`:""}`;}
+ const st=p.stag;let sa;                                   // STAGIONALITA' (prossime 4 settimane, vedi stagionalita.py)
+ if(!st)sa=riga("Stagionalit&agrave;","n/d",0,"storico corto");
+ else if(!st.robusto)sa=riga("Stagionalit&agrave;","NEUTRA",0,"non affidabile");
+ else{sa=riga("Stagionalit&agrave;",st.score>0?"RIALZO":"RIBASSO",st.score,`${st.score>0?st.su:st.n-st.su}/${st.n} anni`);
+  det.push(`stagionalit&agrave;: ${st.score>0?"salito":"sceso"} ${st.score>0?st.su:st.n-st.su} anni su ${st.n} nelle prossime 4 settimane (mediana ${st.med>=0?"+":""}${fx(st.med)}%)`);}
+ if(p.corretto!=null&&Math.round(p.corretto)!=Math.round(p.score))det.push(`<b>punteggio corretto ${fmt(p.score)} &rarr; ${fmt(p.corretto)}</b>`);
+ return `<div class="trio">${sm}${ma}${ne}${sa}</div>${det.length?`<div class="det">${det.join(" &middot; ")}</div>`:""}`;}
 function card(p){return `<div class="card clic" data-tv="p:${p.pair}" title="Clic: grafico a candele"><div class="pairhead"><div><span class="pair">${p.pair}</span><div class="sotto">${badge(p.label)}</div></div>${anello(p.score)}</div>${trio(p)}
  <div class="rows">${sideRow(p.base)}${sideRow(p.quote)}</div>
  <div class="tags">${p.div?'<span class="tag div">Divergenza</span>':''}${mtag(p.cot,p.macro)}${p.new?`<span class="tag new">Nuovo (prima ${p.prev})</span>`:''}${ctag(p.comm_acc)}${atag(p.affid)}</div>
@@ -182,7 +191,7 @@ var act=D.pairs.filter(p=>p.label!="NEUTRO");
 $("cards").innerHTML=act.length?act.map(card).join(""):`<div class="card">Nessun segnale attivo sulle valute questa settimana.</div>`;
 function acard(a){const v=verb(a.score),m=a.mkt;return `<div class="card clic" data-tv="a:${a.key}" title="Clic: grafico a candele"><div class="pairhead"><div><span class="pair" style="font-size:19px">${a.name}</span><div class="sotto">${badge(a.label)}</div></div>${anello(a.score)}</div>
  <div class="small" style="margin-top:8px">${a.it?esc(a.it)+" &middot; ":""}${a.group} &middot; ${a.key} &middot; COT Index ${a.idx}/100</div>${split(a.cot,a.macro)}
- <div class="tags">${mtag(a.cot,a.macro)}${a.new?`<span class="tag new">Nuovo (prima ${a.prev_label})</span>`:''}${a.crowded?'<span class="tag ko">affollato</span>':''}${ctag(a.comm_acc)}${atag(a.affid)}</div>
+ <div class="tags">${mtag(a.cot,a.macro)}${a.new?`<span class="tag new">Nuovo (prima ${a.prev_label})</span>`:''}${a.crowded?'<span class="tag ko">affollato</span>':''}${ctag(a.comm_acc)}${atag(a.affid)}${stagtag(a.stag,a.score)}</div>
  <div class="why">Speculatori: <b class="${v[1]}">${v[0]}</b>, ${fmt(a.d_net)} contratti in settimana, ${fmt(a.d_net4)} in 4 settimane.${m?` Mercato: ${m.status.toLowerCase()}.`:''}${NOTE[a.key]||NOTE[a.group]?' '+(NOTE[a.key]||NOTE[a.group]):''}</div></div>`;}
 var oth=Object.values(D.assets).filter(a=>a.group!="Valute"&&a.label!="NEUTRO").sort((x,y)=>Math.abs(y.score)-Math.abs(x.score));
 $("acards").innerHTML=oth.length?oth.map(acard).join(""):`<div class="card">Nessun segnale attivo.</div>`;
@@ -326,6 +335,54 @@ function drawCorr(){$("heat").innerHTML=`<tr><th></th>${K.map(k=>`<th>${k}</th>`
 selC("Valute");
 }catch(e){fail('Correlazioni','corr',e);}
 
+/* ---------- stagionalita' ----------
+   Dati da D.stag (vedi cot_radar/stagionalita.py): per ogni coppia/strumento con storico lungo
+   finestra = prossime 4 settimane, mesi = 12 mesi, mappa = anni x mesi, giorni = lunedi'..venerdi'.
+   Un effetto e' "affidabile" solo se supera i filtri (anni d'accordo, stabile nel tempo e nelle date). */
+try{(function(){const S=D.stag||{},el=$("stag"),M12=["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
+ const tutte=[...D.pairs.map(p=>p.pair),...D.order.filter(k=>D.assets[k])].filter((k,i,a)=>S[k]&&a.indexOf(k)==i);
+ if(!tutte.length){el.innerHTML=`<h2>Stagionalit&agrave;</h2><p class="sub">L'archivio storico non e' ancora disponibile: si crea da solo al primo aggiornamento con FRED raggiungibile.</p>`;return;}
+ const pc=(v,d=2)=>v==null?"n/d":(v>0?"+":"")+fx(v,d)+"%";
+ const nome=k=>D.assets[k]?`${D.assets[k].name} (${k})`:k;
+ const attive=tutte.filter(k=>S[k].finestra&&S[k].finestra.robusto).sort((a,b)=>Math.abs(S[b].finestra.score)-Math.abs(S[a].finestra.score));
+ let sel=attive[0]||tutte[0];
+ // colore di una cella della mappa: verde = mese in rialzo, rosso = in ribasso, piu' intenso = movimento piu' grande
+ const cella=v=>v==null?"transparent":`rgba(${v>0?"79,214,163":"242,113,107"},${Math.min(.85,.12+Math.abs(v)/6)})`;
+ function percorso(pp){if(!pp||!pp.some(x=>x!=null))return "";const W=600,H=150,P=24,v=pp.map(x=>x??0);
+  const lo=Math.min(0,...v),hi=Math.max(0,...v),sc=y=>H-P-(y-lo)/((hi-lo)||1)*(H-2*P),xs=i=>P+i*(W-2*P)/(v.length-1);
+  const col=v[v.length-1]>=0?"var(--b)":"var(--s)";
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}"><line x1="${P}" x2="${W-P}" y1="${sc(0)}" y2="${sc(0)}" stroke="var(--line)"/>
+  <polyline fill="none" stroke="${col}" stroke-width="3" points="${v.map((y,i)=>xs(i)+","+sc(y)).join(" ")}"/>
+  ${v.map((y,i)=>`<circle cx="${xs(i)}" cy="${sc(y)}" r="3.5" fill="${col}"/><text x="${xs(i)}" y="${H-4}" text-anchor="middle" font-size="11" fill="var(--mute)">${i?"+"+i+"s":"oggi"}</text>`).join("")}
+  <text x="${W-P}" y="${sc(v[v.length-1])-8}" text-anchor="end" font-size="12" fill="${col}">${pc(v[v.length-1])}</text></svg>`;}
+ function disegna(){const X=S[sel],f=X.finestra,mm=X.mesi||[],gg=X.giorni,ora=new Date().getMonth();
+  const verd=!f?"n/d":f.robusto?(f.score>0?"RIALZO":"RIBASSO"):"NEUTRA";
+  const fcard=`<div class="card"><h3>Prossime 4 settimane</h3><div class="kpi"><div class="big" style="color:${!f||!f.robusto?"var(--ink)":f.score>0?"var(--b)":"var(--s)"}">${verd}</div>
+   <div class="note">${f?`salito <b>${f.su}</b> anni su <b>${f.n}</b> (dal ${f.da}) &middot; mediana ${pc(f.med)} &middot; senza trend ${pc(f.med_d)}`:"storico insufficiente"}</div>
+   <div class="note">${f?(f.robusto?`<span class="tag ok">effetto affidabile</span> punteggio stagionale ${fmt(f.score)}`:`<span class="tag">non affidabile: ${esc(f.perche||"")}</span>`):""}</div></div>
+   ${f?percorso(f.percorso):""}<div class="small">Percorso mediano degli anni passati da oggi alle prossime 8 settimane.</div></div>`;
+  const gcard=`<div class="card"><h3>Giorni della settimana</h3>${gg?`<div class="tablewrap" style="box-shadow:none;margin-top:10px"><table class="compatta"><tr><th>Giorno</th><th class="num">In rialzo</th><th class="num">Media</th><th class="num">Mov. tipico</th><th class="num">Ultimi 10a</th><th>Effetto</th></tr>
+   ${gg.map(g=>{const vmax=Math.max(...gg.map(x=>x.vol));return `<tr><td><b>${esc(g.giorno)}</b></td><td class="num">${g.su}%</td><td class="num ${g.media>0?"up":g.media<0?"down":""}">${pc(g.media,3)}</td>
+   <td class="num">${fx(g.vol,2)}%${g.vol==vmax?' <b title="giorno piu\' mosso" style="color:var(--acc)">&#9679;</b>':""}</td><td class="num">${pc(g.rec,3)}</td><td>${g.robusto?`<span class="tag ${g.t>0?"ok":"ko"}">${g.t>0?"rialzo":"ribasso"} (t ${fx(g.t,1)})</span>`:'<span class="small">non significativo</span>'}</td></tr>`}).join("")}</table></div>
+   <div class="small" style="margin-top:8px">&#9679; = giorno che si muove di piu'. ${gg[0].n+gg[1].n+gg[2].n+gg[3].n+gg[4].n} giorni dal ${X.da}. Cambi FRED rilevati alle 12:00 di New York: "mercoledi'" = da martedi' 12:00 a mercoledi' 12:00.</div>`:'<p class="small">Storico giornaliero insufficiente.</p>'}</div>`;
+  const vmax=Math.max(0.01,...mm.map(m=>Math.abs(m.med||0)));
+  const mcard=`<div class="card"><h3>Mesi</h3><div class="mesi">${mm.map((m,i)=>m.n>=10?`<div class="mese${i==ora?" ora":""}${m.robusto?" forte":""}" title="${M12[i]}: salito ${m.su}/${m.n} anni, mediana ${pc(m.med)}${m.robusto?" (affidabile)":""}">
+   <div class="barra"><i style="height:${Math.round(Math.abs(m.med)/vmax*50)}%;${m.med>=0?"bottom:50%":"top:50%"};background:${m.med>=0?"var(--b)":"var(--s)"}"></i></div>
+   <b>${M12[i]}</b><small>${pc(m.med,1)}</small><small>${m.su}/${m.n}</small></div>`:`<div class="mese"><div class="barra"></div><b>${M12[i]}</b><small>n/d</small></div>`).join("")}</div>
+   <div class="small" style="margin-top:8px">Barra = rendimento mediano del mese; sotto, gli anni in rialzo. Bordo turchese = effetto affidabile; evidenziato il mese in corso.</div></div>`;
+  const mp=X.mappa;
+  const hcard=mp?`<div class="card"><h3>Mappa anni &times; mesi (ultimi ${mp.anni.length} anni)</h3><div class="tablewrap" style="box-shadow:none;margin-top:10px"><table class="mappa"><tr><th></th>${M12.map(m=>`<th>${m}</th>`).join("")}</tr>
+   ${mp.anni.map((y,r)=>`<tr><th>${y}</th>${mp.v[r].map(v=>`<td style="background:${cella(v)}">${v==null?"":fx(v,1)}</td>`).join("")}</tr>`).reverse().join("")}</table></div></div>`:"";
+  $("stagdett").innerHTML=`<div class="grid stag2">${fcard}${gcard}</div><div style="margin-top:20px">${mcard}</div><div style="margin-top:20px">${hcard}</div>`;}
+ el.innerHTML=`<h2>Stagionalit&agrave;</h2><p class="sub">Come si e' comportato ogni strumento negli anni passati: nelle prossime 4 settimane, mese per mese e giorno per giorno. Conta solo cio' che supera i filtri anti-coincidenza (vedi Metodo).</p>
+  <div class="card" style="margin-bottom:20px"><h3>Effetti affidabili adesso (prossime 4 settimane)</h3><div class="evlist">${attive.length?attive.map(k=>{const f=S[k].finestra;return `<button class="ev stagbtn" data-k="${esc(k)}"><b>${esc(k)}</b> ${f.score>0?"&uarr;":"&darr;"} ${f.score>0?f.su:f.n-f.su}/${f.n} anni &middot; ${pc(f.med,1)}</button>`}).join(""):'<span class="small">Nessun effetto affidabile in questo periodo dell\'anno.</span>'}</div></div>
+  <div class="filters"><select id="stagsel" class="tvbtn">${tutte.map(k=>`<option value="${esc(k)}">${esc(nome(k))}</option>`).join("")}</select></div><div id="stagdett"></div>`;
+ const scegli=k=>{sel=k;$("stagsel").value=k;disegna();};
+ $("stagsel").onchange=e=>scegli(e.target.value);
+ el.querySelectorAll(".stagbtn").forEach(b=>b.onclick=()=>scegli(b.dataset.k));
+ scegli(sel);
+})();}catch(e){fail("Stagionalita'","stag",e);}
+
 /* ---------- metodo ----------
    Testo della guida: i numeri (pesi, soglie) arrivano da D.meta, cosi' restano allineati a config.py. */
 try{
@@ -336,6 +393,8 @@ $("guide").innerHTML=`<h2>Come funziona</h2>
 <h3>3. Punteggio Mercato (${Math.round(M.mw*100)}% del finale)</h3><p>Il mercato sconta le notizie in anticipo, quindi non uso dati macro pubblicati in ritardo ma solo indicatori prezzati ogni giorno: tasso USA 2 anni (aspettative sulla Fed), rendimento reale 10 anni, inflazione attesa, VIX, spread high yield, differenziale 2 anni USA-Europa. Per ogni strumento con un prezzo pubblico una regressione (ridge, ${M.regw} settimane, stimata escludendo le ultime 4) misura quanto ogni driver muove il prezzo. Nelle ultime 4 settimane si confronta la mossa <b>implicita</b> con quella <b>reale</b>: differenza vicina a zero = gia' scontato (punteggio ~0); prezzo in ritardo = punteggio nella direzione dei driver, ridotto se il modello spiega poco (R² basso).</p>
 <h3>4. Segnali</h3><p>Coppia = (finale base - finale quotata) / 2. Da ${M.normal} in su BUY/SELL, da ${M.strong} STRONG solo con divergenza (forza almeno ${M.divmin} da entrambi i lati, di segno opposto).</p>
 <h3>Conferme del segnale</h3><p><b>Commercials</b> (hedger: produttori, banche, utilizzatori): stanno quasi sempre dalla parte opposta degli speculatori. Quando il loro COT Index e' a un estremo (molto long &ge;80, molto short &le;20) di solito il prezzo e' vicino a un minimo o a un massimo: se l'estremo va nel verso del segnale e' una <i>conferma</i>, altrimenti un <i>contrasto</i>. <b>Open interest</b> (4 settimane): se gli speculatori comprano e l'OI sale entrano nuovi long (trend sano); se l'OI scende stanno solo chiudendo short (spinta piu' debole); lo stesso al contrario per le vendite. <b>Storico</b>: per ogni settimana passata il punteggio COT e' ricalcolato con i soli dati di allora; se era BUY/SELL si guarda il prezzo 4 settimane dopo la pubblicazione. La percentuale e' quante volte il prezzo e' andato nel verso del segnale (50% = come tirare una moneta). E' calcolato solo dove esiste un prezzo storico gratuito (cambi, indici, petrolio, gas, cripto), non include costi e risultati passati non garantiscono quelli futuri.</p>
+<h3>Stagionalit&agrave;</h3><p>Da un archivio permanente di prezzi giornalieri (fino a 50 anni, salvato su GitHub e mai riscritto) si misura come si e' mosso ogni strumento <b>nelle prossime 4 settimane</b> di ogni anno passato, in <b>ogni mese</b> e in <b>ogni giorno della settimana</b>. Prima si toglie il trend (il movimento medio dello strumento), poi un effetto conta solo se: almeno 10 anni di dati; almeno il 65% degli anni nello stesso verso (mesi: anche test t &ge; 2; giorni: test t &ge; 2,58 perche' si confrontano 5 giorni insieme); stesso verso nella prima e nella seconda meta' degli anni; per la finestra, stesso verso spostandola di una settimana avanti o indietro. Sul puro rumore questi filtri lasciano passare circa 1-3 casi su 100.</p>
+<p><b>Peso deciso dal backtest</b>: i segnali COT passati sono stati divisi in "stagionalita' a favore" e "contraria", calcolata solo con gli anni precedenti a ogni segnale. ${D.stag_meta?`A favore: <b>${D.stag_meta.accordo.hit??"n/d"}%</b> di successi in 4 settimane (${D.stag_meta.accordo.n} segnali); contraria: <b>${D.stag_meta.contrasto.hit??"n/d"}%</b> (${D.stag_meta.contrasto.n}). Peso usato: <b>${Math.round(D.stag_meta.peso*100)}%</b> del punteggio stagionale${D.stag_meta.peso?"":" (nessun vantaggio dimostrato: la stagionalita' resta solo informativa)"}.`:"Backtest non disponibile."} I segnali di strumenti e coppie si sovrappongono nel tempo, quindi il numero di casi "indipendenti" e' piu' basso di quanto sembra. Il punteggio originale resta nell'anello; la correzione compare nella riga sotto i riquadri.</p>
 <h3>Notizie (CPI, NFP, Fed, BCE)</h3><p>Il COT indica la direzione per le prossime settimane; una notizia ad alto impatto muove il prezzo per ore o pochi giorni e cambia soprattutto il <i>momento</i> giusto per entrare. Prima dell'evento la card mostra solo l'avviso &#9889;. Dopo l'evento la <b>sorpresa</b> e' misurata dal mercato: di quanto si e' mosso il tasso a 2 anni della valuta nel giorno del dato rispetto a una giornata normale (in deviazioni standard, &sigma;). Tassi su = valuta piu' forte. Il correttivo vale 10 punti per &sigma;, ha un tetto di &plusmn;30 per valuta e si dimezza ogni giorno (ogni 3 giorni per Fed e BCE). Il segnale COT non viene cambiato: accanto si vede il punteggio corretto.</p>
 <h3>5. Mutui</h3><p>Tassi medi sui nuovi mutui per acquisto casa (statistica BCE MIR, fonte Banca d'Italia per l'Italia). La stima dei mesi non ancora pubblicati usa una regressione delle variazioni mensili del tasso sulle variazioni del rendimento a 10 anni (fisso) o dell'ESTR (variabile), del mese stesso e di quello prima. L'intervallo &plusmn; e' l'errore tipico del modello.</p>
 <h3>6. Aggiornamenti</h3><p>Ogni apertura scarica tutto. Aggiornamento automatico ogni venerdi': nel Prompt dei comandi <code>python cot_radar.py --pianifica</code>.</p>
@@ -393,6 +452,8 @@ function conferme(k,p){const parti=[],col=v=>v=="conferma"?"var(--sb)":v=="contr
  if(oi.length)parti.push(`<b>Open interest 4 sett.:</b> ${oi.join(" &middot; ")}`);
  if(p&&p.news){const n=p.news,ev=(n.eventi||[]).filter(x=>x.z!=null).map(x=>`${esc(x.nome)} ${x.z>=0?"+":""}${fx(x.z,1)}&sigma; (${x.pb>=0?"+":""}${fx(x.pb,1)} pb)`);
   parti.push(`<b>Notizie:</b> ${n.oggi.length?"&#9889; "+n.oggi.map(esc).join(", ")+" ":""}${ev.join(" &middot; ")}${ev.length?` &rarr; <b style="color:${n.effetto=="rafforza"?"var(--sb)":n.effetto=="penalizza"?"var(--ss)":"var(--ink)"}">${n.effetto}</b> (${n.adj>=0?"+":""}${fx(n.adj,0)}, punteggio ${fmt(n.score)})`:""}`);}
+ const st=p?p.stag:(D.assets[k]||{}).stag,sc=p?p.score:(D.assets[k]||{}).score;
+ if(st)parti.push(`<b>Stagionalit&agrave;:</b> ${st.robusto?`${st.score>0?"salito":"sceso"} ${st.score>0?st.su:st.n-st.su}/${st.n} anni nelle prossime 4 sett. (mediana ${st.med>=0?"+":""}${fx(st.med)}%) &rarr; <b style="color:${Math.sign(st.score)==Math.sign(sc)?"var(--sb)":"var(--ss)"}">${Math.sign(st.score)==Math.sign(sc)?"conferma":"contrasto"}</b>${st.adj?` (${st.adj>0?"+":""}${fx(st.adj,0)})`:""}`:"nessun effetto affidabile in questo periodo"}`);
  const e=p?p.affid:(D.assets[k]||{}).affid;
  if(e)parti.push(`<b>Storico:</b> <b style="color:${e.pochi?"var(--ink)":e.hit>=60?"var(--sb)":e.hit<50?"var(--ss)":"var(--ink)"}">${e.hit}%</b> su ${e.n} segnali <span class="lungo">(resa media ${e.resa>=0?"+":""}${fx(e.resa)}% a 4 sett.)</span>`);
  return parti.length?`<div class="riga tre">${parti.map(x=>`<span>${x}</span>`).join("")}</div>`:"";}
