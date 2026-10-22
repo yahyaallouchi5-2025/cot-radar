@@ -51,13 +51,15 @@ function fd(s){if(!s)return"";const m=["gen","feb","mar","apr","mag","giu","lug"
 window.__errori=[];
 function fail(sezione,contenitore,e){
  window.__errori.push({sezione,errore:String(e&&e.stack||e)});
- console.error("[COT Radar] sezione '"+sezione+"' non disponibile:",e);
+ console.error("[Edge Board] sezione '"+sezione+"' non disponibile:",e);
  const box=`<div class="alert red"><b>Sezione "${sezione}" non disponibile.</b> Errore: ${esc(e&&e.message||e)}. Le altre sezioni funzionano normalmente.</div>`;
  const el=contenitore&&document.getElementById(contenitore);
  if(el)el.insertAdjacentHTML("afterbegin",box);else{const a=document.getElementById("alerts");if(a)a.insertAdjacentHTML("beforeend",box);}
 }
 function bannerErrore(msg){const a=document.getElementById("alerts");if(a&&!a.querySelector(".js-err"))a.insertAdjacentHTML("afterbegin",`<div class="alert red js-err"><b>Errore imprevisto nella pagina:</b> ${esc(msg)}. Ricarica la pagina.</div>`);}
-window.addEventListener("error",ev=>{window.__errori.push({sezione:"pagina",errore:String(ev.message)});bannerErrore(ev.message);});
+/* "ResizeObserver loop..." e' un avviso innocuo del browser (zoom, rotazione dello schermo): non e' un errore della pagina */
+window.addEventListener("error",ev=>{if(/ResizeObserver loop/i.test(ev.message||""))return;
+ window.__errori.push({sezione:"pagina",errore:String(ev.message)});bannerErrore(ev.message);});
 /* VERSIONE NUOVA? Il browser (o GitHub Pages, ~10 minuti) puo' tenere in memoria la pagina vecchia.
    Ogni 10 minuti leggiamo stato.json "fresco": se e' piu' recente dei dati di questa pagina, compare
    un avviso con il pulsante per ricaricare. Solo sul sito (http/https), non sul file aperto dal PC. */
@@ -75,13 +77,13 @@ window.addEventListener("unhandledrejection",ev=>{window.__errori.push({sezione:
    Un riquadro per fonte (pallino verde/giallo/rosso) e, sotto, gli avvisi in chiaro.
    Se l'ora attuale supera la prossima uscita prevista (next_ms), la pagina avvisa che ci sono dati nuovi. */
 try{
-$("updated").innerHTML=`Aggiornato il <b>${M.now}</b>`;
+$("updated").innerHTML=`<span class="dataagg" title="Ultimo aggiornamento dei dati">${M.now}</span>`;
 var DOT={ok:"var(--b)",cache:"var(--warn)",late:"var(--s)",err:"var(--s)"};
 var STX={ok:"aggiornato",cache:"dati salvati (offline)",late:"IN RITARDO",err:"errore"};
 $("status").innerHTML=D.sources.filter(s=>s.st!="err").map(s=>`<div class="src"><div class="t"><i style="background:${DOT[s.st]}"></i>${s.name}</div>
  <div class="d"><b>${s.last}</b><span class="x"> &middot; ${STX[s.st]}</span><span class="nx"><br>Prossimo: ${s.next}</span></div></div>`).join("");
 var al=[];D.sources.forEach(s=>{if(s.msg)al.push(`<div class="alert ${s.st=='late'||s.st=='err'?'red':''}"><b>${s.name}:</b> ${esc(s.msg)}</div>`);
- if(s.next_ms&&Date.now()>s.next_ms)al.push(`<div class="alert red"><b>${s.name}:</b> sono usciti dati nuovi (${s.next}) dopo questo aggiornamento. ${/^https?:/.test(location.protocol)?"Il sito si aggiorna in automatico a breve.":"Riapri cot_radar.py per scaricarli."}</div>`);});
+ if(s.next_ms&&Date.now()>s.next_ms&&!/^https?:/.test(location.protocol))al.push(`<div class="alert red"><b>${s.name}:</b> sono usciti dati nuovi (${s.next}) dopo questo aggiornamento. ${/^https?:/.test(location.protocol)?"Il sito si aggiorna in automatico a breve.":"Riapri cot_radar.py per scaricarli."}</div>`);});
 if(M.demo)al.unshift(`<div class="alert red"><b>DATI DIMOSTRATIVI:</b> pagina creata con --demo, i numeri sono finti.</div>`);
 $("alerts").innerHTML=al.join("");
 }catch(e){fail('Stato fonti e avvisi','alerts',e);}
@@ -128,10 +130,21 @@ try{
  <div class="card kpi"><h3>Mutuo fisso Italia</h3><div class="big">${mo&&mo.fix!=null?fx(mo.fix)+"%":"n/d"}</div><div class="note">${mo?fd(mo.last):""}${pf?` &middot; stima ${fd(pf.month)}: <b>${fx(pf.value)}%</b>`:""}</div></div>
  <div class="card kpi"><h3>Prossimo COT</h3><div class="big" style="font-size:20px;margin-top:12px">${cot.next}</div><div class="note">dati al ${cot.last}</div></div>`;})();
 
-/* PROSSIMI EVENTI ad alto impatto (motore notizie): nei 7 giorni successivi all'aggiornamento */
-try{const ev=D.eventi||[];$("eventi").innerHTML=ev.length?`<div class="card"><h3>Prossimi eventi ad alto impatto</h3><div class="evlist">${ev.map(e=>
- `<span class="ev ${e.tipo=="banca"?"banca":""}"><b>${esc(e.nome)}</b> ${esc(e.valuta)} &middot; ${["dom","lun","mar","mer","gio","ven","sab"][new Date(e.quando.replace(" ","T")).getDay()]} ${e.quando.slice(8,10)}/${e.quando.slice(5,7)} ore ${e.quando.slice(11)}</span>`).join("")}</div>
- <div class="note" style="margin-top:8px">Il giorno del dato la volatilit&agrave; sale: per lo swing conviene valutare l'ingresso dopo l'uscita. Dopo il dato la riga "Notizie" delle card mostra se la sorpresa rafforza o penalizza il segnale.</div></div>`:"";}catch(e){fail("Prossimi eventi","eventi",e);}
+/* PROSSIMI EVENTI ad alto impatto (motore notizie): mini card come i settori.
+   Colori: ambra = banca centrale (Fed, BCE), blu = dato macro (CPI, NFP); OGGI in rosso, DOMANI in ambra.
+   Oltre 6 eventi compare "Mostra tutti". La spiegazione sta nel tasto (i). */
+try{const ev=D.eventi||[],MAX=6;
+ const GG=["dom","lun","mar","mer","gio","ven","sab"],oggi=new Date();oggi.setHours(0,0,0,0);
+ const evc=e=>{const q=new Date(e.quando.replace(" ","T")),g=new Date(q);g.setHours(0,0,0,0);
+  const diff=Math.round((g-oggi)/864e5),quando=diff<=0?"OGGI":diff==1?"DOMANI":`tra ${diff} giorni`;
+  return `<div class="evc ${e.tipo=="banca"?"banca":"dato"}${diff<=0?" oggi":diff==1?" domani":""}"><div class="evt"><b>${esc(e.nome)}</b><span class="evv">${esc(e.valuta)}</span></div>
+  <div class="evq">${GG[q.getDay()]} ${e.quando.slice(8,10)}/${e.quando.slice(5,7)} <b>${e.quando.slice(11)}</b></div><small>${quando} &middot; ${e.tipo=="banca"?"banca centrale":"dato macro"}</small></div>`;};
+ $("eventi").innerHTML=ev.length?`<div class="card eventi"><div class="evhead"><h3>Prossimi eventi ad alto impatto</h3>
+  <details class="info"><summary title="Come usarli" aria-label="Informazioni">i</summary><div>Il giorno del dato la volatilit&agrave; sale: per lo swing conviene valutare l'ingresso <b>dopo</b> l'uscita. Dopo il dato la riga "Notizie" delle card mostra se la sorpresa rafforza o penalizza il segnale.</div></details></div>
+  <div class="evgrid">${ev.map((e,k)=>k<MAX?evc(e):evc(e).replace('class="evc','class="evc extra')).join("")}</div>
+  ${ev.length>MAX?`<button class="tvbtn evtutti" id="evtutti">Mostra tutti (${ev.length})</button>`:""}</div>`:"";
+ const bt=$("evtutti");if(bt)bt.onclick=()=>{const c=$("eventi").querySelector(".card").classList.toggle("aperto");bt.textContent=c?"Mostra meno":`Mostra tutti (${ev.length})`;};
+}catch(e){fail("Prossimi eventi","eventi",e);}
 $("sectors").innerHTML=SEC.filter(g=>byS[g]).map(g=>{const l=byS[g],avg=l.reduce((x,a)=>x+a.score,0)/l.length;
  const up=l.filter(a=>a.score>=M.normal).length,dn=l.filter(a=>a.score<=-M.normal).length;
  return `<div class="sec" data-g="${g}" style="--bc:${COL[lab(avg*1.6)]}"><b>${g}</b><span>${fmt(avg)}</span><small>${up} in acquisto &middot; ${dn} in vendita</small></div>`}).join("");
@@ -199,7 +212,8 @@ $("acards").innerHTML=oth.length?oth.map(acard).join(""):`<div class="card">Ness
    ResizeObserver ricalcola quando la scheda diventa visibile, cambia larghezza o il nome va a capo. */
 (function(){const allinea=sx=>{const a=sx.parentElement.querySelector(".anello"),h=Math.round(sx.getBoundingClientRect().height);
   if(a&&h>=40){a.style.width=a.style.height=h+"px";}};      // h<40: scheda nascosta o misura non pronta
- const ro=window.ResizeObserver?new ResizeObserver(v=>v.forEach(x=>allinea(x.target))):null;
+ // requestAnimationFrame: la misura si applica al fotogramma dopo, cosi' il browser non entra in un ciclo di ridimensionamenti
+ const ro=window.ResizeObserver?new ResizeObserver(v=>requestAnimationFrame(()=>v.forEach(x=>allinea(x.target)))):null;
  document.querySelectorAll(".pairhead").forEach(h=>{const sx=h.firstElementChild;if(!sx||!h.querySelector(".anello"))return;allinea(sx);if(ro)ro.observe(sx);});})();
 }catch(e){fail('Segnali','sig',e);}
 
@@ -424,7 +438,7 @@ function disegnaTV(){const info=tvInfo(TV.spec),box=$("tvchart");box.innerHTML="
    // quindi lo abbiniamo solo dove coincide; per H4 nessun range (mostra le ultime ~300 candele).
    ...({"60":{range:"3M"},"D":{range:"12M"},"W":{range:"60M"}}[TV.iv]||{}),
    timezone:"Europe/Rome",theme:scuro?"dark":"light",style:"1",locale:"it",allow_symbol_change:true,withdateranges:true,hide_side_toolbar:false,save_image:true});})
- .catch(e=>{box.innerHTML=`<div class="tvmsg">${esc(e.message)}. <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(info.sym)}" target="_blank" rel="noopener">Apri il grafico su TradingView</a></div>`;console.error("[COT Radar] grafico:",e);});}
+ .catch(e=>{box.innerHTML=`<div class="tvmsg">${esc(e.message)}. <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(info.sym)}" target="_blank" rel="noopener">Apri il grafico su TradingView</a></div>`;console.error("[Edge Board] grafico:",e);});}
 /* Pannello COT sotto il grafico: per ogni settimana la variazione del netto Non Commercial (% open interest).
    Coppia = flusso della valuta base MENO quello della quotata: verde = flussi a favore della coppia in SALITA.
    Strumento quotato al contrario (es. JPY -> grafico USDJPY): il segno viene girato per seguire il grafico.
@@ -475,7 +489,7 @@ function disegnaCOT(spec){const box=$("tvcot");try{
   ${conferme(k,p)}
   <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Flussi COT settimanali">${fascia}<line x1="0" x2="${W}" y1="${H/2}" y2="${H/2}" stroke="var(--line)"/>${barre}</svg>
   <div class="assi"><span>${fd(f[0][0])}</span><span class="lungo">verde = comprano &middot; rosso = vendono${p?" (base contro quotata)":""} &middot; fascia = ultime 3 settimane</span><span>${fd(ud)}</span></div>`;
- }catch(e){box.innerHTML="";console.error("[COT Radar] pannello COT:",e);}}   // se si rompe sparisce il pannello, non il grafico
+ }catch(e){box.innerHTML="";console.error("[Edge Board] pannello COT:",e);}}   // se si rompe sparisce il pannello, non il grafico
 /* MANIGLIA: trascinando la barretta tra grafico e pannello COT si allarga o si schiaccia il pannello.
    Doppio clic = misura iniziale. La misura scelta resta salvata in questo browser (se il browser lo permette). */
 (function(){const man=$("tvmaniglia"),pan=$("tvpannello");if(!man||!pan)return;
