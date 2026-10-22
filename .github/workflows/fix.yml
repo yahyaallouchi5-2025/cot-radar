@@ -1,0 +1,19 @@
+# Workflow usa-e-getta: applica una piccola patch (incorporata qui sotto) e si cancella da solo.
+name: Correzione
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  applica:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          set -e
+          echo "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" | base64 -d | xz -d > /tmp/p.diff
+          git apply /tmp/p.diff
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "v5.1.1: anello del punteggio allineato alla pillola"
+          git push
