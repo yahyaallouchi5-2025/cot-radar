@@ -89,6 +89,23 @@ Se la pagina aperta e' vecchia (cache del browser) compare l'avviso "versione pi
 I simboli sono in `cot_radar/config.py` → `TV_SYMBOLS` / `TV_PAIRS` (modificabili). Alcuni strumenti sono quotati
 "al contrario" (es. segnale su JPY → grafico USDJPY; tassi → grafico del rendimento): il pannello lo segnala.
 
+## Conferme del segnale
+
+Per ogni strumento e coppia (`cot_radar/conferme.py`):
+- **Commercials** (hedger) agli estremi del loro COT Index: *conferma* o *contrasto* del segnale.
+- **Open interest** a 4 settimane letto con il flusso degli speculatori: nuovi long/short (trend sano) oppure
+  chiusura di posizioni (spinta piu' debole).
+- **Storico**: % di segnali passati in cui il prezzo, 4 settimane dopo la pubblicazione, e' andato nel verso giusto
+  (solo dove c'e' un prezzo storico gratuito; senza costi; i risultati passati non garantiscono quelli futuri).
+
+## Notizie (motore fase 1)
+
+`cot_radar/notizie.py`: calendario ufficiale di CPI e NFP USA (BLS), Fed (FOMC) e BCE (da aggiornare una volta
+l'anno). Prima dell'evento la card mostra l'avviso; dopo, la **sorpresa** e' misurata dal mercato (variazione del tasso
+a 2 anni nel giorno del dato in deviazioni standard). Correttivo: 10 punti per sigma, tetto +-30 per valuta,
+dimezzamento ogni giorno (3 giorni per Fed/BCE). Il segnale COT non cambia: la card mostra il punteggio corretto accanto.
+Le card delle coppie hanno 3 righe: **Smart money** (COT), **Macro** (modello di mercato), **Notizie**.
+
 ## Registro di monitoraggio e protezione anti-crollo
 
 | Dove | Cosa |

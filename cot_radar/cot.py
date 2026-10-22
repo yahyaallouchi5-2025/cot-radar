@@ -23,9 +23,13 @@ def cot_series(rows):
             nl, ns = float(r["noncomm_positions_long_all"]), float(r["noncomm_positions_short_all"])
         except (KeyError, ValueError, TypeError, AttributeError):
             continue                      # riga incompleta: la saltiamo invece di bloccare tutto
+        try:                              # Commercials (hedger: produttori, banche, utilizzatori): facoltativi
+            cn = float(r["comm_positions_long_all"]) - float(r["comm_positions_short_all"])
+        except (KeyError, ValueError, TypeError):
+            cn = None
         if oi > 0:
             # se la stessa data arriva due volte vince l'ultima (dizionario per data)
-            by.setdefault(code, {})[d] = {"date": d, "oi": oi, "long": nl, "short": ns, "net": nl - ns}
+            by.setdefault(code, {})[d] = {"date": d, "oi": oi, "long": nl, "short": ns, "net": nl - ns, "comm": cn}
     return {c: [v[d] for d in sorted(v)] for c, v in by.items()}
 
 

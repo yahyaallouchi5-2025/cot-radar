@@ -122,6 +122,10 @@ try{
  <div class="card kpi"><h3>Mutuo fisso Italia</h3><div class="big">${mo&&mo.fix!=null?fx(mo.fix)+"%":"n/d"}</div><div class="note">${mo?fd(mo.last):""}${pf?` &middot; stima ${fd(pf.month)}: <b>${fx(pf.value)}%</b>`:""}</div></div>
  <div class="card kpi"><h3>Prossimo COT</h3><div class="big" style="font-size:20px;margin-top:12px">${cot.next}</div><div class="note">dati al ${cot.last}</div></div>`;})();
 
+/* PROSSIMI EVENTI ad alto impatto (motore notizie): nei 7 giorni successivi all'aggiornamento */
+try{const ev=D.eventi||[];$("eventi").innerHTML=ev.length?`<div class="card"><h3>Prossimi eventi ad alto impatto</h3><div class="evlist">${ev.map(e=>
+ `<span class="ev ${e.tipo=="banca"?"banca":""}"><b>${esc(e.nome)}</b> ${esc(e.valuta)} &middot; ${["dom","lun","mar","mer","gio","ven","sab"][new Date(e.quando.replace(" ","T")).getDay()]} ${e.quando.slice(8,10)}/${e.quando.slice(5,7)} ore ${e.quando.slice(11)}</span>`).join("")}</div>
+ <div class="note" style="margin-top:8px">Il giorno del dato la volatilit&agrave; sale: per lo swing conviene valutare l'ingresso dopo l'uscita. Dopo il dato la riga "Notizie" delle card mostra se la sorpresa rafforza o penalizza il segnale.</div></div>`:"";}catch(e){fail("Prossimi eventi","eventi",e);}
 $("sectors").innerHTML=SEC.filter(g=>byS[g]).map(g=>{const l=byS[g],avg=l.reduce((x,a)=>x+a.score,0)/l.length;
  const up=l.filter(a=>a.score>=M.normal).length,dn=l.filter(a=>a.score<=-M.normal).length;
  return `<div class="sec" data-g="${g}" style="background:${COL[lab(avg*1.6)]}"><b>${g}</b><span>${fmt(avg)}</span><small>${up} in acquisto &middot; ${dn} in vendita</small></div>`}).join("");
@@ -132,16 +136,42 @@ function sideRow(k){const a=D.assets[k]||{score:0};const v=verb(a.score);return 
 function why(p){const b=verb(D.assets[p.base].score)[0],q=verb(D.assets[p.quote].score)[0];
  const dir=p.score>=M.normal?"tende a SALIRE":p.score<=-M.normal?"tende a SCENDERE":"non ha una direzione chiara";
  if(p.div)return `Speculatori: ${b} ${p.base} e ${q} ${p.quote}. Spingono in direzioni opposte, quindi ${p.pair} ${dir}.`;
- return `Su ${p.base} sono ${b.toLowerCase()}, su ${p.quote} ${q.toLowerCase()}: nessuna divergenza netta, ${p.pair} ${dir} (segnale meno forte).`;}
-function card(p){return `<div class="card clic" data-tv="p:${p.pair}" title="Clic: grafico a candele"><div class="pairhead"><span class="pair">${p.pair}</span>${badge(p.label)}</div>${meter(p.score)}${split(p.cot,p.macro)}
+ const st=x=>x=="neutri"?"sono neutri":x.toLowerCase();   // "vendono"/"comprano"/"sono neutri"
+ return `Su ${p.base} gli speculatori ${st(b)}, su ${p.quote} ${st(q)}: nessuna divergenza netta, ${p.pair} ${dir} (segnale meno forte).`;}
+/* TAG DI CONFERMA (vedi cot_radar/conferme.py):
+   ctag = i Commercials (hedger) agli estremi confermano o contrastano il segnale
+   atag = affidabilita' storica: % di volte in cui, dopo un segnale, il prezzo e' andato nel verso giusto in 4 settimane */
+function ctag(acc){return acc?`<span class="tag ${acc=="conferma"?"ok":"ko"}" title="Commercials (hedger) agli estremi">Commercials: ${acc}</span>`:"";}
+function atag(e){if(!e)return "";const c=e.pochi?"":e.hit>=60?"ok":e.hit<50?"ko":"";
+ return `<span class="tag ${c}" title="Backtest: ${e.n} segnali passati, resa media ${e.resa>=0?"+":""}${fx(e.resa)}% in 4 settimane">storico ${e.hit}%${e.pochi?" (pochi dati)":""}</span>`;}
+/* CARD A 3 RIGHE: Smart money (COT) / Macro (modello di mercato) / Notizie (motore notizie).
+   Verde = spinge la coppia su, rosso = giu', grigio = neutro. Il dettaglio resta nel pannello sotto il grafico. */
+function riga(nome,txt,v,nota){const c=v>0?"up":v<0?"down":"flat";
+ return `<div class="r3"><span>${nome}</span><b class="${c}">${txt}</b><small>${nota||""}</small></div>`;}
+function flussi3(p){const fb=new Map((D.assets[p.base]||{}).flussi||[]),fq=new Map((D.assets[p.quote]||{}).flussi||[]);
+ const d=[...fb.keys()].filter(x=>fq.has(x)).sort().slice(-3).map(x=>fb.get(x)-fq.get(x));
+ if(d.length<3)return "";const su=d.filter(x=>x>0).length;return su==3?"flussi 3/3 in acquisto":su==0?"flussi 3/3 in vendita":`flussi ${Math.max(su,3-su)}/3`;}
+function trio(p){const n=p.news,cot=p.cot,mac=p.macro;
+ const sm=riga("Smart money",cot>=M.normal?"LONG":cot<=-M.normal?"SHORT":"NEUTRO",cot>=M.normal?1:cot<=-M.normal?-1:0,`COT ${fmt(cot)} &middot; ${flussi3(p)}`);
+ const mtop=((D.assets[p.base]||{}).mkt||{}).top;
+ const ma=mac==null?riga("Macro","n/d",0,"modello non disponibile"):riga("Macro",Math.abs(mac)<25?"SCONTATO":mac>0?"LONG":"SHORT",Math.abs(mac)<25?0:mac,
+   `${fmt(mac)}${mtop&&mtop[0]?" &middot; "+esc(mtop[0].name):""}`);
+ let ne;
+ if(!n)ne=riga("Notizie","&mdash;",0,"nessun evento rilevante");
+ else{const ultimo=(n.eventi||[]).filter(e=>e.z!=null).slice(-1)[0];
+  const txt=n.oggi.length?"&#9889; "+esc(n.oggi[0]):ultimo?`${n.effetto.toUpperCase()}`:"&mdash;";
+  const nota=(ultimo?`${esc(ultimo.nome.split(" ").slice(0,-2).join(" ")||ultimo.nome)} sorpresa ${ultimo.z>=0?"+":""}${fx(ultimo.z,1)}&sigma; &middot; ${n.adj>=0?"+":""}${fx(n.adj,0)} &rarr; ${fmt(n.score)}`:"")+(n.oggi.length?(ultimo?" &middot; ":"")+"evento ad alto impatto: valuta l'ingresso dopo il dato":"");
+  ne=riga("Notizie",txt,n.oggi.length?0:n.effetto=="rafforza"?Math.sign(p.score):n.effetto=="penalizza"?-Math.sign(p.score):0,nota);}
+ return `<div class="trio">${sm}${ma}${ne}</div>`;}
+function card(p){return `<div class="card clic" data-tv="p:${p.pair}" title="Clic: grafico a candele"><div class="pairhead"><span class="pair">${p.pair}</span>${badge(p.label)}</div>${meter(p.score)}${trio(p)}
  <div class="rows">${sideRow(p.base)}${sideRow(p.quote)}</div>
- <div class="tags">${p.div?'<span class="tag div">Divergenza</span>':''}${mtag(p.cot,p.macro)}${p.new?`<span class="tag new">Nuovo (prima ${p.prev})</span>`:''}</div>
+ <div class="tags">${p.div?'<span class="tag div">Divergenza</span>':''}${mtag(p.cot,p.macro)}${p.new?`<span class="tag new">Nuovo (prima ${p.prev})</span>`:''}${ctag(p.comm_acc)}${atag(p.affid)}</div>
  <div class="why">${why(p)}</div></div>`;}
 var act=D.pairs.filter(p=>p.label!="NEUTRO");
 $("cards").innerHTML=act.length?act.map(card).join(""):`<div class="card">Nessun segnale attivo sulle valute questa settimana.</div>`;
 function acard(a){const v=verb(a.score),m=a.mkt;return `<div class="card clic" data-tv="a:${a.key}" title="Clic: grafico a candele"><div class="pairhead"><span class="pair" style="font-size:19px">${a.name}</span>${badge(a.label)}</div>
  <div class="small" style="margin-top:2px">${a.it?esc(a.it)+" &middot; ":""}${a.group} &middot; ${a.key} &middot; COT Index ${a.idx}/100</div>${meter(a.score)}${split(a.cot,a.macro)}
- <div class="tags">${mtag(a.cot,a.macro)}${a.new?`<span class="tag new">Nuovo (prima ${a.prev_label})</span>`:''}${a.crowded?'<span class="tag ko">affollato</span>':''}</div>
+ <div class="tags">${mtag(a.cot,a.macro)}${a.new?`<span class="tag new">Nuovo (prima ${a.prev_label})</span>`:''}${a.crowded?'<span class="tag ko">affollato</span>':''}${ctag(a.comm_acc)}${atag(a.affid)}</div>
  <div class="why">Speculatori: <b class="${v[1]}">${v[0]}</b>, ${fmt(a.d_net)} contratti in settimana, ${fmt(a.d_net4)} in 4 settimane.${m?` Mercato: ${m.status.toLowerCase()}.`:''}${NOTE[a.key]||NOTE[a.group]?' '+(NOTE[a.key]||NOTE[a.group]):''}</div></div>`;}
 var oth=Object.values(D.assets).filter(a=>a.group!="Valute"&&a.label!="NEUTRO").sort((x,y)=>Math.abs(y.score)-Math.abs(x.score));
 $("acards").innerHTML=oth.length?oth.map(acard).join(""):`<div class="card">Nessun segnale attivo.</div>`;
@@ -179,6 +209,9 @@ function drawAssets(){const groups={};D.order.forEach(k=>{const a=D.assets[k];if
    `<b>Speculatori:</b> ${a.d_net==0?'nessuna variazione':(a.d_net>0?'comprato ':'venduto ')+fmt(Math.abs(a.d_net)).replace('+','')+' contratti netti'} in settimana, ${fmt(a.d_net4)} in 4 settimane; netto ${fmt(a.net)} (${a.pct_oi}% open interest), COT Index ${a.idx}/100.`;
   if(a.mkt)t+=` <b>Mercato:</b> ${a.mkt.status.toLowerCase()} (R² ${fx(a.mkt.r2)}).`;
   if(a.crowded)t+=` <b style="color:var(--warn)">Posizionamento affollato: rischio inversione.</b>`;
+  if(a.comm)t+=` <b>Commercials:</b> ${a.comm.txt} (COT Index ${a.comm.idx}/100)${a.comm_acc?" &rarr; "+a.comm_acc+" del segnale":""}.`;
+  if(a.oi4)t+=` <b>Open interest:</b> ${a.oi4.d_oi>=0?"+":""}${fx(a.oi4.d_oi,1)}% in 4 settimane, ${a.oi4.txt}.`;
+  if(a.affid)t+=` <b>Storico:</b> ${a.affid.hit}% dei ${a.affid.n} segnali passati giusti a 4 settimane (resa media ${a.affid.resa>=0?"+":""}${fx(a.affid.resa)}%)${a.affid.pochi?", pochi dati":""}.`;
   return `<div class="asset clic" data-tv="a:${a.key}"><div class="nm"><b>${a.name}</b><small>${a.key}${a.it?" &middot; "+esc(a.it):""}</small></div>
   <div class="abar"><i style="left:${s<0?50-w:50}%;width:${w}%;background:${s<0?'var(--s)':'var(--b)'}"></i></div>
   <div style="text-align:right"><b style="font-size:17px">${fmt(s)}</b><br>${badge(a.label||lab(s))}</div><div class="txt">${t}</div></div>`}).join("")+
@@ -285,6 +318,8 @@ $("guide").innerHTML=`<h2>Come funziona</h2>
 <h3>2. Punteggio COT (${Math.round((1-M.mw)*100)}% del finale)</h3><ul><li><b>${w.posizione*100}% posizione</b>: COT Index a 3 anni (0 = mai cosi' short, 100 = mai cosi' long).</li><li><b>${w.flusso_1w*100}% flusso della settimana</b> e <b>${w.flusso_4w*100}% flusso a 4 settimane</b>, misurati in z-score a 52 settimane.</li><li>Se il posizionamento e' gia' estremo (oltre 95 o sotto 5) la forza viene ridotta del 30%.</li></ul>
 <h3>3. Punteggio Mercato (${Math.round(M.mw*100)}% del finale)</h3><p>Il mercato sconta le notizie in anticipo, quindi non uso dati macro pubblicati in ritardo ma solo indicatori prezzati ogni giorno: tasso USA 2 anni (aspettative sulla Fed), rendimento reale 10 anni, inflazione attesa, VIX, spread high yield, differenziale 2 anni USA-Europa. Per ogni strumento con un prezzo pubblico una regressione (ridge, ${M.regw} settimane, stimata escludendo le ultime 4) misura quanto ogni driver muove il prezzo. Nelle ultime 4 settimane si confronta la mossa <b>implicita</b> con quella <b>reale</b>: differenza vicina a zero = gia' scontato (punteggio ~0); prezzo in ritardo = punteggio nella direzione dei driver, ridotto se il modello spiega poco (R² basso).</p>
 <h3>4. Segnali</h3><p>Coppia = (finale base - finale quotata) / 2. Da ${M.normal} in su BUY/SELL, da ${M.strong} STRONG solo con divergenza (forza almeno ${M.divmin} da entrambi i lati, di segno opposto).</p>
+<h3>Conferme del segnale</h3><p><b>Commercials</b> (hedger: produttori, banche, utilizzatori): stanno quasi sempre dalla parte opposta degli speculatori. Quando il loro COT Index e' a un estremo (molto long &ge;80, molto short &le;20) di solito il prezzo e' vicino a un minimo o a un massimo: se l'estremo va nel verso del segnale e' una <i>conferma</i>, altrimenti un <i>contrasto</i>. <b>Open interest</b> (4 settimane): se gli speculatori comprano e l'OI sale entrano nuovi long (trend sano); se l'OI scende stanno solo chiudendo short (spinta piu' debole); lo stesso al contrario per le vendite. <b>Storico</b>: per ogni settimana passata il punteggio COT e' ricalcolato con i soli dati di allora; se era BUY/SELL si guarda il prezzo 4 settimane dopo la pubblicazione. La percentuale e' quante volte il prezzo e' andato nel verso del segnale (50% = come tirare una moneta). E' calcolato solo dove esiste un prezzo storico gratuito (cambi, indici, petrolio, gas, cripto), non include costi e risultati passati non garantiscono quelli futuri.</p>
+<h3>Notizie (CPI, NFP, Fed, BCE)</h3><p>Il COT indica la direzione per le prossime settimane; una notizia ad alto impatto muove il prezzo per ore o pochi giorni e cambia soprattutto il <i>momento</i> giusto per entrare. Prima dell'evento la card mostra solo l'avviso &#9889;. Dopo l'evento la <b>sorpresa</b> e' misurata dal mercato: di quanto si e' mosso il tasso a 2 anni della valuta nel giorno del dato rispetto a una giornata normale (in deviazioni standard, &sigma;). Tassi su = valuta piu' forte. Il correttivo vale 10 punti per &sigma;, ha un tetto di &plusmn;30 per valuta e si dimezza ogni giorno (ogni 3 giorni per Fed e BCE). Il segnale COT non viene cambiato: accanto si vede il punteggio corretto.</p>
 <h3>5. Mutui</h3><p>Tassi medi sui nuovi mutui per acquisto casa (statistica BCE MIR, fonte Banca d'Italia per l'Italia). La stima dei mesi non ancora pubblicati usa una regressione delle variazioni mensili del tasso sulle variazioni del rendimento a 10 anni (fisso) o dell'ESTR (variabile), del mese stesso e di quello prima. L'intervallo &plusmn; e' l'errore tipico del modello.</p>
 <h3>6. Aggiornamenti</h3><p>Ogni apertura scarica tutto. Aggiornamento automatico ogni venerdi': nel Prompt dei comandi <code>python cot_radar.py --pianifica</code>.</p>
 <h3>7. Limiti</h3><ul><li>Sono stime statistiche, non certezze: le relazioni cambiano nel tempo.</li><li>Il COT ha 3 giorni di ritardo; i mutui circa 5 settimane.</li><li>Oro, materie agricole e altri strumenti senza prezzo gratuito su FRED usano solo il COT.</li><li>Non e' una consulenza finanziaria.</li></ul>`;
@@ -331,6 +366,19 @@ function tre(f){const u=f.slice(-3),tot=u.reduce((s,x)=>s+x[1],0),su=u.filter(x=
 /* posizione netta attuale in % dell'open interest: >0 net long, <0 net short */
 function netto(k,inv){const a=D.assets[k]||{};if(a.pct_oi==null)return "";const v=inv?-a.pct_oi:a.pct_oi;
  return `${esc(k)} <b style="color:${v>=0?"var(--sb)":"var(--ss)"}">net ${v>=0?"long":"short"} ${fx(Math.abs(v),1)}%</b>`;}
+/* riga "Conferme" del pannello: Commercials, open interest, affidabilita' storica */
+function conferme(k,p){const parti=[],col=v=>v=="conferma"?"var(--sb)":v=="contrasto"?"var(--ss)":"var(--ink)";
+ const gambe=p?[p.base,p.quote]:[k];
+ const cm=gambe.map(g=>{const c=(D.assets[g]||{}).comm;return c?`${esc(g)} ${c.idx>=80?"molto long":c.idx<=20?"molto short":"neutri"} (${c.idx})`:null;}).filter(Boolean);
+ const acc=p?p.comm_acc:(D.assets[k]||{}).comm_acc;
+ if(cm.length)parti.push(`<b>Commercials:</b> ${cm.join(" &middot; ")}${acc?` &rarr; <b style="color:${col(acc)}">${acc}</b>`:""}`);
+ const oi=gambe.map(g=>{const o=(D.assets[g]||{}).oi4;return o?`${esc(g)} ${o.d_oi>=0?"+":""}${fx(o.d_oi,1)}% <span class="lungo">(${esc(o.txt)})</span>`:null;}).filter(Boolean);
+ if(oi.length)parti.push(`<b>Open interest 4 sett.:</b> ${oi.join(" &middot; ")}`);
+ if(p&&p.news){const n=p.news,ev=(n.eventi||[]).filter(x=>x.z!=null).map(x=>`${esc(x.nome)} ${x.z>=0?"+":""}${fx(x.z,1)}&sigma; (${x.pb>=0?"+":""}${fx(x.pb,1)} pb)`);
+  parti.push(`<b>Notizie:</b> ${n.oggi.length?"&#9889; "+n.oggi.map(esc).join(", ")+" ":""}${ev.join(" &middot; ")}${ev.length?` &rarr; <b style="color:${n.effetto=="rafforza"?"var(--sb)":n.effetto=="penalizza"?"var(--ss)":"var(--ink)"}">${n.effetto}</b> (${n.adj>=0?"+":""}${fx(n.adj,0)}, punteggio ${fmt(n.score)})`:""}`);}
+ const e=p?p.affid:(D.assets[k]||{}).affid;
+ if(e)parti.push(`<b>Storico:</b> <b style="color:${e.pochi?"var(--ink)":e.hit>=60?"var(--sb)":e.hit<50?"var(--ss)":"var(--ink)"}">${e.hit}%</b> su ${e.n} segnali <span class="lungo">(resa media ${e.resa>=0?"+":""}${fx(e.resa)}% a 4 sett.)</span>`);
+ return parti.length?`<div class="riga tre">${parti.map(x=>`<span>${x}</span>`).join("")}</div>`:"";}
 function disegnaCOT(spec){const box=$("tvcot");try{
  const f=flussiDi(spec);if(!f.length){box.innerHTML=`<div class="riga">Nessun dato COT per questo strumento.</div>`;return;}
  const max=Math.max(...f.map(x=>Math.abs(x[1])),0.01),W=600,H=100,bw=W/f.length;
@@ -346,6 +394,7 @@ function disegnaCOT(spec){const box=$("tvcot");try{
   <span>Ultimo: <b style="color:${uv>=0?"var(--sb)":"var(--ss)"}">${uv>=0?"acquisti":"vendite"} ${uv>=0?"+":""}${fx(uv)}%</b> &middot; <span class="lungo">dato di marted&igrave; ${fd(ud)}, pubblicato venerd&igrave; ${fd(ven.toISOString().slice(0,10))}</span><span class="corto">mar ${fd(ud).slice(0,5)}</span></span></div>
   <div class="riga tre"><span><b><span class="lungo">Ultime 3 settimane:</span><span class="corto">3 sett.:</span></b> ${t.u.map(x=>`<span style="color:${x[1]>=0?"var(--sb)":"var(--ss)"}">${x[1]>=0?"+":""}${fx(x[1])}</span>`).join(" &middot; ")}
    = <b style="color:${t.col}">${t.tot>=0?"+":""}${fx(t.tot)}%</b> &rarr; <b style="color:${t.col}">${t.txt}</b></span>${pos?`<span>Posizione: ${pos}</span>`:""}</div>
+  ${conferme(k,p)}
   <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Flussi COT settimanali">${fascia}<line x1="0" x2="${W}" y1="${H/2}" y2="${H/2}" stroke="var(--line)"/>${barre}</svg>
   <div class="assi"><span>${fd(f[0][0])}</span><span class="lungo">verde = comprano &middot; rosso = vendono${p?" (base contro quotata)":""} &middot; fascia = ultime 3 settimane</span><span>${fd(ud)}</span></div>`;
  }catch(e){box.innerHTML="";console.error("[COT Radar] pannello COT:",e);}}   // se si rompe sparisce il pannello, non il grafico
@@ -366,9 +415,22 @@ function apriGrafico(spec){TV.spec=spec;const info=tvInfo(spec),m=$("tvmodal");d
  $("tvsotto").innerHTML=`${esc(info.sotto)} &middot; simbolo <b>${esc(info.sym||"n/d")}</b>`+(info.inv?` &middot; <b style="color:var(--warn)">grafico quotato al contrario: BUY sul segnale = grafico che SCENDE</b>`:"");
  $("tvlink").href="https://www.tradingview.com/chart/?symbol="+encodeURIComponent(info.sym||"");
  document.querySelectorAll("#tviv button").forEach(b=>b.classList.toggle("on",b.dataset.iv==TV.iv));
- m.hidden=false;document.body.style.overflow="hidden";disegnaTV();}
+ m.hidden=false;bloccaPagina(true);disegnaTV();}
 function chiudiGrafico(){const m=$("tvmodal");if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
- if($("tvpannello").classList.contains("pieno"))schermoPieno();m.hidden=true;document.body.style.overflow="";$("tvchart").innerHTML="";}
+ if($("tvpannello").classList.contains("pieno"))schermoPieno();m.hidden=true;bloccaPagina(false);$("tvchart").innerHTML="";}
+/* BLOCCO DELLA PAGINA mentre il grafico e' aperto (soprattutto iPhone).
+   Su iOS "overflow:hidden" non basta: trascinando sul grafico (es. per disegnare una zona) Safari muoveva
+   anche la pagina sotto, o la ingrandiva. Qui: 1) la pagina viene "fissata" nella sua posizione (position:fixed)
+   e poi rimessa dov'era alla chiusura; 2) lo zoom con le dita della pagina e' disattivato solo finche' il
+   grafico e' aperto (il grafico TradingView continua a zoomare da solo). */
+var BLOCCO={y:0,vp:null};
+function bloccaPagina(on){const b=document.body,h=document.documentElement,vp=document.querySelector('meta[name="viewport"]');
+ if(on){if(h.classList.contains("bloccato"))return;BLOCCO.y=window.scrollY;h.classList.add("bloccato");
+  Object.assign(b.style,{position:"fixed",top:-BLOCCO.y+"px",left:"0",right:"0",width:"100%",overflow:"hidden"});
+  if(vp){BLOCCO.vp=vp.content;vp.content=BLOCCO.vp+",maximum-scale=1,user-scalable=no";}}
+ else{if(!h.classList.contains("bloccato"))return;h.classList.remove("bloccato");
+  Object.assign(b.style,{position:"",top:"",left:"",right:"",width:"",overflow:""});window.scrollTo({top:BLOCCO.y,behavior:"instant"});
+  if(vp&&BLOCCO.vp)vp.content=BLOCCO.vp;}}
 document.addEventListener("click",ev=>{const el=ev.target.closest("[data-tv]");if(el&&!ev.target.closest("button,a,input")){try{apriGrafico(el.dataset.tv);}catch(e){fail("Grafico",null,e);}}});
 $("tvchiudi").onclick=chiudiGrafico;
 $("tvmodal").addEventListener("click",ev=>{if(ev.target.id=="tvmodal")chiudiGrafico();});
@@ -376,8 +438,7 @@ document.addEventListener("keydown",ev=>{if(ev.key=="Escape"&&!$("tvmodal").hidd
 /* SCHERMO INTERO. iPhone (Safari e Chrome su iOS) NON permette lo schermo intero vero sugli elementi della pagina
    (solo sui video): li' usiamo un "finto" schermo intero via CSS (classe .pieno = pannello su tutta la finestra).
    Sugli altri browser si prova quello vero; se il browser lo rifiuta si ripiega sullo stesso metodo CSS. */
-function schermoPieno(){const p=$("tvpannello"),on=p.classList.toggle("pieno");$("tvfull").classList.toggle("on",on);
- document.documentElement.classList.toggle("bloccato",on);}
+function schermoPieno(){const p=$("tvpannello"),on=p.classList.toggle("pieno");$("tvfull").classList.toggle("on",on);}   // la pagina e' gia' bloccata dal grafico aperto
 $("tvfull").onclick=()=>{const p=$("tvpannello"),fs=document.fullscreenElement||document.webkitFullscreenElement;
  if(p.classList.contains("pieno"))return schermoPieno();                 // esco dal finto schermo intero
  if(fs){(document.exitFullscreen||document.webkitExitFullscreen).call(document);return;}

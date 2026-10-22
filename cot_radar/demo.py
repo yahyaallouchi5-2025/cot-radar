@@ -9,6 +9,7 @@ volute (es. EUR scende quando sale il differenziale tassi USA-Europa), cosi' il 
 Il seme casuale e' fisso: ogni volta escono gli stessi numeri, utile per confrontare prima/dopo una modifica.
 I numeri NON sono reali: non usarli per decidere nulla.
 """
+import math
 import random
 from datetime import date, timedelta
 
@@ -36,9 +37,13 @@ def demo_data(seed=7):
                 net += 0.04 * oi                 # speculatori in acquisto
             net = max(-.5 * oi, min(.5 * oi, net))
             lo = oi * .35 + max(net, 0) + 5000
+            oiw = int(oi * (1 + 0.08 * math.sin(w / 7)))             # open interest che sale e scende nel tempo
+            comm = -0.85 * net + rnd.gauss(0, .02) * oi              # i Commercials stanno di solito dall'altra parte
+            cl = oi * .4 + max(comm, 0)
             rows.append({"report_date_as_yyyy_mm_dd": d.isoformat() + "T00:00:00.000", "cftc_contract_market_code": code,
-                         "open_interest_all": str(oi), "noncomm_positions_long_all": str(int(lo)),
-                         "noncomm_positions_short_all": str(int(lo - net))})
+                         "open_interest_all": str(oiw), "noncomm_positions_long_all": str(int(lo)),
+                         "noncomm_positions_short_all": str(int(lo - net)),
+                         "comm_positions_long_all": str(int(cl)), "comm_positions_short_all": str(int(cl - comm))})
 
     # ---- giorni lavorativi degli ultimi ~4 anni
     days, d = [], today - timedelta(days=1400)

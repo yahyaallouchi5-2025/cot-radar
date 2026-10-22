@@ -25,6 +25,7 @@ from .fonti import load_all
 from .log import log, raccoglitore
 from .mercato import fed_liquidity
 from .mutui import mortgages
+from . import notizie
 
 
 def clean(o):
@@ -68,6 +69,12 @@ def build(data_source=load_all, demo=False):
     except Exception:
         log.warning("liquidita' Fed non calcolata:\n%s", traceback.format_exc())
         fed = None
+    try:                              # motore notizie (vedi notizie.py): se fallisce mancano solo le righe "Notizie"
+        news = notizie.motore(fred, ecb)
+        notizie.applica(pairs, assets, news)
+    except Exception:
+        log.warning("motore notizie non calcolato:\n%s", traceback.format_exc())
+        news = {"prossimi": [], "valute": {}}
     try:
         sources = sources_status(cache, status, errors, assets, mort, fred)
     except Exception:
@@ -92,7 +99,7 @@ def build(data_source=load_all, demo=False):
             "divmin": DIVERGENCE_MIN, "mw": MACRO_WEIGHT, "regw": REG_WEEKS, "demo": demo}
     data = {"meta": meta, "sources": sources,
             "assets": assets, "pairs": pairs, "corr": corr, "market": market, "fed": fed, "mortgage": mort,
-            "order": [a[0] for a in ASSETS] + ["USD"], "sectors": SECTORS, "stato": stato,
+            "order": [a[0] for a in ASSETS] + ["USD"], "sectors": SECTORS, "stato": stato, "eventi": news["prossimi"],
             "tv": {k: {"s": v[0], "inv": v[1]} for k, v in TV_SYMBOLS.items()}, "tvp": TV_PAIRS}
     payload = json.dumps(clean(data), ensure_ascii=False)
     # "</" dentro <script> chiuderebbe il tag per errore: lo "spezziamo" in "<\/"

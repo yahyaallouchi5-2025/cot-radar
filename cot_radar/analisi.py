@@ -11,6 +11,7 @@ Flusso:
 """
 from .calcoli import clip, pearson
 from .config import ASSETS, EXTRA_PAIRS, FX_ORDER, MACRO_WEIGHT, NOMI_EN, PAIR_NAMES
+from . import conferme
 from .cot import cot_series, cot_strength, is_divergence, label
 from .log import log
 from .mercato import market_model
@@ -107,6 +108,26 @@ def analyse(cot_rows, fred, ecb):
                       "div": div, "prev": prev_lab, "new": prev_lab is not None and prev_lab != lab,
                       "cot": round((assets[b]["cot"] - assets[q]["cot"]) / 2, 1),
                       "macro": round((mb - mq) / 2, 1) if mb is not None and mq is not None else None})
+
+    # ---- 4b. CONFERME del segnale (vedi conferme.py): Commercials, open interest, affidabilita' storica.
+    #          Isolate: se qualcosa va storto i segnali restano, manca solo questa informazione in piu'.
+    try:
+        for k, a in assets.items():
+            if k in hist:
+                a["comm"] = conferme.commercials(hist[k])
+                a["comm_acc"] = conferme.accordo(a["score"], a["comm"])
+                a["oi4"] = conferme.open_interest(hist[k])
+        for p in pairs:
+            cb, cq = assets[p["base"]].get("comm"), assets[p["quote"]].get("comm")
+            v = (cb["verso"] if cb else 0) - (cq["verso"] if cq else 0)   # base molto long / quotata molto short = rialzo
+            p["comm_acc"] = None if v == 0 or p["label"] == "NEUTRO" else ("conferma" if (v > 0) == (p["score"] > 0) else "contrasto")
+        aff_a, aff_p = conferme.affidabilita(hist, fred or {}, pairs)
+        for k, e in aff_a.items():
+            assets[k]["affid"] = e
+        for p in pairs:
+            p["affid"] = aff_p.get(p["pair"])
+    except Exception:
+        log.exception("conferme (Commercials / open interest / affidabilita') non calcolate")
 
     # ---- 5. correlazioni tra i FLUSSI settimanali degli speculatori (ultime 52 settimane)
     flows = {}
