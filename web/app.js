@@ -122,7 +122,7 @@ try{
 
 (function kpis(){const strong=D.pairs.filter(p=>p.label.startsWith("STRONG")).length+Object.values(D.assets).filter(a=>a.key!="USD"&&a.group!="Valute"&&a.label.startsWith("STRONG")).length;
  const act=D.pairs.filter(p=>p.label!="NEUTRO").length+Object.values(D.assets).filter(a=>a.key!="USD"&&a.group!="Valute"&&a.label!="NEUTRO").length;
- const r=D.market?D.market.risk:null,rl=r==null?"n/d":r>=30?"Favorevole":r<=-30?"Sfavorevole":"Neutro";
+ const r=D.market?D.market.risk:null,rl=r==null?"n/d":r>=30?"FAVOREVOLE":r<=-30?"SFAVOREVOLE":"NEUTRO";   // in maiuscolo, come i verdetti delle card
  const mo=D.mortgage,pf=mo&&mo.proj_fix&&mo.proj_fix.points.length?mo.proj_fix.points.slice(-1)[0]:null;
  const cot=D.sources[0];
  $("kpis").innerHTML=`<div class="card kpi"><h3>Segnali attivi</h3><div class="big">${act}</div><div class="note">di cui <b>${strong}</b> STRONG</div></div>
