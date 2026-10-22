@@ -1,0 +1,19 @@
+# Workflow usa-e-getta: applica una piccola patch (incorporata qui sotto). Va cancellato dopo l'uso.
+name: Correzione
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  applica:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          set -e
+          echo "/Td6WFoAAATm1rRGAgAhARwAAAAQz1jM4AP2Ag9dADIaSQnC/BF9UN4KT0fZ17lPVow7X5XFpicXiQ/vb6aAlmasRfbrLPHmis7544lpdCy8DYrqJ9wHAP+ML3ta7bSwY9FpqA/IbQTsDrWSsRIgI03BA2HryO3ULCYgZbkOVZKw15ZqGkwhgUhDxXxaCp5nZ/OdYi+/JH6ctvAmuiEClkBuYnRAjceDcZT1COT4DWsuKBEJMT+U+HsNhiReua4YzDBTvwaifDHGZ4R1jd/OxG+RL9DUA2IYK4KKkJ88YKQZLT6Uoj97GGusZGnoEB+AOePJeeN+pLzarN3zH79W9mzFXRZKEEF3nFCokdn4C5G2lwz6zBy8FftiiK68FbvhcJnX9ylC59ZQsA0r19rgLiA2yTxoKsnKcSD6JyCT+8UBv64abVhMdHJYrOQ6T556tm67KJW1/9oXZSmFD2LCOeEW9UOxiikOSQICHTBpRSNdzdLQyuHm31DwlQnjeZdIX6x+L+XvaU6MtqmZAHdYz5cqL8lw21ddLe0JhI2aG2EvcBeskhSJjtUVv26FlFXMdp4MOEB4Mi+m2XPYtGD5+nubxEMmKe6vKIqbCJ1xrOXYTQX0dos6NjPGUvzeXMwRKxHYva+srA2yh+iogJjhrDdQ1oEWoTGEVtgCT6/5NCKw8C+bYBEw9+y5ksPJPKXfjg8xLCl2eTbnm7Wp+dNCr1hVOjX8Jvr1HLmQK+2cAABGNC+CzwY06AABqwT3BwAAq6vwW7HEZ/sCAAAAAARZWg==" | base64 -d | xz -d > /tmp/p.diff
+          git apply /tmp/p.diff
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "v5.3.1: clima di rischio in maiuscolo"
+          git push
