@@ -275,3 +275,11 @@ h1.ghiaccio{color:#eef6ff;text-shadow:0 0 18px rgba(185,225,255,.32),0 0 2px rgb
  html.ridotta .snome,html.ridotta .stx,html.ridotta .stit span,html.ridotta .sitem span{display:revert}
  html.ridotta .sbrand{flex-direction:row}html.ridotta .sbtn svg{transform:none}
  .smenu{display:flex}}
+/* telefono: conferme del pannello COT in mini-riquadri su due colonne */
+@media (max-width:600px){.tvcot .riga.tre{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+ .tvcot .riga.tre>span{padding:7px 9px;border-radius:10px;background:color-mix(in srgb,var(--soft) 70%,transparent);border:1px solid var(--line);line-height:1.35}
+ .tvtitolo .badge,#tvtitolo .badge{font-size:10.5px;padding:2px 8px}}
+/* riga di sintesi dei flussi COT: clic = apre/chiude le barre settimanali */
+.sintesi{display:block;width:100%;text-align:left;margin:6px 0;padding:7px 10px;border-radius:10px;border:1px solid var(--line);background:none;color:var(--ink2);font:12px system-ui;cursor:pointer}
+.sintesi:hover{border-color:var(--acc)}.sintesi b{color:var(--ink)}.sintesi .freccia{float:right;color:var(--mute);transition:transform .2s}
+.barrechiuse .barre{display:none}.barrechiuse .sintesi .freccia{transform:rotate(-90deg)}

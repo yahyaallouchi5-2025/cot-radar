@@ -476,7 +476,8 @@ function disegnaTV(){const info=tvInfo(TV.spec),box=$("tvchart");box.innerHTML="
    // "range" = periodo visibile. ATTENZIONE: TradingView adatta il timeframe al range (3M->1h, 12M->D, 60M->W),
    // quindi lo abbiniamo solo dove coincide; per H4 nessun range (mostra le ultime ~300 candele).
    ...({"60":{range:"3M"},"D":{range:"12M"},"W":{range:"60M"}}[TV.iv]||{}),
-   timezone:"Europe/Rome",theme:scuro?"dark":"light",style:"1",locale:"it",allow_symbol_change:true,withdateranges:true,hide_side_toolbar:false,save_image:true});})
+   timezone:"Europe/Rome",theme:scuro?"dark":"light",style:"1",locale:"it",allow_symbol_change:true,withdateranges:true,hide_side_toolbar:false,save_image:true,
+   /* telefono: niente barra in alto di TradingView (timeframe doppi), grafico piu' alto */ hide_top_toolbar:matchMedia("(max-width:600px)").matches});})
  .catch(e=>{box.innerHTML=`<div class="tvmsg">${esc(e.message)}. <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(info.sym)}" target="_blank" rel="noopener">Apri il grafico su TradingView</a></div>`;console.error("[Edge Board] grafico:",e);});}
 /* Pannello COT sotto il grafico: per ogni settimana la variazione del netto Non Commercial (% open interest).
    Coppia = flusso della valuta base MENO quello della quotata: verde = flussi a favore della coppia in SALITA.
@@ -510,6 +511,15 @@ function conferme(k,p){const parti=[],col=v=>v=="conferma"?"var(--sb)":v=="contr
  const e=p?p.affid:(D.assets[k]||{}).affid;
  if(e)parti.push(`<b>Storico:</b> <b style="color:${e.pochi?"var(--ink)":e.hit>=60?"var(--sb)":e.hit<50?"var(--ss)":"var(--ink)"}">${e.hit}%</b> su ${e.n} segnali <span class="lungo">(resa media ${e.resa>=0?"+":""}${fx(e.resa)}% a 4 sett.)</span>`);
  return parti.length?`<div class="riga tre">${parti.map(x=>`<span>${x}</span>`).join("")}</div>`:"";}
+/* SINTESI DEI FLUSSI COT in una riga (al posto delle barre, che si aprono con un clic):
+   quante settimane in acquisto/vendita, da quante settimane di fila nello stesso verso,
+   e se la spinta sta crescendo o calando (media delle ultime 3 settimane contro le 3 prima). */
+function sintesiFlussi(f){const n=f.length,su=f.filter(x=>x[1]>0).length,giu=f.filter(x=>x[1]<0).length;
+ const ult=Math.sign(f[n-1][1]);let fila=0;for(let i=n-1;i>=0&&Math.sign(f[i][1])==ult&&ult!=0;i--)fila++;
+ const media=a=>a.reduce((x,y)=>x+Math.abs(y[1]),0)/(a.length||1),m1=media(f.slice(-3)),m0=media(f.slice(-6,-3));
+ const spinta=m1>m0*1.25?"spinta in aumento":m1<m0*0.8?"spinta in calo":"spinta stabile";
+ const col=ult>0?"var(--sb)":ult<0?"var(--ss)":"var(--ink)";
+ return `<b>${n} settimane:</b> ${su} in acquisto &middot; ${giu} in vendita &middot; <b style="color:${col}">${ult>0?"acquisti":ult<0?"vendite":"fermi"} da ${fila} ${fila==1?"settimana":"settimane di fila"}</b> &middot; ${spinta}`;}
 function disegnaCOT(spec){const box=$("tvcot");try{
  const f=flussiDi(spec);if(!f.length){box.innerHTML=`<div class="riga">Nessun dato COT per questo strumento.</div>`;return;}
  const max=Math.max(...f.map(x=>Math.abs(x[1])),0.01),W=600,H=100,bw=W/f.length;
@@ -526,8 +536,14 @@ function disegnaCOT(spec){const box=$("tvcot");try{
   <div class="riga tre"><span><b><span class="lungo">Ultime 3 settimane:</span><span class="corto">3 sett.:</span></b> ${t.u.map(x=>`<span style="color:${x[1]>=0?"var(--sb)":"var(--ss)"}">${x[1]>=0?"+":""}${fx(x[1])}</span>`).join(" &middot; ")}
    = <b style="color:${t.col}">${t.tot>=0?"+":""}${fx(t.tot)}%</b> &rarr; <b style="color:${t.col}">${t.txt}</b></span>${pos?`<span>Posizione: ${pos}</span>`:""}</div>
   ${conferme(k,p)}
-  <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Flussi COT settimanali">${fascia}<line x1="0" x2="${W}" y1="${H/2}" y2="${H/2}" stroke="var(--line)"/>${barre}</svg>
-  <div class="assi"><span>${fd(f[0][0])}</span><span class="lungo">verde = comprano &middot; rosso = vendono${p?" (base contro quotata)":""} &middot; fascia = ultime 3 settimane</span><span>${fd(ud)}</span></div>`;
+  <button class="sintesi" id="cotsint" title="Mostra / nascondi le barre settimanali">${sintesiFlussi(f)} <span class="freccia">&#9662;</span></button>
+  <div class="barre"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Flussi COT settimanali">${fascia}<line x1="0" x2="${W}" y1="${H/2}" y2="${H/2}" stroke="var(--line)"/>${barre}</svg>
+  <div class="assi"><span>${fd(f[0][0])}</span><span class="lungo">verde = comprano &middot; rosso = vendono${p?" (base contro quotata)":""} &middot; fascia = ultime 3 settimane</span><span>${fd(ud)}</span></div></div>`;
+ // barre aperte/chiuse: su telefono partono chiuse (piu' spazio al grafico); la scelta resta salvata
+ const pan=$("tvpannello");let chiuse=matchMedia("(max-width:600px)").matches;
+ try{const v=localStorage.getItem("cotBarre");if(v)chiuse=v=="chiuse";}catch(e){}
+ pan.classList.toggle("barrechiuse",chiuse);
+ $("cotsint").onclick=()=>{const c=pan.classList.toggle("barrechiuse");try{localStorage.setItem("cotBarre",c?"chiuse":"aperte");}catch(e){}};
  }catch(e){box.innerHTML="";console.error("[Edge Board] pannello COT:",e);}}   // se si rompe sparisce il pannello, non il grafico
 /* MANIGLIA: trascinando la barretta tra grafico e pannello COT si allarga o si schiaccia il pannello.
    Doppio clic = misura iniziale. La misura scelta resta salvata in questo browser (se il browser lo permette). */
@@ -541,8 +557,19 @@ function disegnaCOT(spec){const box=$("tvcot");try{
  man.addEventListener("pointermove",ev=>{if(pan.classList.contains("trascino"))imposta(h0+(y0-ev.clientY));});   // su = piu' alto
  const fine=()=>pan.classList.remove("trascino");man.addEventListener("pointerup",fine);man.addEventListener("pointercancel",fine);
  man.addEventListener("dblclick",()=>imposta(STD));})();
+/* AFFIDABILITA' DEL SEGNALE (etichetta in testa al pannello del grafico): somma di tre conferme
+   storico (>=60% +1, <50% -1, "pochi dati" non conta) + Commercials (conferma +1, contrasto -1)
+   + stagionalita' affidabile (stesso verso del segnale +1, contrario -1).  >=2 ALTA, <=-1 BASSA, altrimenti MEDIA. */
+function affidabilitaSegnale(spec){const[t,id]=spec.split(":"),o=t=="p"?D.pairs.find(x=>x.pair==id):D.assets[id];
+ if(!o||o.label=="NEUTRO")return "";
+ let v=0;const perche=[],e=o.affid,st=o.stag,acc=o.comm_acc;
+ if(e&&!e.pochi){if(e.hit>=60){v++;perche.push(`storico ${e.hit}%`);}else if(e.hit<50){v--;perche.push(`storico solo ${e.hit}%`);}}
+ if(acc=="conferma"){v++;perche.push("Commercials a favore");}else if(acc=="contrasto"){v--;perche.push("Commercials contrari");}
+ if(st&&st.robusto){if(Math.sign(st.score)==Math.sign(o.score)){v++;perche.push("stagionalita' a favore");}else{v--;perche.push("stagionalita' contraria");}}
+ const liv=v>=2?["ALTA","var(--sb)"]:v<=-1?["BASSA","var(--ss)"]:["MEDIA","var(--warn)"];
+ return `<span class="badge" style="--bc:${liv[1]}" title="${esc(perche.join(", ")||"nessuna conferma o contrasto")}">AFFIDABILIT&Agrave; ${liv[0]}</span>`;}
 function apriGrafico(spec){TV.spec=spec;const info=tvInfo(spec),m=$("tvmodal");disegnaCOT(spec);
- $("tvtitolo").innerHTML=`<span class="pair">${esc(info.nome)}</span> ${info.label?badge(info.label):""} <span class="small">punteggio ${fmt(info.score)}</span>`;
+ $("tvtitolo").innerHTML=`<span class="pair">${esc(info.nome)}</span> ${info.label?badge(info.label):""} ${affidabilitaSegnale(spec)} <span class="small">punteggio ${fmt(info.score)}</span>`;
  $("tvsotto").innerHTML=`${esc(info.sotto)} &middot; simbolo <b>${esc(info.sym||"n/d")}</b>`+(info.inv?` &middot; <b style="color:var(--warn)">grafico quotato al contrario: BUY sul segnale = grafico che SCENDE</b>`:"");
  $("tvlink").href="https://www.tradingview.com/chart/?symbol="+encodeURIComponent(info.sym||"");
  document.querySelectorAll("#tviv button").forEach(b=>b.classList.toggle("on",b.dataset.iv==TV.iv));
