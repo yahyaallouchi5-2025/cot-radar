@@ -241,6 +241,33 @@ def giorni(s):
     return out
 
 
+# --------------------------------------------------------------------------- 3b) prossima settimana da oggi
+def settimana(s, giorno, giorni=7):
+    """STAGIONALITA' DELLA PROSSIMA SETTIMANA: per ogni anno dello storico, come si e' mosso lo strumento
+    da questa stessa data del calendario ai 7 giorni successivi. Lettura semplice per il pannello del grafico.
+    Restituisce {n anni, su (anni in rialzo), hit %, med (variazione mediana %), media %, dal (primo anno),
+    robusto}: "robusto" solo se almeno 10 anni, almeno 70% (o al massimo 30%) nella stessa direzione e
+    mediana e media dello stesso segno. Altrimenti e' rumore e lo diciamo."""
+    anni = {}
+    a0, a1 = int(s.d[0][:4]), int(s.d[-1][:4])
+    for y in range(a0, a1 + 1):
+        inizio = date(y, giorno.month, min(giorno.day, 28))
+        if inizio >= giorno:                        # solo anni passati: niente futuro
+            break
+        r = _rend(s, _iso(inizio), giorni)
+        if r is not None:
+            anni[y] = (math.exp(r) - 1) * 100
+    n = len(anni)
+    if n < 5:
+        return None
+    v = list(anni.values())
+    su = sum(x > 0 for x in v)
+    hit = round(100 * su / n)
+    med, media = median(v), sum(v) / n
+    return {"n": n, "su": su, "hit": hit, "med": round(med, 2), "media": round(media, 2), "dal": min(anni),
+            "robusto": n >= 10 and abs(hit - 50) >= 20 and _verso(med) == _verso(media) != 0}
+
+
 # --------------------------------------------------------------------------- 4) tutto insieme per uno strumento
 def analizza(pts, oggi=None):
     """Tutte le statistiche per una serie di prezzi [(data, prezzo)]. None se lo storico e' troppo corto."""
@@ -250,7 +277,7 @@ def analizza(pts, oggi=None):
     oggi = oggi or date.today()
     m, mappa = mesi(s)
     return {"finestra": finestra(s, oggi), "mesi": m, "mappa": mappa, "giorni": giorni(s),
-            "da": s.d[0][:4], "al": s.d[-1]}
+            "sett": settimana(s, oggi), "da": s.d[0][:4], "al": s.d[-1]}
 
 
 # --------------------------------------------------------------------------- 5) backtest: decide il peso
@@ -327,6 +354,7 @@ def calcola(hist, prezzi, pairs, assets, oggi=None):
                 tab[p["pair"]] = r
     meta = backtest(hist, prezzi, pairs)
     for chiave, obj in [(p["pair"], p) for p in pairs] + list(assets.items()):
+        obj["stag1s"] = (tab.get(chiave) or {}).get("sett")       # prossima settimana da oggi (pannello grafico)
         f = (tab.get(chiave) or {}).get("finestra")
         if not f:
             continue

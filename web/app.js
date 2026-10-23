@@ -505,6 +505,44 @@ function conferme(k,p){const parti=[],col=v=>v=="conferma"?"var(--sb)":v=="contr
  const e=p?p.affid:(D.assets[k]||{}).affid;
  if(e)parti.push(`<b>Storico:</b> <b style="color:${e.pochi?"var(--ink)":e.hit>=60?"var(--sb)":e.hit<50?"var(--ss)":"var(--ink)"}">${e.hit}%</b> su ${e.n} segnali <span class="lungo">(resa media ${e.resa>=0?"+":""}${fx(e.resa)}% a 4 sett.)</span>`);
  return parti.length?`<div class="riga tre">${parti.map(x=>`<span>${x}</span>`).join("")}</div>`:"";}
+/* RIEPILOGO SEMPLICE sotto il grafico (richiudibile): una riga riassuntiva sempre visibile e, aprendola,
+   poche frasi in italiano semplice. Niente doppioni: i numeri tecnici restano nelle schede di approfondimento.
+   Ordine: speculatori -> Commercials -> contratti aperti -> notizie -> storico -> prossima settimana (stagionalita'). */
+function lettura(spec,f,p,k,inv){
+ const pc1=x=>`${x>=0?"+":"&minus;"}${fx(Math.abs(x),1)}%`,verde="var(--sb)",rosso="var(--ss)";
+ const t=tre(f),[ud,uv]=f[f.length-1],ven=new Date(ud);ven.setDate(ven.getDate()+3);
+ const o=p||D.assets[k]||{},nome=p?p.pair:(o.name||k),gambe=p?[p.base,p.quote]:[k];
+ const n3=Math.max(t.u.filter(x=>x[1]>0).length,t.u.filter(x=>x[1]<0).length),compra=t.tot>=0;
+ // --- speculatori
+ const dir=n3<2?"nessuna direzione chiara":`${compra?"comprano":"vendono"} (${n3==3?"3 settimane su 3":"2 su 3"}, ${pc1(t.tot)})`;
+ const pos=p?[netto(p.base),netto(p.quote)].filter(Boolean).join(" &middot; "):netto(k,inv);
+ const righe=[`<b>Speculatori</b> (grandi fondi): nell'ultima settimana hanno <b style="color:${uv>=0?verde:rosso}">${uv>=0?"comprato":"venduto"}</b> (${pc1(uv)} dei contratti aperti).
+  Nelle ultime 3 settimane ${n3<2?"la direzione &egrave; mista":`hanno ${compra?"comprato":"venduto"} ${n3==3?"tutte e 3 le settimane":"2 settimane su 3"} (<b style="color:${compra?verde:rosso}">${pc1(t.tot)}</b> in totale)`}.
+  ${pos?`Oggi: ${pos}.`:""} <span class="small">Dato di marted&igrave; ${fd(ud)}, uscito venerd&igrave; ${fd(ven.toISOString().slice(0,10))}.</span>`];
+ // --- Commercials (chi produce o usa davvero il sottostante e si copre)
+ const acc=o.comm_acc,cm=gambe.map(g=>{const c=(D.assets[g]||{}).comm;return c&&(c.idx>=80||c.idx<=20)?`molto in ${c.idx>=80?"acquisto":"vendita"} su ${esc(g)}`:null;}).filter(Boolean);
+ righe.push(`<b>Commercials</b> (produttori e banche che si coprono): ${cm.length?cm.join(" &middot; ")+(acc?` &rarr; <b style="color:${acc=="conferma"?verde:rosso}">${acc=="conferma"?"sono dalla parte del segnale":"vanno contro il segnale"}</b>`:""):"nella norma, nessuna indicazione"}.`);
+ // --- contratti aperti
+ const oi=gambe.map(g=>{const x=(D.assets[g]||{}).oi4;return x&&Math.abs(x.d_oi)>=2?`${esc(g)} ${pc1(x.d_oi)} (${esc(x.txt)})`:null;}).filter(Boolean);
+ if(oi.length)righe.push(`<b>Contratti aperti</b> nelle ultime 4 settimane: ${oi.join(" &middot; ")}.`);
+ // --- notizie (solo se cambiano qualcosa)
+ const nw=p&&p.news;if(nw&&nw.effetto!="neutro"){const ev=[...(nw.oggi||[]),...(nw.eventi||[]).map(x=>x.nome)].filter(Boolean);
+  righe.push(`<b>Notizie</b>: ${ev.length?esc(ev.join(", "))+" &rarr; ":""}<b style="color:${nw.effetto=="rafforza"?verde:rosso}">${nw.effetto=="rafforza"?"rafforzano il segnale":"vanno contro il segnale"}</b>.`);}
+ // --- storico del segnale
+ const e=o.affid;if(e)righe.push(`<b>Storico</b>: su ${e.n} segnali simili in passato ha funzionato <b style="color:${e.pochi?"var(--ink)":e.hit>=60?verde:e.hit<50?rosso:"var(--ink)"}">${e.hit}% delle volte</b> (resa media ${pc1(e.resa)} dopo 4 settimane)${e.pochi?", pochi casi: da prendere con le pinze":""}.`);
+ // --- stagionalita': da oggi a una settimana, su tutto lo storico
+ const s1=o.stag1s,st4=o.stag;
+ if(s1){const su=s1.med>=0,giu=s1.n-s1.su;
+  let stg=`<b>Prossima settimana</b> (stagionalit&agrave;): dal ${s1.dal}, da questa data a 7 giorni dopo ${esc(nome)} &egrave; salito in <b>${s1.su} anni su ${s1.n}</b> e sceso in ${giu}${s1.robusto?`, con una variazione tipica di ${pc1(s1.med)}: <b style="color:${su?verde:rosso}">tendenza ${su?"al rialzo":"al ribasso"} abbastanza costante</b>`:`: <b>quasi testa o croce</b>, nessuna tendenza da seguire`}.`;
+  if(st4&&st4.robusto)stg+=` Sulle prossime 4 settimane invece la stagione tende ${st4.score>0?"al rialzo":"al ribasso"} (${st4.score>0?st4.su:st4.n-st4.su} anni su ${st4.n}).`;
+  stg+=` <a href="#" data-vai="stag">Approfondisci nella scheda Stagionalit&agrave;</a>`;righe.push(stg);}
+ // --- riga riassuntiva (sempre visibile)
+ const pezzi=[`Speculatori: <b style="color:${n3<2?"var(--ink)":compra?verde:rosso}">${dir}</b>`];
+ if(acc)pezzi.push(`Commercials: <b style="color:${acc=="conferma"?verde:rosso}">${acc=="conferma"?"a favore":"contrari"}</b>`);
+ if(nw&&nw.effetto=="penalizza")pezzi.push(`<b style="color:${rosso}">notizia contraria</b>`);
+ if(s1)pezzi.push(`Prossima settimana: ${s1.robusto?`<b style="color:${s1.med>=0?verde:rosso}">${s1.med>=0?"di solito sale":"di solito scende"}</b>`:"nessuna tendenza"}`);
+ return `<button class="sintesi" id="cotinfo" title="Mostra / nascondi il riepilogo"><b>Riepilogo:</b> ${pezzi.join(" &middot; ")} <span class="freccia">&#9662;</span></button>
+  <div class="cotinfo">${righe.map(r=>`<p>${r}</p>`).join("")}</div>`;}
 /* SINTESI DEI FLUSSI COT in una riga (al posto delle barre, che si aprono con un clic):
    quante settimane in acquisto/vendita, da quante settimane di fila nello stesso verso,
    e se la spinta sta crescendo o calando (media delle ultime 3 settimane contro le 3 prima). */
@@ -525,11 +563,7 @@ function disegnaCOT(spec){const box=$("tvcot");try{
  const [ud,uv]=f[f.length-1],ven=new Date(ud);ven.setDate(ven.getDate()+3),t=tre(f);
  const k=spec.slice(2),p=spec[0]=="p"?D.pairs.find(x=>x.pair==k)||{}:null,inv=!!((D.tv||{})[k]||{}).inv;
  const pos=p?[netto(p.base),netto(p.quote)].filter(Boolean).join(" &middot; "):netto(k,inv);
- box.innerHTML=`<div class="riga"><span><b>COT Non Commercial</b><span class="lungo"> &middot; variazione settimanale del netto (% open interest) &middot; ultime ${f.length} settimane</span></span>
-  <span>Ultimo: <b style="color:${uv>=0?"var(--sb)":"var(--ss)"}">${uv>=0?"acquisti":"vendite"} ${uv>=0?"+":""}${fx(uv)}%</b> &middot; <span class="lungo">dato di marted&igrave; ${fd(ud)}, pubblicato venerd&igrave; ${fd(ven.toISOString().slice(0,10))}</span><span class="corto">mar ${fd(ud).slice(0,5)}</span></span></div>
-  <div class="riga tre"><span><b><span class="lungo">Ultime 3 settimane:</span><span class="corto">3 sett.:</span></b> ${t.u.map(x=>`<span style="color:${x[1]>=0?"var(--sb)":"var(--ss)"}">${x[1]>=0?"+":""}${fx(x[1])}</span>`).join(" &middot; ")}
-   = <b style="color:${t.col}">${t.tot>=0?"+":""}${fx(t.tot)}%</b> &rarr; <b style="color:${t.col}">${t.txt}</b></span>${pos?`<span>Posizione: ${pos}</span>`:""}</div>
-  ${conferme(k,p)}
+ box.innerHTML=lettura(spec,f,p,k,inv)+`
   <button class="sintesi" id="cotsint" title="Mostra / nascondi le barre settimanali">${sintesiFlussi(f)} <span class="freccia">&#9662;</span></button>
   <div class="barre"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Flussi COT settimanali">${fascia}<line x1="0" x2="${W}" y1="${H/2}" y2="${H/2}" stroke="var(--line)"/>${barre}</svg>
   <div class="assi"><span>${fd(f[0][0])}</span><span class="lungo">verde = comprano &middot; rosso = vendono${p?" (base contro quotata)":""} &middot; fascia = ultime 3 settimane</span><span>${fd(ud)}</span></div></div>`;
@@ -537,6 +571,10 @@ function disegnaCOT(spec){const box=$("tvcot");try{
  const pan=$("tvpannello");let chiuse=matchMedia("(max-width:600px)").matches;
  try{const v=localStorage.getItem("cotBarre");if(v)chiuse=v=="chiuse";}catch(e){}
  pan.classList.toggle("barrechiuse",chiuse);
+ let infoChiuse=true;try{const v=localStorage.getItem("cotInfo");if(v)infoChiuse=v=="chiuse";}catch(e){}
+ pan.classList.toggle("infochiuse",infoChiuse);
+ $("cotinfo").onclick=()=>{const c=pan.classList.toggle("infochiuse");try{localStorage.setItem("cotInfo",c?"chiuse":"aperte");}catch(e){}};
+ box.querySelectorAll("[data-vai]").forEach(a=>a.onclick=ev=>{ev.preventDefault();chiudiGrafico();go(a.dataset.vai);});
  $("cotsint").onclick=()=>{const c=pan.classList.toggle("barrechiuse");try{localStorage.setItem("cotBarre",c?"chiuse":"aperte");}catch(e){}};
  }catch(e){box.innerHTML="";console.error("[Edge Board] pannello COT:",e);}}   // se si rompe sparisce il pannello, non il grafico
 /* MANIGLIA: trascinando la barretta tra grafico e pannello COT si allarga o si schiaccia il pannello.
@@ -562,8 +600,14 @@ function affidabilitaSegnale(spec){const[t,id]=spec.split(":"),o=t=="p"?D.pairs.
  if(st&&st.robusto){if(Math.sign(st.score)==Math.sign(o.score)){v++;perche.push("stagionalita' a favore");}else{v--;perche.push("stagionalita' contraria");}}
  const liv=v>=2?["ALTA","var(--sb)"]:v<=-1?["BASSA","var(--ss)"]:["MEDIA","var(--warn)"];
  return `<span class="badge" style="--bc:${liv[1]}" title="${esc(perche.join(", ")||"nessuna conferma o contrasto")}">AFFIDABILIT&Agrave; ${liv[0]}</span>`;}
+/* Nel pannello del grafico l'affidabilita' si mostra SOLO quando la abbassa una notizia (es. CPI, Fed)
+   che va contro il segnale: e' l'unico caso che cambia il "quando" entrare. Il resto e' nel riepilogo sotto. */
+function avvisoNotizia(spec){const[t,id]=spec.split(":");if(t!="p")return "";const p=D.pairs.find(x=>x.pair==id);
+ if(!p||!p.news||p.news.effetto!="penalizza"||p.label=="NEUTRO")return "";
+ const ev=[...(p.news.oggi||[]),...(p.news.eventi||[]).map(x=>x.nome)].filter(Boolean);
+ return `<span class="badge" style="--bc:var(--ss)" title="${esc("Notizia contraria al segnale: "+(ev.join(", ")||"vedi riepilogo"))}">AFFIDABILIT&Agrave; BASSA &middot; NOTIZIA</span>`;}
 function apriGrafico(spec){TV.spec=spec;const info=tvInfo(spec),m=$("tvmodal");disegnaCOT(spec);
- $("tvtitolo").innerHTML=`<span class="pair">${esc(info.nome)}</span> ${info.label?badge(info.label):""} ${affidabilitaSegnale(spec)} <span class="small">punteggio ${fmt(info.score)}</span>`;
+ $("tvtitolo").innerHTML=`<span class="pair">${esc(info.nome)}</span> ${info.label?badge(info.label):""} ${avvisoNotizia(spec)} <span class="small">punteggio ${fmt(info.score)}</span>`;
  $("tvsotto").innerHTML=`${esc(info.sotto)}`+   /* simbolo TradingView tolto: si vede gia' nel grafico */(info.inv?` &middot; <b style="color:var(--warn)">grafico quotato al contrario: BUY sul segnale = grafico che SCENDE</b>`:"");
  $("tvlink").href="https://www.tradingview.com/chart/?symbol="+encodeURIComponent(info.sym||"");
  document.querySelectorAll("#tviv button").forEach(b=>b.classList.toggle("on",b.dataset.iv==TV.iv));

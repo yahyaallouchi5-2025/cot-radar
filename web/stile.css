@@ -351,3 +351,10 @@ h1.ghiaccio{color:#eef6ff;text-shadow:0 0 18px rgba(185,225,255,.32),0 0 2px rgb
 .vfbarre.fitte{gap:2px;overflow-x:auto}.vfbarre.fitte .vfb{min-width:14px}.vfbarre.fitte .vfbcol i{width:80%}.vfbarre.fitte span{font-size:9.5px}
 .vfvtag{color:var(--vc)!important;background:color-mix(in srgb,var(--vc) 14%,transparent)!important}
 @media (max-width:600px){.vfregime{grid-template-columns:1fr;gap:12px}.vfsel{min-width:0;width:100%}.vfbarre{height:150px;gap:4px}.vfb em{font-size:10px}}
+/* riepilogo semplice sotto il grafico (si apre e chiude come le barre COT) */
+.tvcot .cotinfo{display:grid;gap:6px;margin:2px 0 8px;font-size:12.5px;line-height:1.5;color:var(--ink2)}
+.tvcot .cotinfo p{margin:0;padding:7px 10px;border-radius:10px;background:color-mix(in srgb,var(--soft) 55%,transparent);border:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.tvcot .cotinfo b{color:var(--ink)}.tvcot .cotinfo a{color:var(--acc);white-space:nowrap}
+.infochiuse .cotinfo{display:none}.infochiuse #cotinfo .freccia{transform:rotate(-90deg)}
+.tvcot{max-height:46vh;overflow-y:auto}
+@media (max-width:600px){.tvcot .cotinfo{font-size:11.5px}}
