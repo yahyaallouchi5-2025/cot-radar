@@ -411,9 +411,10 @@ $("guide").innerHTML=`
 <h3>6. Stagionalit&agrave;</h3><p>Da un archivio permanente di prezzi giornalieri (fino a 50 anni, salvato su GitHub e mai riscritto) si misura come si e' mosso ogni strumento <b>nelle prossime 4 settimane</b> di ogni anno passato, in <b>ogni mese</b> e in <b>ogni giorno della settimana</b>. Prima si toglie il trend (il movimento medio dello strumento), poi un effetto conta solo se: almeno 10 anni di dati; almeno il 65% degli anni nello stesso verso (mesi: anche test t &ge; 2; giorni: test t &ge; 2,58 perche' si confrontano 5 giorni insieme); stesso verso nella prima e nella seconda meta' degli anni; per la finestra, stesso verso spostandola di una settimana avanti o indietro. Sul puro rumore questi filtri lasciano passare circa 1-3 casi su 100.</p>
 <p><b>Peso deciso dal backtest</b>: i segnali COT passati sono stati divisi in "stagionalita' a favore" e "contraria", calcolata solo con gli anni precedenti a ogni segnale. ${D.stag_meta?`A favore: <b>${D.stag_meta.accordo.hit??"n/d"}%</b> di successi in 4 settimane (${D.stag_meta.accordo.n} segnali); contraria: <b>${D.stag_meta.contrasto.hit??"n/d"}%</b> (${D.stag_meta.contrasto.n}). Peso usato: <b>${Math.round(D.stag_meta.peso*100)}%</b> del punteggio stagionale${D.stag_meta.peso?"":" (nessun vantaggio dimostrato: la stagionalita' resta solo informativa)"}.`:"Backtest non disponibile."} I segnali di strumenti e coppie si sovrappongono nel tempo, quindi il numero di casi "indipendenti" e' piu' basso di quanto sembra. Il punteggio originale resta nell'anello; la correzione compare nella riga sotto i riquadri.</p>
 <h3>7. Notizie (CPI, NFP, Fed, BCE)</h3><p>Il COT indica la direzione per le prossime settimane; una notizia ad alto impatto muove il prezzo per ore o pochi giorni e cambia soprattutto il <i>momento</i> giusto per entrare. Prima dell'evento la card mostra solo l'avviso &#9889;. Dopo l'evento la <b>sorpresa</b> e' misurata dal mercato: di quanto si e' mosso il tasso a 2 anni della valuta nel giorno del dato rispetto a una giornata normale (in deviazioni standard, &sigma;). Tassi su = valuta piu' forte. Il correttivo vale 10 punti per &sigma;, ha un tetto di &plusmn;30 per valuta e si dimezza ogni giorno (ogni 3 giorni per Fed e BCE). Il segnale COT non viene cambiato: accanto si vede il punteggio corretto.</p>
-<h3>8. Mutui</h3><p>Tassi medi sui nuovi mutui per acquisto casa (statistica BCE MIR, fonte Banca d'Italia per l'Italia). La stima dei mesi non ancora pubblicati usa una regressione delle variazioni mensili del tasso sulle variazioni del rendimento a 10 anni (fisso) o dell'ESTR (variabile), del mese stesso e di quello prima. L'intervallo &plusmn; e' l'errore tipico del modello.</p>
-<h3>9. Aggiornamenti</h3><p>${/^https?:/.test(location.protocol)?"Il sito si aggiorna da solo: venerdi' sera dopo il COT, ogni mattina feriale (mercati e BCE) e ogni sera feriale a fine giornata (fino a 3 tentativi a 5 minuti di distanza). Se una fonte non risponde restano online gli ultimi dati validi.":"Ogni apertura scarica tutto. Aggiornamento automatico ogni venerdi': nel Prompt dei comandi <code>python cot_radar.py --pianifica</code>."}</p>
-<h3>10. Limiti</h3><ul><li>Sono stime statistiche, non certezze: le relazioni cambiano nel tempo.</li><li>Il COT ha 3 giorni di ritardo; i mutui circa 5 settimane.</li><li>Oro, materie agricole e altri strumenti senza prezzo gratuito su FRED usano solo il COT.</li><li>Non e' una consulenza finanziaria.</li></ul>`;
+<h3>8. Verifica dei segnali</h3><p><b>Registro live</b>: ogni segnale viene salvato nel momento in cui nasce (data e ora vere), con l'ingresso alla <b>prima chiusura giornaliera successiva</b> (mai un prezzo gi&agrave; passato). Poi si misurano, nel verso del segnale, il risultato a 1, 2 e 4 settimane e fino al cambio di etichetta (massimo 12 settimane), con il guadagno massimo e il drawdown massimo lungo il percorso. Un segnale nasce quando l'etichetta passa da NEUTRO a BUY/SELL o si inverte; la stessa direzione la settimana dopo &egrave; una conferma; il passaggio a STRONG apre una "fase STRONG" misurata a parte. Gli eventi non si possono modificare: ognuno contiene l'impronta (hash SHA-256) del precedente, e il registro si aggiorna solo con dati completi.</p><p><b>Backtest</b> (marcato SIMULATO): le stesse regole applicate a tutte le settimane dal 1986, usando ogni volta solo i dati disponibili allora. Esclude la parte Mercato e macro, le notizie e la stagionalit&agrave;, sottrae costi stimati e tiene separati gli ultimi 2 anni (holdout) come controllo onesto. Tre modi di entrare: subito, con un ordine limite di ritracciamento, o met&agrave; e met&agrave;.</p>
+<h3>9. Mutui</h3><p>Tassi medi sui nuovi mutui per acquisto casa (statistica BCE MIR, fonte Banca d'Italia per l'Italia). La stima dei mesi non ancora pubblicati usa una regressione delle variazioni mensili del tasso sulle variazioni del rendimento a 10 anni (fisso) o dell'ESTR (variabile), del mese stesso e di quello prima. L'intervallo &plusmn; e' l'errore tipico del modello.</p>
+<h3>10. Aggiornamenti</h3><p>${/^https?:/.test(location.protocol)?"Il sito si aggiorna da solo: venerdi' sera dopo il COT, ogni mattina feriale (mercati e BCE) e ogni sera feriale a fine giornata (fino a 3 tentativi a 5 minuti di distanza). Se una fonte non risponde restano online gli ultimi dati validi.":"Ogni apertura scarica tutto. Aggiornamento automatico ogni venerdi': nel Prompt dei comandi <code>python cot_radar.py --pianifica</code>."}</p>
+<h3>11. Limiti</h3><ul><li>Sono stime statistiche, non certezze: le relazioni cambiano nel tempo.</li><li>Il COT ha 3 giorni di ritardo; i mutui circa 5 settimane.</li><li>Oro, materie agricole e altri strumenti senza prezzo gratuito su FRED usano solo il COT.</li><li>Non e' una consulenza finanziaria.</li></ul>`;
 /* AVVERTENZA LEGALE: testo fisso in fondo a ogni pagina (tutela: il sito e' informativo, non consulenza) */
 $("foot").innerHTML=`<div class="legale"><b>Avvertenza importante.</b> Edge Board ha finalit&agrave; esclusivamente informative, didattiche e di studio.
  I contenuti (segnali, punteggi, statistiche, stagionalit&agrave;, analisi e qualsiasi altra informazione) <b>non costituiscono consulenza finanziaria,
@@ -605,6 +606,113 @@ $("tvfull").onclick=()=>{const p=$("tvpannello"),fs=document.fullscreenElement||
  try{const r=vero.call(p);if(r&&r.catch)r.catch(()=>schermoPieno());}catch(e){schermoPieno();}};
 document.querySelectorAll("#tviv button").forEach(b=>b.onclick=()=>{TV.iv=b.dataset.iv;document.querySelectorAll("#tviv button").forEach(x=>x.classList.toggle("on",x==b));disegnaTV();});
 }catch(e){fail('Grafico',null,e);}
+
+/* ---------- VERIFICA DEI SEGNALI: registro live + backtest simulato ----------
+   Due finestre separate e mai mescolate:
+     LIVE     = segnali veri, con data e ora di generazione, salvati per sempre con una catena di hash (D.reg)
+     BACKTEST = segnali SIMULATI sulle settimane passate dal 1986 con le stesse regole (D.bt)
+   Calcoli in cot_radar/motore.py; qui solo la presentazione. Ingresso = prima chiusura dopo il segnale. */
+try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!el)return;
+ const ORZ=[["1s","1 settimana"],["2s","2 settimane"],["4s","4 settimane"],["fine","fino al cambio"]];
+ const V={fin:"live",h:"4s"};try{const s=JSON.parse(localStorage.getItem("ebVerifica")||"{}");if(s.fin)V.fin=s.fin;if(s.h)V.h=s.h;}catch(e){}
+ const salva=()=>{try{localStorage.setItem("ebVerifica",JSON.stringify(V));}catch(e){}};
+ const pc=(x,d=2)=>x==null||isNaN(x)?"n/d":(x>0?"+":x<0?"−":"")+Math.abs(x).toLocaleString("it-IT",{minimumFractionDigits:d,maximumFractionDigits:d})+"%";
+ const col=x=>x==null?"":x>0?"up":x<0?"down":"flat";
+ const prezzo=p=>{if(p==null)return"n/d";const d=p>=1000?2:p>=100?3:p>=10?3:4;return p.toLocaleString("it-IT",{minimumFractionDigits:d,maximumFractionDigits:d});};
+ const oraIt=u=>{if(!u)return"";const t=new Date(u.replace("Z",":00Z"));
+  return t.toLocaleDateString("it-IT",{timeZone:"Europe/Rome",day:"2-digit",month:"2-digit",year:"numeric"})+" ore "+t.toLocaleTimeString("it-IT",{timeZone:"Europe/Rome",hour:"2-digit",minute:"2-digit"});};
+ const sett=(a,b)=>Math.max(1,Math.round((new Date(b)-new Date(a))/864e5/7));
+ const AFC={ALTA:"var(--sb)",MEDIA:"var(--warn)",BASSA:"var(--ss)"};
+ const aff=l=>l?`<span class="badge" style="--bc:${AFC[l]||"var(--n)"}">AFFIDABILIT&Agrave; ${l}</span>`:"";
+ const MOT={neutro:"tornato NEUTRO",inversione:"segnale invertito",indebolito:"tornato da STRONG a normale","12 settimane":"limite di 12 settimane"};
+
+ /* tabellina dei risultati: periodo, risultato, guadagno massimo e drawdown massimo lungo il percorso */
+ function cella(t){return t?`<td class="num"><b class="${col(t.res)}">${pc(t.res)}</b></td><td class="num up">${pc(t.mfe)}</td><td class="num down">${pc(t.mae)}</td><td>${t.provvisorio?'<span class="vfic" title="ancora in corso">&#9719;</span>':t.vinto?'<span class="vfok">&#10003;</span>':'<span class="vfko">&#10007;</span>'}</td>`
+  :`<td class="num small" colspan="4">in attesa</td>`;}
+
+ /* scheda di un segnale nel formato approvato */
+ function scheda(s,sim){const m=s.m||{},A=m.A||{},ing=m.ingresso;
+  const testa=`<div class="vfh"><span class="pair">${esc(s.strumento)}</span> ${badge(s.etichetta)} ${aff(s.affid)}${s.iniziale?' <span class="tag" title="Era gia\' attivo quando il registro e\' partito: escluso dalle statistiche">gi&agrave; attivo all\'avvio</span>':''}${s.padre?' <span class="tag" title="Fase STRONG di un segnale gia\' aperto">fase STRONG</span>':''}</div>`;
+  let h=`<div class="vfr"><span>Segnale generato</span><b>${esc(s.generato_it)}</b></div>`+
+   (ing?`<div class="vfr"><span>Ingresso</span><b>${prezzo(ing.prezzo)} <span class="small">&middot; ${oraIt(ing.utc)}</span></b></div>`
+       :`<div class="vfr"><span>Ingresso</span><span class="small">${esc(m.stato||"prezzo non disponibile")}</span></div>`);
+  if(ing){const f=A.fine,fm=m.fine||{},chiuso=!!(s.chiuso||fm.motivo);
+   const nf=f?`${chiuso?"Al cambio":"Finora"}<small class="vfsett">${sett(ing.data,f.data)} sett.</small>`:"Al cambio";
+   h+=`<table class="vftab"><tr><th></th><th class="num">Risultato</th><th class="num">Max</th><th class="num">Min</th><th></th></tr>
+    <tr><td>1 settimana</td>${cella(A["1s"])}</tr><tr><td>2 settimane</td>${cella(A["2s"])}</tr><tr><td>4 settimane</td>${cella(A["4s"])}</tr>
+    <tr class="vffine"><td>${nf}</td>${f?cella(f):'<td class="num small" colspan="4">in attesa del prezzo</td>'}</tr></table>`;
+   if(chiuso){const quando=s.chiuso&&fm.motivo!="12 settimane"?s.chiuso.quando_it:(f?fd(f.data):"");
+    h+=`<div class="small vfnota">${s.chiuso?"Chiuso il "+esc(quando):"Misura conclusa"} &middot; ${esc(MOT[fm.motivo]||MOT[(s.chiuso||{}).motivo]||"")}</div>`;}
+   const b=m.B||{};const bt=b.esito=="eseguito"?`eseguito a ${prezzo(b.limite)} il ${fd(b.data)}`:b.esito=="non eseguito"?`non eseguito (limite ${prezzo(b.limite)})`:b.esito=="in attesa"?`limite a ${prezzo(b.limite)} in attesa`:"n/d";
+   h+=`<div class="small vfnota">Ingresso B (ritracciamento): ${bt}</div>`;}
+  const perche=(s.perche||[]).length?`<div class="small vfp">Affidabilit&agrave;: ${esc(s.perche.join(", "))}</div>`:"";
+  return `<div class="card vfcard${sim?" vfsim":""}">${testa}<div class="vfrighe">${h}</div>${perche}</div>`;}
+
+ /* riquadri riassuntivi per l'orizzonte scelto */
+ function kpi(st,nota){const x=(st||{})[V.h];
+  if(!x)return `<div class="vfvuoto small">Nessun segnale con questo orizzonte ancora concluso.${nota?" "+nota:""}</div>`;
+  return `<div class="grid k4 vfkpi">
+   <div class="card kpi"><h3>Segnali misurati</h3><div class="big">${x.n.toLocaleString("it-IT")}</div><div class="note">${x.vinti} vinti &middot; ${x.n-x.vinti} persi</div></div>
+   <div class="card kpi"><h3>Vinti</h3><div class="big">${x.hit}%</div><div class="note" title="Intervallo di confidenza al 95% (Wilson): con pochi segnali e' largo">probabile tra ${x.ic[0]}% e ${x.ic[1]}%</div></div>
+   <div class="card kpi"><h3>Resa media</h3><div class="big ${col(x.resa)}">${pc(x.resa)}</div><div class="note">per segnale, al netto dei costi stimati</div></div>
+   <div class="card kpi"><h3>Guadagno / drawdown max</h3><div class="big" style="font-size:22px;margin-top:12px"><span class="up">${pc(x.mfe)}</span> / <span class="down">${pc(x.mae)}</span></div><div class="note">medie separate &middot; rapporto ${x.rapporto==null?"n/d":x.rapporto.toLocaleString("it-IT")}</div></div></div>`;}
+
+ /* tabella per gruppo (etichetta, affidabilita', periodo, strumento) */
+ function tabella(titolo,gr,ordine,min){const ks=(ordine||Object.keys(gr||{})).filter(k=>gr&&gr[k]&&gr[k][V.h]&&gr[k][V.h].n>=(min||1));
+  if(!ks.length)return "";
+  return `<h3 class="vft">${titolo}</h3><div class="tablewrap"><table class="compatta"><tr><th></th><th class="num">Segnali</th><th class="num">Vinti</th><th class="num">Probabile tra</th><th class="num">Resa media</th><th class="num">Guadagno max</th><th class="num">Drawdown max</th><th class="num">Rapporto</th></tr>
+   ${ks.map(k=>{const x=gr[k][V.h];return `<tr><td><b>${esc(k)}</b></td><td class="num">${x.n}</td><td class="num"><b>${x.hit}%</b></td><td class="num small">${x.ic[0]}&ndash;${x.ic[1]}%</td><td class="num ${col(x.resa)}">${pc(x.resa)}</td><td class="num up">${pc(x.mfe)}</td><td class="num down">${pc(x.mae)}</td><td class="num">${x.rapporto==null?"n/d":x.rapporto.toLocaleString("it-IT")}</td></tr>`;}).join("")}</table></div>`;}
+
+ /* confronto dei tre modi di entrare */
+ function varianti(st){const x=(st||{})[V.h];if(!x)return "";
+  return `<h3 class="vft">Tre modi di entrare <span class="small">(valore medio per segnale)</span></h3><div class="grid k3 vfvar">
+   <div class="card"><b>A &middot; subito</b><div class="big ${col(x.resa)}">${pc(x.resa)}</div><div class="small">alla prima chiusura dopo il segnale</div></div>
+   <div class="card"><b>B &middot; ritracciamento</b><div class="big ${col(x.B.valore)}">${pc(x.B.valore)}</div><div class="small">ordine limite a 0,5&times; il movimento settimanale tipico, valido 5 giorni: eseguito ${x.B.fill==null?"n/d":x.B.fill+"%"} delle volte${x.B.resa_eseguiti!=null?`, resa quando eseguito ${pc(x.B.resa_eseguiti)}`:""}</div></div>
+   <div class="card"><b>C &middot; met&agrave; e met&agrave;</b><div class="big ${col(x.C.valore)}">${pc(x.C.valore)}</div><div class="small">met&agrave; subito, met&agrave; con l'ordine limite</div></div></div>
+   <p class="small">Valore per segnale = percentuale di esecuzione &times; resa media: un ingresso "migliore" che scatta di rado pu&ograve; valere meno.</p>`;}
+
+ const scelta=()=>`<div class="filters vforz">${ORZ.map(([k,t])=>`<button data-h="${k}" class="${V.h==k?"on":""}">${t}</button>`).join("")}</div>`;
+
+ function live(){if(!R)return `<div class="card vfvuoto">Registro non disponibile in questo aggiornamento.</div>`;
+  const cat=R.integra?`<span class="vfok">&#10003;</span> catena integra`:`<b class="vfko">&#10007; catena NON integra</b>`;
+  const testa=`<div class="vfstato small">${R.dal?`Registro attivo dal <b>${esc(R.dal)}</b> &middot; `:""}${R.eventi} eventi &middot; ${cat}${R.ultimo_hash?` <code title="Impronta SHA-256 dell'ultimo evento: se un evento passato venisse modificato, non corrisponderebbe piu'">${R.ultimo_hash.slice(0,12)}&hellip;</code>`:""}${R.completi?"":" &middot; <b style='color:var(--warn)'>ultimo aggiornamento con dati incompleti: registro non aggiornato</b>"}</div>`;
+  if(!R.eventi)return testa+`<div class="card vfvuoto"><b>Il registro parte con il prossimo aggiornamento completo.</b><p class="small">Da quel momento ogni segnale viene salvato con data e ora, prezzo d'ingresso e risultati a 1, 2, 4 settimane e fino al cambio di etichetta. Gli eventi non si possono modificare: ognuno contiene l'impronta del precedente.</p></div>`;
+  const ap=R.aperti||[],ch=R.chiusi||[];
+  return testa+scelta()+kpi(R.stat.tutti,"I segnali già attivi all'avvio sono esclusi.")+
+   `<h2>Segnali aperti <span class="small">(${ap.length})</span></h2><div class="grid vfgrid">${ap.map(s=>scheda(s)).join("")||'<div class="small">Nessun segnale aperto.</div>'}</div>
+   <h2>Segnali chiusi <span class="small">(${R.n_chiusi})</span></h2><div class="grid vfgrid" id="vfchiusi">${ch.slice(0,12).map(s=>scheda(s)).join("")||'<div class="small">Ancora nessuno.</div>'}</div>
+   ${ch.length>12?`<button class="vfaltro" id="vfaltro">Mostra tutti (${ch.length})</button>`:""}
+   ${tabella("Per etichetta",R.stat.etichetta,["STRONG BUY","BUY","SELL","STRONG SELL"])}${tabella("Per affidabilit&agrave;",R.stat.affid,["ALTA","MEDIA","BASSA"])}${varianti(R.stat.tutti)}${tabella("Per strumento",R.stat.strumento)}`;}
+
+ function backtest(){if(!B)return `<div class="card vfvuoto">Backtest non disponibile in questo aggiornamento.</div>`;
+  const per={"Tutto il periodo":B.stat.tutti,"Sviluppo":B.stat.sviluppo,"Holdout (ultimi 2 anni)":B.stat.holdout};
+  const anni=Object.entries(B.anni||{}).filter(([a,s])=>s[V.h=="fine"?"fine":"4s"]),hA=V.h=="fine"?"fine":"4s";
+  const mx=Math.max(0.5,...anni.map(([a,s])=>Math.abs(s[hA].resa)));
+  const barre=anni.length?`<h3 class="vft">Anno per anno <span class="small">(resa media ${hA=="fine"?"fino al cambio":"a 4 settimane"})</span></h3><div class="vfanni">${anni.map(([a,s])=>{const x=s[hA],h=Math.round(Math.abs(x.resa)/mx*100);
+   return `<div class="vfanno" title="${a}: ${x.n} segnali, vinti ${x.hit}%, resa media ${pc(x.resa)}"><div class="vfmeta">${x.resa>=0?`<i class="su" style="height:${h}%"></i>`:""}</div><div class="vfmeta giu">${x.resa<0?`<i class="giu" style="height:${h}%"></i>`:""}</div><span>${a.slice(2)}</span></div>`;}).join("")}</div>`:"";
+  return `<div class="vfsimulato"><b>SIMULATO</b> &middot; risultati ricostruiti sul passato, non segnali reali. Servono a capire se il metodo ha un vantaggio, non promettono risultati futuri.</div>
+   <div class="vfstato small">Dal <b>${fd(B.dal)}</b> al <b>${fd(B.al)}</b> &middot; ${B.n.toLocaleString("it-IT")} segnali (pi&ugrave; ${B.n_strong.toLocaleString("it-IT")} fasi STRONG) &middot; holdout dal ${fd(B.holdout_dal)}</div>
+   ${scelta()}${kpi(B.stat.tutti)}
+   ${tabella("Sviluppo e holdout",per,Object.keys(per))}
+   <p class="small">Il periodo di <b>holdout</b> (ultimi 2 anni) non va mai usato per tarare pesi o soglie: e' il controllo onesto. Se sviluppo e holdout dicono cose molto diverse, il risultato del passato non e' affidabile.</p>
+   ${tabella("Per affidabilit&agrave; (tutto il periodo)",B.affid,["ALTA","MEDIA","BASSA"])}${tabella("Per affidabilit&agrave; (holdout)",B.affid_holdout,["ALTA","MEDIA","BASSA"])}
+   ${tabella("Per etichetta",B.etichetta,["STRONG BUY","BUY","SELL","STRONG SELL"])}${varianti(B.stat.tutti)}${barre}
+   ${tabella("Per strumento <span class=\"small\">(almeno 20 segnali)</span>",B.strumento,Object.keys(B.strumento||{}).sort((a,b)=>((B.strumento[b][V.h]||{}).resa||-99)-((B.strumento[a][V.h]||{}).resa||-99)),20)}
+   <details class="vfdett"><summary>Come &egrave; costruito (e cosa manca rispetto al live)</summary><ul class="small">
+    <li>Ogni settimana il punteggio COT &egrave; ricalcolato con i <b>soli report disponibili allora</b>; il segnale nasce alla pubblicazione (venerd&igrave; 15:30 di New York) ed entra alla prima chiusura successiva.</li>
+    <li>Stesse regole del sito per etichette, divergenza, dollaro composito, nascita/conferma/chiusura dei segnali e affidabilit&agrave; (storico e Commercials di allora).</li>
+    <li>Non incluse: la parte <b>Mercato e macro</b> (30% del punteggio live), le notizie e la stagionalit&agrave;.</li>
+    <li>Costi stimati andata e ritorno sottratti: cambi principali ${B.costi.major}%, incroci ${B.costi.cross}%, emergenti ${B.costi.em}%, indici ${B.costi.indici}%, petrolio ${B.costi.energia}%, gas ${B.costi.NATGAS}%, crypto ${B.costi.crypto}%. Swap e rollover esclusi.</li>
+    <li>Prezzi solo di chiusura giornaliera (FRED): guadagno e drawdown massimi sono misurati sulle chiusure.</li></ul></details>
+   <h2>Ultimi segnali simulati conclusi</h2><div class="grid vfgrid">${(B.ultimi||[]).slice(0,12).map(s=>scheda(s,true)).join("")}</div>`;}
+
+ function disegna(){el.innerHTML=`<h2>Verifica dei segnali</h2><p class="sub">Ogni segnale misurato con prezzi veri: ingresso alla prima chiusura dopo il segnale, risultato a 1, 2 e 4 settimane e fino al cambio di etichetta, con guadagno e drawdown massimi.</p>
+  <div class="vfswitch"><button data-f="live" class="${V.fin=="live"?"on":""}">Registro live</button><button data-f="bt" class="${V.fin=="bt"?"on":""}">Backtest <span class="vfsimtag">SIMULATO</span></button></div>
+  <div class="vfcorpo">${V.fin=="live"?live():backtest()}</div>`;
+  el.querySelectorAll(".vfswitch button").forEach(b=>b.onclick=()=>{V.fin=b.dataset.f;salva();disegna();});
+  el.querySelectorAll(".vforz button").forEach(b=>b.onclick=()=>{V.h=b.dataset.h;salva();disegna();});
+  const alt=$("vfaltro");if(alt)alt.onclick=()=>{$("vfchiusi").innerHTML=R.chiusi.map(s=>scheda(s)).join("");alt.remove();};}
+ disegna();})();}catch(e){fail('Verifica dei segnali','verifica',e);}
 
 /* ---------- registro (SOLO AMMINISTRATORE) ----------
    Il sito e' pubblico, quindi il registro completo NON e' in chiaro nella pagina:

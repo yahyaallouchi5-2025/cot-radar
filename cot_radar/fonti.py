@@ -58,6 +58,25 @@ def get_cftc():
     return rows
 
 
+def get_cftc_tutto(inizio="1986-01-01", pagina=50000):
+    """TUTTO lo storico COT dei nostri mercati (dal 1986): serve UNA volta sola per creare l'archivio del backtest
+    (vedi storico.aggiorna_cot). Circa 75.000 righe, scaricate a pagine da 50.000."""
+    codes = ",".join(f"'{a[1]}'" for a in ASSETS)
+    righe, offset = [], 0
+    while True:
+        q = {
+            "$select": "report_date_as_yyyy_mm_dd,cftc_contract_market_code,open_interest_all,"
+                       "noncomm_positions_long_all,noncomm_positions_short_all,comm_positions_long_all,comm_positions_short_all",
+            "$where": f"cftc_contract_market_code in({codes}) AND report_date_as_yyyy_mm_dd >= '{inizio}'",
+            "$order": "cftc_contract_market_code,report_date_as_yyyy_mm_dd", "$limit": str(pagina), "$offset": str(offset),
+        }
+        blocco = json.loads(http(CFTC_URL + "?" + urllib.parse.urlencode(q)))
+        righe += blocco
+        if len(blocco) < pagina:
+            return righe
+        offset += pagina
+
+
 def get_fred(sid, since):
     """Una serie FRED -> lista ordinata [[data, valore], ...].
 

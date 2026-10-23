@@ -29,6 +29,7 @@ from cot_radar import admin                           # noqa: E402
 from cot_radar.log import log, raccoglitore, setup   # noqa: E402
 from cot_radar.pagina import build, error_page       # noqa: E402
 from cot_radar import paracadute                     # noqa: E402
+from cot_radar import registro                       # noqa: E402
 
 
 def install_task():
@@ -103,7 +104,7 @@ def main(argv):
         source = load_all
 
     try:
-        page, stato = build(source, demo="--demo" in argv)
+        page, stato = build(source, demo="--demo" in argv, sito=site)
     except Exception:
         err = traceback.format_exc()
         log.critical("La dashboard NON e' stata creata:\n%s", err)
@@ -131,6 +132,12 @@ def main(argv):
             log.critical("Pagina NON aggiornata: tengo quella precedente (%s)", out)
             return 1
         scrivi_stato(stato, [os.path.dirname(STATO)], os.path.dirname(out) if site else None)
+        # REGISTRO LIVE dei segnali: si salva solo adesso, ad aggiornamento approvato, e mai con esito critico
+        # (dati sospetti = possibili segnali finti). Vedi cot_radar/registro.py
+        if stato["esito"] != "critico":
+            registro.salva()
+        else:
+            log.warning("registro segnali non aggiornato: esito critico")
         segnala_a_github(stato)
         log.info("Esito: %s (%d errori, %d avvisi)", stato["esito"].upper(), stato["errori"], stato["avvisi"])
 

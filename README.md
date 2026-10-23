@@ -125,6 +125,33 @@ Ogni sera feriale (22:15 UTC) il sito si aggiorna; se qualcosa non va riprova al
 La mail all'admin parte **solo se falliscono tutti e 3** i tentativi. Nel frattempo online restano gli ultimi dati validi.
 (GitHub può ritardare gli avvii programmati di qualche minuto nelle ore di punta.)
 
+## Verifica dei segnali: registro live e backtest
+
+Un **motore unico** (`cot_radar/motore.py`) decide quando nasce, si conferma e finisce un segnale, e lo misura.
+Le stesse regole servono a due finestre separate (scheda "Verifica segnali"):
+
+- **Registro live** (`cot_radar/registro.py`): file `storico/segnali/registro.jsonl` nel ramo `storico`.
+  - Ogni evento (apertura, conferma, chiusura) ha data e ora vere.
+  - Ogni evento contiene l'hash SHA-256 del precedente. Se si modifica un evento vecchio la catena si rompe: il sito lo mostra e il registro smette di scrivere.
+  - Si scrive solo dal sito, solo con COT e FRED completi e solo se l'aggiornamento viene pubblicato.
+- **Backtest SIMULATO** (`cot_radar/backtest.py`): tutte le settimane dal 1986.
+  - L'archivio COT completo `storico/COT.csv` viene scaricato una volta sola e poi solo aggiornato.
+  - Calcolo point-in-time: ogni settimana usa solo i dati di allora.
+  - Gli ultimi 2 anni restano separati (holdout).
+  - Dal risultato si tolgono i costi stimati.
+  - La parte macro, le notizie e la stagionalità non sono incluse.
+
+**Come si misura un segnale:**
+- **Ingresso:** la prima chiusura giornaliera dopo la generazione. I cambi FRED sono le 12:00 di New York.
+- **Orizzonti:** risultato a 1, 2 e 4 settimane e fino al cambio di etichetta, con un massimo di 12 settimane.
+- **Guadagno e drawdown massimi:** misurati sulle chiusure.
+- **Tre ingressi a confronto:**
+  - A: subito;
+  - B: ordine limite a 0,5× il movimento settimanale tipico, valido 5 giorni;
+  - C: metà e metà.
+
+Test: `python -m unittest tests.test_motore -v`. Tra l'altro verificano la catena di hash, la manomissione e il backtest senza dati "dal futuro".
+
 ## Registro di monitoraggio e protezione anti-crollo
 
 | Dove | Cosa |

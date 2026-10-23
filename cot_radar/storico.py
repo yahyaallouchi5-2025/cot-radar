@@ -182,3 +182,87 @@ def prezzi_usd(archivio):
         pts = archivio.get(sid) or []
         out[k] = [(d, v if verso > 0 else 1 / v) for d, v in pts if v and v > 0]
     return {k: v for k, v in out.items() if v}
+
+
+# --------------------------------------------------------------------------- archivio COT (per il backtest)
+# Un solo file storico/COT.csv con tutte le settimane dal 1986 dei nostri mercati.
+# Stesse regole dei prezzi: si scarica tutto UNA volta, poi si aggiungono solo le settimane nuove che arrivano
+# con il normale download della dashboard; le righe gia' salvate non si toccano mai.
+COT_FILE = "COT.csv"
+COT_CAMPI = ["cftc_contract_market_code", "report_date_as_yyyy_mm_dd", "open_interest_all",
+             "noncomm_positions_long_all", "noncomm_positions_short_all", "comm_positions_long_all",
+             "comm_positions_short_all"]
+COT_MIN = 20000                     # un download completo con meno righe e' sospetto
+
+
+def _riga_cot(r):
+    """Riga CFTC -> lista di testi nel formato del file, None se incompleta o impossibile."""
+    try:
+        v = [str(r[c]).strip() if r.get(c) not in (None, "") else "" for c in COT_CAMPI]
+        v[1] = v[1][:10]
+        if not v[0] or len(v[1]) != 10 or float(v[2]) <= 0 or float(v[3]) < 0 or float(v[4]) < 0:
+            return None
+        return v
+    except (KeyError, ValueError, TypeError):
+        return None
+
+
+def leggi_cot(cartella=CARTELLA):
+    """Righe dell'archivio COT nello stesso formato della CFTC (dizionari): vanno bene per cot.cot_series()."""
+    f = os.path.join(cartella, COT_FILE)
+    if not os.path.exists(f):
+        return []
+    with open(f, encoding="utf-8") as fh:
+        rd = csv.reader(fh)
+        next(rd, None)
+        return [{c: (x if x != "" else None) for c, x in zip(COT_CAMPI, r)} for r in rd if r]
+
+
+def _scrivi_cot(cartella, righe):
+    os.makedirs(cartella, exist_ok=True)
+    f = os.path.join(cartella, COT_FILE)
+    with open(f + ".tmp", "w", encoding="utf-8", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(COT_CAMPI)
+        w.writerows(righe)
+    os.replace(f + ".tmp", f)
+
+
+def aggiorna_cot(recenti, scarica=None, cartella=CARTELLA):
+    """Aggiorna l'archivio COT. recenti = righe CFTC del normale download (ultime ~3 anni);
+    scarica() = download completo (solo se l'archivio non esiste ancora).
+    Restituisce (righe per cot_series, riepilogo)."""
+    meta = _meta(cartella)
+    try:
+        vecchie = [_riga_cot(r) for r in leggi_cot(cartella)]
+    except Exception as e:
+        log.critical("archivio COT illeggibile (%s): non lo tocco, il backtest usa solo gli ultimi 3 anni", e)
+        return recenti, {"stato": "illeggibile"}
+    vecchie = [r for r in vecchie if r]
+    if not vecchie or "COT" not in meta:
+        if scarica is None:
+            return recenti, {"stato": "assente"}
+        try:
+            tutte = scarica()
+        except Exception as e:
+            log.warning("archivio COT: download completo non riuscito (%s), riprovo al prossimo aggiornamento", e)
+            return recenti, {"stato": "assente"}
+        nuove = sorted({(r[0], r[1]): r for r in (_riga_cot(x) for x in tutte) if r}.values(), key=lambda r: (r[0], r[1]))
+        if len(nuove) < COT_MIN:
+            log.critical("archivio COT: download completo sospetto (%d righe): NON salvato", len(nuove))
+            return recenti, {"stato": "assente"}
+        _scrivi_cot(cartella, nuove)
+        meta["COT"] = date.today().isoformat()
+        _salva_meta(cartella, meta)
+        log.info("archivio COT creato: %d righe dal %s", len(nuove), min(r[1] for r in nuove))
+        vecchie = nuove
+    ultima = {}
+    for r in vecchie:
+        ultima[r[0]] = max(ultima.get(r[0], ""), r[1])
+    agg = [r for r in (_riga_cot(x) for x in recenti or []) if r and r[1] > ultima.get(r[0], "")]
+    agg = sorted({(r[0], r[1]): r for r in agg}.values(), key=lambda r: (r[0], r[1]))
+    if agg:
+        vecchie = vecchie + agg
+        _scrivi_cot(cartella, sorted(vecchie, key=lambda r: (r[0], r[1])))
+        log.info("archivio COT: %d settimane nuove aggiunte", len(agg))
+    return [dict(zip(COT_CAMPI, r)) for r in vecchie], {"stato": "ok", "righe": len(vecchie), "nuove": len(agg)}

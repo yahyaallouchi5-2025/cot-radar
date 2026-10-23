@@ -23,4 +23,4 @@ Mappa dei moduli (in ordine di "viaggio" dei dati):
   stagionalita.py stagionalita': prossime 4 settimane, mesi, giorni della settimana + backtest del peso
   admin.py       registro riservato: sul sito cifrato con la password admin (Secret ADMIN_PASSWORD)
 """
-__version__ = "5.2"
+__version__ = "6.0"

@@ -14,7 +14,7 @@ import json
 import math
 import os
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone
 
 from .analisi import analyse
 from .calendario import sources_status
@@ -22,11 +22,11 @@ from .config import (ASSETS, DIVERGENCE_MIN, MACRO_WEIGHT, NORMAL, REG_WEEKS, SE
                      WEB_DIR, WEIGHTS)
 from .controlli import controlla
 from .cot import cot_series
-from .fonti import get_fred, load_all
+from .fonti import get_cftc_tutto, get_fred, load_all
 from .log import log, raccoglitore
 from .mercato import fed_liquidity
 from .mutui import mortgages
-from . import notizie, stagionalita, storico
+from . import backtest, notizie, registro, stagionalita, storico
 from .admin import pubblico
 
 
@@ -49,11 +49,13 @@ def template():
     return read("index.html").replace("{{CSS}}", read("stile.css")).replace("{{JS}}", read("app.js"))
 
 
-def build(data_source=load_all, demo=False):
+def build(data_source=load_all, demo=False, sito=False):
     """Scarica (o riceve) i dati, calcola tutto e restituisce (html, stato).
     data_source si puo' sostituire: la modalita' --demo passa dati finti invece di scaricarli.
-    stato = riepilogo dell'esecuzione (fonti, avvisi, errori): finisce nella scheda "Registro" e in stato.json."""
+    stato = riepilogo dell'esecuzione (fonti, avvisi, errori): finisce nella scheda "Registro" e in stato.json.
+    sito=True: e' l'aggiornamento ufficiale del sito, l'unico che scrive il registro live dei segnali."""
     t0 = datetime.now()
+    t0_utc = datetime.now(timezone.utc)
     cache, status, errors = data_source()
     fred = cache.get("fred", {}).get("data", {}) or {}
     ecb = cache.get("ecb", {}).get("data", {}) or {}
@@ -79,7 +81,7 @@ def build(data_source=load_all, demo=False):
         news = {"prossimi": [], "valute": {}}
     # STAGIONALITA' (vedi storico.py e stagionalita.py). Isolata: se qualcosa va storto mancano solo
     # i riquadri "Stagionalita'", il resto della dashboard non cambia.
-    rie_storico, stag, stag_meta = None, {}, None
+    rie_storico, stag, stag_meta, archivio = None, {}, None, {}
     try:
         if demo:
             from .demo import storico_demo
@@ -93,6 +95,29 @@ def build(data_source=load_all, demo=False):
         log.info("stagionalita': %d strumenti/coppie, peso dal backtest %s", len(stag), stag_meta.get("peso"))
     except Exception:
         log.warning("stagionalita' non calcolata:\n%s", traceback.format_exc())
+    # VERIFICA DEI SEGNALI (vedi motore.py): registro live (registro.py) e backtest simulato (backtest.py).
+    # Isolati come il resto: se falliscono manca solo la scheda "Verifica", la dashboard non cambia.
+    prezzi = storico.prezzi_usd(archivio) if archivio else {}
+    reg = bt = rie_cot = None
+    try:
+        cot_data = max((a.get("date") or "" for a in assets.values()), default="") or None
+        reg = registro.aggiorna(pairs, assets, prezzi, status, t0_utc, cot_data,
+                                scrivi=sito and not demo)
+    except Exception:
+        log.error("registro segnali non calcolato:\n%s", traceback.format_exc())
+    try:
+        righe_cot, rie_cot = (cache["cot"]["data"], {"stato": "demo"}) if demo else \
+            storico.aggiorna_cot(cache["cot"]["data"], scarica=get_cftc_tutto)
+        bt = backtest.calcola(righe_cot, prezzi, con_eventi=demo) if prezzi else None
+        if demo and bt:
+            from datetime import date, timedelta
+            bt["inizio_demo"] = (date.fromisoformat(bt["al"]) - timedelta(days=90)).isoformat()
+        if demo and bt:              # DEMO: registro finto con gli ultimi 3 mesi simulati, per vedere la scheda
+            ev = [e for e in bt.pop("_eventi") if (e.get("quando") or e["generato"]) >= bt["inizio_demo"]]
+            reg = registro.vista(registro.concatena(ev, registro.ZERO, 0),
+                                 registro.strumenti(pairs, assets, prezzi), True, True)
+    except Exception:
+        log.warning("backtest non calcolato:\n%s", traceback.format_exc())
     # punteggio corretto = COT/mercato + notizie + stagionalita' (il punteggio originale resta quello mostrato nell'anello)
     for p in pairs:
         extra = ((p.get("news") or {}).get("adj") or 0) + ((p.get("stag") or {}).get("adj") or 0)
@@ -115,14 +140,14 @@ def build(data_source=load_all, demo=False):
         "errori": n_err, "avvisi": n_warn, "fonti": status,
         "strumenti": len(assets), "coppie": len(pairs), "mercato": bool(market), "mutui": bool(mort),
         "voci": raccoglitore.voci[-200:],             # ultimi avvisi/errori di questa esecuzione
-        "controlli": controlli, "demo": demo, "storico": rie_storico,
+        "controlli": controlli, "demo": demo, "storico": rie_storico, "archivio_cot": rie_cot,
     }
     meta = {"now": datetime.now().strftime("%d/%m/%Y %H:%M"), "w": WEIGHTS, "strong": STRONG, "normal": NORMAL,
             "divmin": DIVERGENCE_MIN, "mw": MACRO_WEIGHT, "regw": REG_WEEKS, "demo": demo}
     data = {"meta": meta, "sources": sources,
             "assets": assets, "pairs": pairs, "corr": corr, "market": market, "fed": fed, "mortgage": mort,
             "order": [a[0] for a in ASSETS] + ["USD"], "sectors": SECTORS, "stato": pubblico(stato), "admin": "__ADMIN__", "eventi": news["prossimi"],
-            "stag": stag, "stag_meta": stag_meta,
+            "stag": stag, "stag_meta": stag_meta, "reg": reg, "bt": bt,
             "tv": {k: {"s": v[0], "inv": v[1]} for k, v in TV_SYMBOLS.items()}, "tvp": TV_PAIRS}
     # "stato" pubblico = solo esito e fonti; "admin" = segnaposto che main.py sostituisce con il registro
     # completo (cifrato sul sito, in chiaro sul PC). Vedi cot_radar/admin.py
