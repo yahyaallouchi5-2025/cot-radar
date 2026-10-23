@@ -152,6 +152,14 @@ Le stesse regole servono a due finestre separate (scheda "Verifica segnali"):
 
 **Orizzonte a scelta.** Nella pagina si sceglie l'uscita: da 1 a 20 sedute (5 = una settimana) oppure al cambio di etichetta. Il backtest si può filtrare anche per periodo: tutto, sviluppo o holdout. Per ogni seduta Python salva una lista compatta con, per quel giorno: numero di segnali, segnali vinti, somma dei risultati, somma dei guadagni massimi e somma dei drawdown massimi. Il calcolo è `motore.giorni_stat`. Medie, % di vinti e intervallo di Wilson li calcola `app.js`. Per ogni strumento ci sono anche la volatilità annua e la mossa settimanale tipica (`motore.profilo`).
 
+**Volatilità per asset** (`cot_radar/volatilita.py`). Si calcola dall'archivio prezzi e copre:
+- il movimento medio per giorno della settimana;
+- la settimana tipica e quella "brutta", cioè il 90° percentile;
+- la volatilità per mese del calendario e anno per anno;
+- il regime attuale: ultime 20 sedute contro gli ultimi 5 anni, diviso in calma, normale e agitata.
+
+Ogni segnale (live e backtest) riceve il regime del giorno prima della generazione, quindi senza dati dal futuro. Le statistiche si possono leggere anche per regime. La volatilità è misurata da chiusura a chiusura.
+
 Test: `python -m unittest tests.test_motore -v`. Tra l'altro verificano la catena di hash, la manomissione e il backtest senza dati "dal futuro".
 
 ## Registro di monitoraggio e protezione anti-crollo

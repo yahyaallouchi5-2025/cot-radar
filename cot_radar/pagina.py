@@ -26,7 +26,7 @@ from .fonti import get_cftc_tutto, get_fred, load_all
 from .log import log, raccoglitore
 from .mercato import fed_liquidity
 from .mutui import mortgages
-from . import backtest, notizie, registro, stagionalita, storico
+from . import backtest, notizie, registro, stagionalita, storico, volatilita
 from .admin import pubblico
 
 
@@ -118,6 +118,12 @@ def build(data_source=load_all, demo=False, sito=False):
                                  registro.strumenti(pairs, assets, prezzi), True, True)
     except Exception:
         log.warning("backtest non calcolato:\n%s", traceback.format_exc())
+    # VOLATILITA' di ogni strumento (giorni, settimane, mesi, anni, regime attuale): vedi volatilita.py
+    vol = {}
+    try:
+        vol = volatilita.calcola(pairs, prezzi) if prezzi else {}
+    except Exception:
+        log.warning("volatilita' non calcolata:\n%s", traceback.format_exc())
     # punteggio corretto = COT/mercato + notizie + stagionalita' (il punteggio originale resta quello mostrato nell'anello)
     for p in pairs:
         extra = ((p.get("news") or {}).get("adj") or 0) + ((p.get("stag") or {}).get("adj") or 0)
@@ -147,7 +153,7 @@ def build(data_source=load_all, demo=False, sito=False):
     data = {"meta": meta, "sources": sources,
             "assets": assets, "pairs": pairs, "corr": corr, "market": market, "fed": fed, "mortgage": mort,
             "order": [a[0] for a in ASSETS] + ["USD"], "sectors": SECTORS, "stato": pubblico(stato), "admin": "__ADMIN__", "eventi": news["prossimi"],
-            "stag": stag, "stag_meta": stag_meta, "reg": reg, "bt": bt,
+            "stag": stag, "stag_meta": stag_meta, "reg": reg, "bt": bt, "vol": vol,
             "tv": {k: {"s": v[0], "inv": v[1]} for k, v in TV_SYMBOLS.items()}, "tvp": TV_PAIRS}
     # "stato" pubblico = solo esito e fonti; "admin" = segnaposto che main.py sostituisce con il registro
     # completo (cifrato sul sito, in chiaro sul PC). Vedi cot_radar/admin.py

@@ -335,3 +335,19 @@ h1.ghiaccio{color:#eef6ff;text-shadow:0 0 18px rgba(185,225,255,.32),0 0 2px rgb
 .vfanno.vfhold{background:color-mix(in srgb,var(--acc) 10%,transparent);border-radius:4px}
 @media (max-width:600px){.vfetich{min-width:0;width:100%}.vfcomandi{padding:12px}}
 @media (max-width:600px){.vfleg{gap:4px 12px}}
+/* volatilita' per asset: regime attuale, barre per giorno/mese/anno, selettore strumento */
+.vfsel{background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font:600 14px system-ui;min-width:220px}
+.vfregime{display:grid;grid-template-columns:1fr 1.2fr;gap:24px;align-items:center;margin-bottom:20px;border-color:color-mix(in srgb,var(--vc) 45%,var(--line))}
+.vfregime .big{font-size:28px;font-weight:800;margin:6px 0 4px}.vfregime .note{font-size:13.5px;color:var(--mute)}
+.vfpbar{height:10px;border-radius:99px;background:linear-gradient(90deg,var(--c1),var(--warn) 50%,var(--ss));position:relative;margin:6px 0 8px}
+.vfpbar i{position:absolute;top:-5px;width:4px;height:20px;border-radius:2px;background:var(--ink);transform:translateX(-2px)}
+.vfbarre{display:flex;align-items:flex-end;gap:8px;height:190px;padding-top:6px}
+.vfb{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;min-width:0}
+.vfbcol{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center;gap:3px}
+.vfbcol i{display:block;width:42%;max-width:34px;min-height:2px;border-radius:4px 4px 0 0;background:var(--c1)}.vfbcol i.b2{background:color-mix(in srgb,var(--c1) 45%,transparent)}
+.vfb.evid .vfbcol i{background:var(--acc)}
+.vfb em{font-style:normal;font-size:11.5px;color:var(--ink2);margin-top:4px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.vfb span{font-size:12px;color:var(--mute);margin-top:2px}.vfb.evid span{color:var(--acc);font-weight:700}
+.vfbarre.fitte{gap:2px;overflow-x:auto}.vfbarre.fitte .vfb{min-width:14px}.vfbarre.fitte .vfbcol i{width:80%}.vfbarre.fitte span{font-size:9.5px}
+.vfvtag{color:var(--vc)!important;background:color-mix(in srgb,var(--vc) 14%,transparent)!important}
+@media (max-width:600px){.vfregime{grid-template-columns:1fr;gap:12px}.vfsel{min-width:0;width:100%}.vfbarre{height:150px;gap:4px}.vfb em{font-size:10px}}

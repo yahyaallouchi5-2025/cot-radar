@@ -24,7 +24,7 @@ DEBUG: python -c "from cot_radar import backtest; ..." oppure python -m unittest
 from bisect import bisect_left, bisect_right
 from datetime import date, timedelta
 
-from . import motore
+from . import motore, volatilita
 from .config import ASSETS, EXTRA_PAIRS, FX_ORDER, NORMAL, PAIR_NAMES
 from .conferme import ORIZZONTE, MIN_SEGNALI, _al, accordo, commercials
 from .cot import cot_series, cot_strength, is_divergence, label
@@ -169,9 +169,10 @@ def calcola(cot_righe, prezzi, con_eventi=False):
     # misura e statistiche
     ultima = date_tutte[-1]
     limite_h = (date.fromisoformat(ultima) - timedelta(days=HOLDOUT_GIORNI)).isoformat()
-    misurati = []
+    misurati, reg = [], volatilita.Regimi()
     for sid, s in segnali.items():
         st = strum[s["strumento"]]
+        s["vol"] = reg.al_segnale(s["strumento"], st["pts"], s["generato"])   # regime di volatilita' di allora
         m = motore.misura(s, st["pts"], st["cls"])
         if m and m.get("stato") == "ok":
             misurati.append((s, m, st["costo"]))
@@ -191,7 +192,8 @@ def calcola(cot_righe, prezzi, con_eventi=False):
         return {"riass": motore.riassunto(padri_p, varianti=True),
                 "etichetta": gruppi(tutti_p, lambda s: s["etichetta"]),
                 "affid": gruppi(padri_p, lambda s: s.get("affid") or "n/d"),
-                "strumento": gruppi(padri_p, lambda s: s["strumento"])}
+                "strumento": gruppi(padri_p, lambda s: s["strumento"]),
+                "vol": gruppi(padri_p, lambda s: (s.get("vol") or {}).get("nome") or "n/d")}
 
     in_hold = lambda x: x[0]["generato"][:10] >= limite_h
     anni = {}
@@ -209,7 +211,7 @@ def calcola(cot_righe, prezzi, con_eventi=False):
                     "holdout": periodo(hold, [x for x in misurati if in_hold(x)])},
         "anni": {a: motore.riassunto(v) for a, v in sorted(anni.items())},
         "ultimi": [{"id": s["id"], "strumento": s["strumento"], "etichetta": s["etichetta"], "affid": s.get("affid"),
-                    "generato_it": motore.ora_italia(s["generato"]), "punteggio": s["punteggio"],
+                    "generato_it": motore.ora_italia(s["generato"]), "punteggio": s["punteggio"], "vol": s.get("vol"),
                     "chiuso": dict(s["chiuso"], quando_it=motore.ora_italia(s["chiuso"]["quando"])) if s["chiuso"] else None,
                     "m": motore.snello(m)} for s, m, c in ultimi],
         "costi": {k: v for k, v in motore.COSTI.items()},

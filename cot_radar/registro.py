@@ -26,7 +26,7 @@ import json
 import os
 from datetime import timezone
 
-from . import motore
+from . import motore, volatilita
 from .config import PRICES, ROOT
 from .log import log
 from .stagionalita import prezzo_coppia
@@ -157,8 +157,10 @@ def vista(eventi, strum, integra, completi):
     """Dati per la pagina: segnali misurati (aperti + ultimi chiusi), statistiche e stato della catena."""
     segnali, _ = motore.applica(eventi)
     righe, misurati = [], []
+    reg = volatilita.Regimi()
     for sid, s in segnali.items():
         d = strum.get(s["strumento"])
+        s["vol"] = reg.al_segnale(s["strumento"], d["_pts"], s["generato"]) if d else None
         m = motore.misura(s, d["_pts"], d["_cls"]) if d else None
         cst = motore.costo(s["strumento"], s.get("base"), s.get("quote"))
         if not s.get("iniziale"):
@@ -168,7 +170,7 @@ def vista(eventi, strum, integra, completi):
                       "generato": s["generato"], "generato_it": motore.ora_italia(s["generato"]),
                       "padre": s.get("padre"), "iniziale": s.get("iniziale", False), "conferme": s["conferme"],
                       "chiuso": dict(s["chiuso"], quando_it=motore.ora_italia(s["chiuso"]["quando"])) if s["chiuso"] else None,
-                      "cls": d["_cls"] if d else None, "m": m})
+                      "cls": d["_cls"] if d else None, "m": m, "vol": s.get("vol")})
     aperti = [r for r in righe if not r["chiuso"]]
     chiusi = sorted([r for r in righe if r["chiuso"]], key=lambda r: r["chiuso"]["quando"], reverse=True)
     padri = [x for x in misurati if not x[0].get("padre")]
@@ -183,7 +185,8 @@ def vista(eventi, strum, integra, completi):
     stat = {"riass": motore.riassunto(padri, varianti=True),
             "etichetta": gruppi(misurati, lambda s: s["etichetta"]),
             "affid": gruppi(padri, lambda s: s.get("affid") or "n/d"),
-            "strumento": gruppi(padri, lambda s: s["strumento"])}
+            "strumento": gruppi(padri, lambda s: s["strumento"]),
+            "vol": gruppi(padri, lambda s: (s.get("vol") or {}).get("nome") or "n/d")}
     for r in righe:
         r["m"] = motore.snello(r["m"])
     return {"aperti": sorted(aperti, key=lambda r: r["generato"], reverse=True), "chiusi": chiusi[:MAX_CHIUSI],

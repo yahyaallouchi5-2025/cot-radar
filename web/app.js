@@ -411,7 +411,7 @@ $("guide").innerHTML=`
 <h3>6. Stagionalit&agrave;</h3><p>Da un archivio permanente di prezzi giornalieri (fino a 50 anni, salvato su GitHub e mai riscritto) si misura come si e' mosso ogni strumento <b>nelle prossime 4 settimane</b> di ogni anno passato, in <b>ogni mese</b> e in <b>ogni giorno della settimana</b>. Prima si toglie il trend (il movimento medio dello strumento), poi un effetto conta solo se: almeno 10 anni di dati; almeno il 65% degli anni nello stesso verso (mesi: anche test t &ge; 2; giorni: test t &ge; 2,58 perche' si confrontano 5 giorni insieme); stesso verso nella prima e nella seconda meta' degli anni; per la finestra, stesso verso spostandola di una settimana avanti o indietro. Sul puro rumore questi filtri lasciano passare circa 1-3 casi su 100.</p>
 <p><b>Peso deciso dal backtest</b>: i segnali COT passati sono stati divisi in "stagionalita' a favore" e "contraria", calcolata solo con gli anni precedenti a ogni segnale. ${D.stag_meta?`A favore: <b>${D.stag_meta.accordo.hit??"n/d"}%</b> di successi in 4 settimane (${D.stag_meta.accordo.n} segnali); contraria: <b>${D.stag_meta.contrasto.hit??"n/d"}%</b> (${D.stag_meta.contrasto.n}). Peso usato: <b>${Math.round(D.stag_meta.peso*100)}%</b> del punteggio stagionale${D.stag_meta.peso?"":" (nessun vantaggio dimostrato: la stagionalita' resta solo informativa)"}.`:"Backtest non disponibile."} I segnali di strumenti e coppie si sovrappongono nel tempo, quindi il numero di casi "indipendenti" e' piu' basso di quanto sembra. Il punteggio originale resta nell'anello; la correzione compare nella riga sotto i riquadri.</p>
 <h3>7. Notizie (CPI, NFP, Fed, BCE)</h3><p>Il COT indica la direzione per le prossime settimane; una notizia ad alto impatto muove il prezzo per ore o pochi giorni e cambia soprattutto il <i>momento</i> giusto per entrare. Prima dell'evento la card mostra solo l'avviso &#9889;. Dopo l'evento la <b>sorpresa</b> e' misurata dal mercato: di quanto si e' mosso il tasso a 2 anni della valuta nel giorno del dato rispetto a una giornata normale (in deviazioni standard, &sigma;). Tassi su = valuta piu' forte. Il correttivo vale 10 punti per &sigma;, ha un tetto di &plusmn;30 per valuta e si dimezza ogni giorno (ogni 3 giorni per Fed e BCE). Il segnale COT non viene cambiato: accanto si vede il punteggio corretto.</p>
-<h3>8. Verifica dei segnali</h3><p><b>Registro live</b>: ogni segnale viene salvato nel momento in cui nasce (data e ora vere), con l'ingresso alla <b>prima chiusura giornaliera successiva</b> (mai un prezzo gi&agrave; passato). Poi si misurano, nel verso del segnale, il risultato a 1, 2 e 4 settimane e fino al cambio di etichetta (massimo 12 settimane), con il guadagno massimo e il drawdown massimo lungo il percorso. Un segnale nasce quando l'etichetta passa da NEUTRO a BUY/SELL o si inverte; la stessa direzione la settimana dopo &egrave; una conferma; il passaggio a STRONG apre una "fase STRONG" misurata a parte. Gli eventi non si possono modificare: ognuno contiene l'impronta (hash SHA-256) del precedente, e il registro si aggiorna solo con dati completi.</p><p><b>Backtest</b> (marcato SIMULATO): le stesse regole applicate a tutte le settimane dal 1986, usando ogni volta solo i dati disponibili allora. Esclude la parte Mercato e macro, le notizie e la stagionalit&agrave;, sottrae costi stimati e tiene separati gli ultimi 2 anni (holdout) come controllo onesto. Tre modi di entrare: subito, con un ordine limite di ritracciamento, o met&agrave; e met&agrave;.</p><p><b>Orizzonte a scelta</b>: chi specula pu&ograve; chiudere dopo 1 settimana (5 sedute), chi investe dopo 4 (20 sedute). Il cursore mostra, seduta per seduta dall'uscita dei dati, risultato medio, guadagno massimo e drawdown massimo, anche solo sull'holdout. Accanto a ogni strumento ci sono volatilit&agrave; annua e mossa settimanale tipica: lo stesso drawdown pesa diversamente su un cambio tranquillo e su un mercato nervoso come il gas.</p>
+<h3>8. Verifica dei segnali</h3><p><b>Registro live</b>: ogni segnale viene salvato nel momento in cui nasce (data e ora vere), con l'ingresso alla <b>prima chiusura giornaliera successiva</b> (mai un prezzo gi&agrave; passato). Poi si misurano, nel verso del segnale, il risultato a 1, 2 e 4 settimane e fino al cambio di etichetta (massimo 12 settimane), con il guadagno massimo e il drawdown massimo lungo il percorso. Un segnale nasce quando l'etichetta passa da NEUTRO a BUY/SELL o si inverte; la stessa direzione la settimana dopo &egrave; una conferma; il passaggio a STRONG apre una "fase STRONG" misurata a parte. Gli eventi non si possono modificare: ognuno contiene l'impronta (hash SHA-256) del precedente, e il registro si aggiorna solo con dati completi.</p><p><b>Backtest</b> (marcato SIMULATO): le stesse regole applicate a tutte le settimane dal 1986, usando ogni volta solo i dati disponibili allora. Esclude la parte Mercato e macro, le notizie e la stagionalit&agrave;, sottrae costi stimati e tiene separati gli ultimi 2 anni (holdout) come controllo onesto. Tre modi di entrare: subito, con un ordine limite di ritracciamento, o met&agrave; e met&agrave;.</p><p><b>Orizzonte a scelta</b>: chi specula pu&ograve; chiudere dopo 1 settimana (5 sedute), chi investe dopo 4 (20 sedute). Il cursore mostra, seduta per seduta dall'uscita dei dati, risultato medio, guadagno massimo e drawdown massimo, anche solo sull'holdout. Accanto a ogni strumento ci sono volatilit&agrave; annua e mossa settimanale tipica: lo stesso drawdown pesa diversamente su un cambio tranquillo e su un mercato nervoso come il gas.</p><p><b>Volatilit&agrave; per asset</b>: per ogni strumento il movimento medio per giorno della settimana, la settimana tipica e quella "brutta" (1 su 10), la volatilit&agrave; per mese del calendario e anno per anno, e il <b>regime di adesso</b> (ultime 4 settimane rispetto agli ultimi 5 anni: calma, normale, agitata). Ogni segnale riporta il regime in cui &egrave; nato e le statistiche si possono leggere anche per regime: cos&igrave; si scopre se il COT funziona meglio a mercato calmo o agitato.</p>
 <h3>9. Mutui</h3><p>Tassi medi sui nuovi mutui per acquisto casa (statistica BCE MIR, fonte Banca d'Italia per l'Italia). La stima dei mesi non ancora pubblicati usa una regressione delle variazioni mensili del tasso sulle variazioni del rendimento a 10 anni (fisso) o dell'ESTR (variabile), del mese stesso e di quello prima. L'intervallo &plusmn; e' l'errore tipico del modello.</p>
 <h3>10. Aggiornamenti</h3><p>${/^https?:/.test(location.protocol)?"Il sito si aggiorna da solo: venerdi' sera dopo il COT, ogni mattina feriale (mercati e BCE) e ogni sera feriale a fine giornata (fino a 3 tentativi a 5 minuti di distanza). Se una fonte non risponde restano online gli ultimi dati validi.":"Ogni apertura scarica tutto. Aggiornamento automatico ogni venerdi': nel Prompt dei comandi <code>python cot_radar.py --pianifica</code>."}</p>
 <h3>11. Limiti</h3><ul><li>Sono stime statistiche, non certezze: le relazioni cambiano nel tempo.</li><li>Il COT ha 3 giorni di ritardo; i mutui circa 5 settimane.</li><li>Oro, materie agricole e altri strumenti senza prezzo gratuito su FRED usano solo il COT.</li><li>Non e' una consulenza finanziaria.</li></ul>`;
@@ -613,8 +613,8 @@ document.querySelectorAll("#tviv button").forEach(b=>b.onclick=()=>{TV.iv=b.data
      BACKTEST = segnali SIMULATI sulle settimane passate dal 1986 con le stesse regole (D.bt)
    Calcoli in cot_radar/motore.py; qui solo la presentazione. Ingresso = prima chiusura dopo il segnale. */
 try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!el)return;
- const V={fin:"live",d:5,per:"tutti"};   // finestra, sedute di uscita (1..20 o "fine"), periodo del backtest
- try{const s=JSON.parse(localStorage.getItem("ebVerifica")||"{}");if(s.fin)V.fin=s.fin;if(s.d=="fine"||(s.d>=1&&s.d<=20))V.d=s.d;if(s.per)V.per=s.per;}catch(e){}
+ const V={fin:"live",d:5,per:"tutti",asset:"EURUSD"};   // finestra, sedute di uscita (1..20 o "fine"), periodo del backtest
+ try{const s=JSON.parse(localStorage.getItem("ebVerifica")||"{}");if(s.fin)V.fin=s.fin;if(s.d=="fine"||(s.d>=1&&s.d<=20))V.d=s.d;if(s.per)V.per=s.per;if(s.asset)V.asset=s.asset;}catch(e){}
  const salva=()=>{try{localStorage.setItem("ebVerifica",JSON.stringify(V));}catch(e){}};
  const pc=(x,d=2)=>x==null||isNaN(x)?"n/d":(x>0?"+":x<0?"−":"")+Math.abs(x).toLocaleString("it-IT",{minimumFractionDigits:d,maximumFractionDigits:d})+"%";
  const col=x=>x==null?"":x>0?"up":x<0?"down":"flat";
@@ -632,7 +632,7 @@ try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!el)return;
 
  /* scheda di un segnale nel formato approvato */
  function scheda(s,sim){const m=s.m||{},A=m.A||{},ing=m.ingresso;
-  const testa=`<div class="vfh"><span class="pair">${esc(s.strumento)}</span> ${badge(s.etichetta)} ${aff(s.affid)}${s.iniziale?' <span class="tag" title="Era gia\' attivo quando il registro e\' partito: escluso dalle statistiche">gi&agrave; attivo all\'avvio</span>':''}${s.padre?' <span class="tag" title="Fase STRONG di un segnale gia\' aperto">fase STRONG</span>':''}</div>`;
+  const testa=`<div class="vfh"><span class="pair">${esc(s.strumento)}</span> ${badge(s.etichetta)} ${aff(s.affid)}${s.iniziale?' <span class="tag" title="Era gia\' attivo quando il registro e\' partito: escluso dalle statistiche">gi&agrave; attivo all\'avvio</span>':''}${s.padre?' <span class="tag" title="Fase STRONG di un segnale gia\' aperto">fase STRONG</span>':''}${volTag(s.vol)}</div>`;
   let h=`<div class="vfr"><span>Segnale generato</span><b>${esc(s.generato_it)}</b></div>`+
    (ing?`<div class="vfr"><span>Ingresso</span><b>${prezzo(ing.prezzo)} <span class="small">&middot; ${oraIt(ing.utc)}</span></b></div>`
        :`<div class="vfr"><span>Ingresso</span><span class="small">${esc(m.stato||"prezzo non disponibile")}</span></div>`);
@@ -648,6 +648,40 @@ try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!el)return;
   const perche=(s.perche||[]).length?`<div class="small vfp">Affidabilit&agrave;: ${esc(s.perche.join(", "))}</div>`:"";
   return `<div class="card vfcard${sim?" vfsim":""}">${testa}<div class="vfrighe">${h}</div>${perche}</div>`;}
 
+ /* ---- VOLATILITA' PER ASSET (D.vol, calcolata da cot_radar/volatilita.py) ----
+    La "natura" di ogni mercato: quanto si muove per giorno della settimana, per settimana, per mese del
+    calendario e anno per anno, e in che regime e' adesso. Volatilita' da chiusura a chiusura (FRED). */
+ const VCOL={calma:"var(--c1)",normale:"var(--warn)",agitata:"var(--ss)"};
+ const fp=(x,d=2)=>x==null?"n/d":x.toLocaleString("it-IT",{minimumFractionDigits:d,maximumFractionDigits:d})+"%";
+ const volTag=v=>v?` <span class="tag vfvtag" style="--vc:${VCOL[v.nome]}" title="Volatilita' delle 4 settimane prima del segnale (${fp(v.vol,1)} annua) rispetto agli ultimi 5 anni">vol. ${v.nome} &middot; ${v.pct}&deg;</span>`:"";
+ /* barre verticali semplici: items = [{et, v, v2?, evid?, tit?}]; v2 = seconda serie (ultimo anno) */
+ function barre(items,dec,cls){const mx=Math.max(1e-9,...items.flatMap(x=>[x.v||0,x.v2||0]));
+  return `<div class="vfbarre ${cls||""}">${items.map(x=>`<div class="vfb${x.evid?" evid":""}" title="${esc(x.tit||x.et+": "+fp(x.v,dec)+(x.v2!=null?" (ultimo anno "+fp(x.v2,dec)+")":""))}">
+   <div class="vfbcol"><i style="height:${Math.round((x.v||0)/mx*100)}%"></i>${x.v2!=null?`<i class="b2" style="height:${Math.round(x.v2/mx*100)}%"></i>`:""}</div>
+   ${cls=="fitte"?"":`<em>${fp(x.v,dec)}</em>`}<span>${esc(x.et)}</span></div>`).join("")}</div>`;}
+ function datiVol(){const P=(D.vol||{})[V.asset];if(!P)return `<div class="card vfvuoto">Volatilit&agrave; non disponibile per questo strumento.</div>`;
+  const R=P.regime,S=P.settimane,o=P.oggi,mOra=new Date().getMonth(),aOra=String(new Date().getFullYear());
+  const MESI=["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
+  const reg=R?`<div class="card vfregime" style="--vc:${VCOL[R.nome]}"><div><h3>Regime di adesso</h3><div class="big" style="color:var(--vc)">${R.nome.toUpperCase()}</div>
+   <div class="note">ultime 4 settimane: <b>${fp(R.vol,1)}</b> di volatilit&agrave; annua, pi&ugrave; alta del <b>${R.pct}%</b> dei periodi degli ultimi 5 anni</div></div>
+   <div class="vfpct"><div class="vfpbar"><i style="left:${R.pct}%"></i></div><div class="scale"><span>calma</span><span>normale</span><span>agitata</span></div></div></div>`:"";
+  return reg+`<div class="grid k4 vfkpi">
+   <div class="card kpi"><h3>Volatilit&agrave; annua</h3><div class="big">${fp(P.ann_anno,1)}</div><div class="note">ultimo anno &middot; storia ${fp(P.ann_storia,1)}</div></div>
+   <div class="card kpi"><h3>Settimana tipica</h3><div class="big">${fp(S.media_anno)}</div><div class="note">media ultimo anno &middot; storia ${fp(S.media)}</div></div>
+   <div class="card kpi"><h3>Settimana "brutta"</h3><div class="big">${fp(S.brutta)}</div><div class="note">1 settimana su 10 si muove pi&ugrave; di cos&igrave; &middot; l'ultima ${fp(S.ultima)}</div></div>
+   <div class="card kpi"><h3>Ultima seduta</h3><div class="big">${fp(o.mossa,2)}</div><div class="note">${fd(o.data)} &middot; media di quel giorno ${fp(o.media_giorno)}</div></div></div>
+   <h3 class="vft">Giorno per giorno <span class="small">(movimento medio per giorno della settimana: colonna piena = storia, chiara = ultimo anno)</span></h3>
+   <div class="card">${barre(P.giorni.map(g=>({et:g.g,v:g.storia,v2:g.anno})),2)}</div>
+   <h3 class="vft">Mese per mese <span class="small">(volatilit&agrave; annua media in quel mese del calendario, dal ${fd(P.dal)})</span></h3>
+   <div class="card">${barre(P.mesi.map((v,i)=>({et:MESI[i],v:v,evid:i==mOra})),1)}</div>
+   <h3 class="vft">Anno per anno <span class="small">(volatilit&agrave; annua di ogni anno; l'anno in corso &egrave; parziale)</span></h3>
+   <div class="card">${barre(Object.entries(P.anni).map(([a,v])=>({et:a.slice(2),v:v,evid:a==aOra,tit:a+": "+fp(v,1)+(a==aOra?" (in corso)":"")})),1,"fitte")}</div>
+   <p class="small">Volatilit&agrave; misurata da chiusura a chiusura (FRED pubblica un prezzo al giorno): il range vero della giornata (massimo &minus; minimo) pu&ograve; essere pi&ugrave; ampio. Movimenti giornalieri e settimanali = media del valore assoluto della variazione; volatilit&agrave; annua = deviazione standard dei rendimenti giornalieri &times; &radic;252.</p>`;}
+ function volatilitaVista(){const ks=Object.keys(D.vol||{});if(!ks.length)return `<div class="card vfvuoto">Volatilit&agrave; non disponibile in questo aggiornamento.</div>`;
+  if(!ks.includes(V.asset))V.asset=ks.includes("EURUSD")?"EURUSD":ks[0];
+  const coppie=ks.filter(k=>/^[A-Z]{6}$/.test(k)).sort(),altri=ks.filter(k=>!/^[A-Z]{6}$/.test(k)).sort();
+  const opt=l=>l.map(k=>`<option value="${k}"${k==V.asset?" selected":""}>${k}${D.vol[k].regime?" · "+D.vol[k].regime.nome:""}</option>`).join("");
+  return `<div class="card vfcomandi"><div class="vfriga"><span class="vfetich">Strumento</span><select id="vfasset" class="vfsel"><optgroup label="Cambi">${opt(coppie)}</optgroup><optgroup label="Indici, energia, crypto">${opt(altri)}</optgroup></select></div></div><div id="vfdati">${datiVol()}</div>`;}
  /* ---- ORIZZONTE DI USCITA scelto da chi guarda ----
     Uno speculatore chiude in settimana (5 sedute), un investitore tiene 4 settimane (20 sedute):
     V.d = numero di sedute dopo l'ingresso (1..20) oppure "fine" (= fino al cambio di etichetta).
@@ -716,7 +750,7 @@ try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!el)return;
    `<h2>Segnali aperti <span class="small">(${ap.length})</span></h2><div class="grid vfgrid">${ap.map(s=>scheda(s)).join("")||'<div class="small">Nessun segnale aperto.</div>'}</div>
    <h2>Segnali chiusi <span class="small">(${R.n_chiusi})</span></h2><div class="grid vfgrid" id="vfchiusi">${ch.slice(0,12).map(s=>scheda(s)).join("")||'<div class="small">Ancora nessuno.</div>'}</div>
    ${ch.length>12?`<button class="vfaltro" id="vfaltro">Mostra tutti (${ch.length})</button>`:""}
-   ${tabella("Per etichetta",P.etichetta,["STRONG BUY","BUY","SELL","STRONG SELL"])}${tabella("Per affidabilit&agrave;",P.affid,["ALTA","MEDIA","BASSA"])}${varianti(P.riass)}${tabella("Per strumento",P.strumento,null,1,R.profilo)}`;}
+   ${tabella("Per etichetta",P.etichetta,["STRONG BUY","BUY","SELL","STRONG SELL"])}${tabella("Per affidabilit&agrave;",P.affid,["ALTA","MEDIA","BASSA"])}${tabella("Per volatilit&agrave; al momento del segnale",P.vol,["calma","normale","agitata"])}${varianti(P.riass)}${tabella("Per strumento",P.strumento,null,1,R.profilo)}`;}
 
  function datiBt(){const P=B.periodi[V.per]||B.periodi.tutti,nomeP={tutti:"tutto il periodo",sviluppo:"sviluppo",holdout:"holdout"}[V.per];
   const per={"Tutto il periodo":B.periodi.tutti.riass,"Sviluppo":B.periodi.sviluppo.riass,"Holdout (ultimi 2 anni)":B.periodi.holdout.riass};
@@ -726,7 +760,7 @@ try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!el)return;
   const ordS=Object.keys(P.strumento||{}).sort((a,b)=>((st(P.strumento[b])||{}).resa??-99)-((st(P.strumento[a])||{}).resa??-99));
   return kpi(P.riass)+percorso(P.riass)+tabella("Sviluppo e holdout a confronto",per,Object.keys(per))+
    `<p class="small">Il periodo di <b>holdout</b> (ultimi 2 anni) non va mai usato per tarare pesi o soglie: &egrave; il controllo onesto. Se sviluppo e holdout dicono cose molto diverse, il risultato del passato non &egrave; affidabile.</p>
-   ${tabella(`Per affidabilit&agrave; <span class="small">(${nomeP})</span>`,P.affid,["ALTA","MEDIA","BASSA"])}${tabella(`Per etichetta <span class="small">(${nomeP})</span>`,P.etichetta,["STRONG BUY","BUY","SELL","STRONG SELL"])}${varianti(P.riass)}${barre}
+   ${tabella(`Per affidabilit&agrave; <span class="small">(${nomeP})</span>`,P.affid,["ALTA","MEDIA","BASSA"])}${tabella(`Per etichetta <span class="small">(${nomeP})</span>`,P.etichetta,["STRONG BUY","BUY","SELL","STRONG SELL"])}${tabella(`Per volatilit&agrave; al momento del segnale <span class="small">(${nomeP}: calma / normale / agitata rispetto ai 5 anni prima)</span>`,P.vol,["calma","normale","agitata"])}${varianti(P.riass)}${barre}
    ${tabella(`Per strumento <span class="small">(${nomeP}, almeno ${V.per=="holdout"?5:20} segnali)</span>`,P.strumento,ordS,V.per=="holdout"?5:20,B.profilo)}`;}
 
  function live(){if(!R)return `<div class="card vfvuoto">Registro non disponibile in questo aggiornamento.</div>`;
@@ -748,18 +782,19 @@ try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!el)return;
    <h2>Ultimi segnali simulati conclusi</h2><div class="grid vfgrid">${(B.ultimi||[]).slice(0,12).map(s=>scheda(s,true)).join("")}</div>`;}
 
  /* aggiorna SOLO i numeri (non i comandi): cosi' il cursore delle sedute si puo' trascinare senza scatti */
- function aggiorna(){const box=$("vfdati");if(!box)return;box.innerHTML=V.fin=="live"?datiLive():datiBt();
+ function aggiorna(){const box=$("vfdati");if(!box)return;box.innerHTML=V.fin=="live"?datiLive():V.fin=="vol"?datiVol():datiBt();
   el.querySelectorAll(".vforz button").forEach(b=>b.classList.toggle("on",b.dataset.h==String(V.d)));
   const t=$("vfgtesto");if(t)t.textContent=V.d=="fine"?"al cambio":V.d+(V.d==1?" seduta":" sedute");
   const alt=$("vfaltro");if(alt)alt.onclick=()=>{$("vfchiusi").innerHTML=R.chiusi.map(s=>scheda(s)).join("");alt.remove();};}
 
  function disegna(){el.innerHTML=`<h2>Verifica dei segnali</h2><p class="sub">Ogni segnale misurato con prezzi veri dall'uscita dei dati: ingresso alla prima chiusura dopo il segnale, poi risultato, guadagno massimo e drawdown massimo per l'orizzonte che scegli tu (da 1 seduta a 4 settimane, oppure fino al cambio di etichetta).</p>
-  <div class="vfswitch"><button data-f="live" class="${V.fin=="live"?"on":""}">Registro live</button><button data-f="bt" class="${V.fin=="bt"?"on":""}">Backtest <span class="vfsimtag">SIMULATO</span></button></div>
-  <div class="vfcorpo">${V.fin=="live"?live():backtest()}</div>`;
+  <div class="vfswitch"><button data-f="live" class="${V.fin=="live"?"on":""}">Registro live</button><button data-f="bt" class="${V.fin=="bt"?"on":""}">Backtest <span class="vfsimtag">SIMULATO</span></button><button data-f="vol" class="${V.fin=="vol"?"on":""}">Volatilit&agrave; per asset</button></div>
+  <div class="vfcorpo">${V.fin=="live"?live():V.fin=="vol"?volatilitaVista():backtest()}</div>`;
   el.querySelectorAll(".vfswitch button").forEach(b=>b.onclick=()=>{V.fin=b.dataset.f;salva();disegna();});
   el.querySelectorAll(".vforz button").forEach(b=>b.onclick=()=>{V.d=b.dataset.h=="fine"?"fine":+b.dataset.h;const r=$("vfgiorni");if(r&&V.d!="fine")r.value=V.d;salva();aggiorna();});
   el.querySelectorAll(".vfper button").forEach(b=>b.onclick=()=>{V.per=b.dataset.p;el.querySelectorAll(".vfper button").forEach(x=>x.classList.toggle("on",x==b));salva();aggiorna();});
   const r=$("vfgiorni");if(r){r.oninput=()=>{V.d=+r.value;aggiorna();};r.onchange=salva;}
+  const sa=$("vfasset");if(sa)sa.onchange=()=>{V.asset=sa.value;salva();aggiorna();};
   aggiorna();}
  disegna();})();}catch(e){fail('Verifica dei segnali','verifica',e);}
 
