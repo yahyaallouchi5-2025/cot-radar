@@ -172,14 +172,22 @@ def vista(eventi, strum, integra, completi):
     aperti = [r for r in righe if not r["chiuso"]]
     chiusi = sorted([r for r in righe if r["chiuso"]], key=lambda r: r["chiuso"]["quando"], reverse=True)
     padri = [x for x in misurati if not x[0].get("padre")]
-    gruppi = {"tutti": motore.statistiche(padri)}
-    for chiave, fn in (("etichetta", lambda s: s["etichetta"]), ("affid", lambda s: s.get("affid") or "n/d"),
-                       ("strumento", lambda s: s["strumento"])):
-        val = {}
-        for x in (misurati if chiave == "etichetta" else padri):
-            val.setdefault(fn(x[0]), []).append(x)
-        gruppi[chiave] = {k: motore.statistiche(v) for k, v in sorted(val.items())}
+
+    def gruppi(lista, fn):
+        g = {}
+        for x in lista:
+            g.setdefault(fn(x[0]), []).append(x)
+        return {k: motore.riassunto(v) for k, v in sorted(g.items())}
+
+    # stessa forma di un "periodo" del backtest (vedi backtest.py): la pagina li disegna con lo stesso codice
+    stat = {"riass": motore.riassunto(padri, varianti=True),
+            "etichetta": gruppi(misurati, lambda s: s["etichetta"]),
+            "affid": gruppi(padri, lambda s: s.get("affid") or "n/d"),
+            "strumento": gruppi(padri, lambda s: s["strumento"])}
+    for r in righe:
+        r["m"] = motore.snello(r["m"])
     return {"aperti": sorted(aperti, key=lambda r: r["generato"], reverse=True), "chiusi": chiusi[:MAX_CHIUSI],
-            "n_chiusi": len(chiusi), "stat": gruppi, "eventi": len(eventi), "integra": integra,
+            "n_chiusi": len(chiusi), "stat": stat,
+            "profilo": {k: motore.profilo(d["_pts"]) for k, d in strum.items()}, "eventi": len(eventi), "integra": integra,
             "ultimo_hash": eventi[-1]["hash"] if eventi else None, "completi": completi,
             "dal": motore.ora_italia(eventi[0]["generato"]) if eventi and eventi[0].get("generato") else None}

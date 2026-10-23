@@ -150,6 +150,8 @@ Le stesse regole servono a due finestre separate (scheda "Verifica segnali"):
   - B: ordine limite a 0,5× il movimento settimanale tipico, valido 5 giorni;
   - C: metà e metà.
 
+**Orizzonte a scelta.** Nella pagina si sceglie l'uscita: da 1 a 20 sedute (5 = una settimana) oppure al cambio di etichetta. Il backtest si può filtrare anche per periodo: tutto, sviluppo o holdout. Per ogni seduta Python salva una lista compatta con, per quel giorno: numero di segnali, segnali vinti, somma dei risultati, somma dei guadagni massimi e somma dei drawdown massimi. Il calcolo è `motore.giorni_stat`. Medie, % di vinti e intervallo di Wilson li calcola `app.js`. Per ogni strumento ci sono anche la volatilità annua e la mossa settimanale tipica (`motore.profilo`).
+
 Test: `python -m unittest tests.test_motore -v`. Tra l'altro verificano la catena di hash, la manomissione e il backtest senza dati "dal futuro".
 
 ## Registro di monitoraggio e protezione anti-crollo

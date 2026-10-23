@@ -37,6 +37,7 @@ CAP_GIORNI = 84                                   # "fino al cambio": al massimo
 LIMITE_VOLTE = 0.5                                # entrata B: 0,5 x movimento settimanale tipico
 LIMITE_GIORNI = 5                                 # entrata B: l'ordine limite resta valido 5 chiusure
 BUCHI_MAX = 7                                     # un orizzonte senza prezzo per piu' di 7 giorni = n/d
+GIORNI_MAX = 20                                   # percorso giorno per giorno: fino a 20 sedute (4 settimane)
 
 # --------------------------------------------------------------------------- orari di chiusura dei prezzi
 # Ogni serie FRED ha UN prezzo al giorno, ma a orari diversi. Serve per decidere qual e' la prima chiusura
@@ -326,6 +327,18 @@ def misura(segnale, pts, cls, oggi=None):
         uscite["fine"] = (max(jx, ie), in_corso)
     out["fine"] = {"motivo": motivo, "in_corso": in_corso}
 
+    # PERCORSO GIORNO PER GIORNO (uscita a tempo fisso, scelta da chi guarda: 1..20 sedute dopo l'ingresso).
+    # Per ogni seduta k: [risultato a k, guadagno massimo fino a k, drawdown massimo fino a k] in %, nel verso
+    # del segnale. Non dipende dal cambio di etichetta: risponde a "se chiudo dopo k giorni, cosa succede?".
+    g, mx, mn = [], 0.0, 0.0
+    for k in range(1, GIORNI_MAX + 1):
+        if ie + k >= len(pts):
+            break
+        r = v * (pts[ie + k][1] / pe - 1) * 100
+        mx, mn = max(mx, r), min(mn, r)
+        g.append([round(r, 3), round(mx, 3), round(mn, 3)])
+    out["G"] = g
+
     # A: ingresso immediato
     for nome, (j, prov) in uscite.items():
         t = _tratto(pts, ie, j, pe, v)
@@ -413,3 +426,52 @@ def statistiche(misurati, orizzonti=("1s", "2s", "4s", "fine")):
             "C": {"n": len(c), "valore": round(sum(c) / len(c), 3) if c else None},
         }
     return out
+
+
+def giorni_stat(misurati):
+    """Percorso medio giorno per giorno: per ogni seduta k (1..20) la lista compatta
+    [segnali, vinti, somma risultati, somma guadagni massimi, somma drawdown massimi], al netto dei costi.
+    Compatta di proposito: medie, percentuali e intervallo di Wilson le calcola la pagina (app.js)."""
+    acc = [[0, 0, 0.0, 0.0, 0.0] for _ in range(GIORNI_MAX)]
+    for s, m, cst in misurati:
+        if not m or m.get("stato") != "ok":
+            continue
+        for k, (r, mx, mn) in enumerate(m.get("G") or []):
+            a = acc[k]
+            a[0] += 1
+            a[1] += 1 if r - cst > 0 else 0
+            a[2] += r - cst
+            a[3] += mx
+            a[4] += mn
+    return [[a[0], a[1], round(a[2], 2), round(a[3], 2), round(a[4], 2)] for a in acc if a[0]]
+
+
+def riassunto(misurati, varianti=False):
+    """Tutto cio' che serve alla pagina per un gruppo di segnali:
+    g = percorso giorno per giorno (uscita dopo 1..20 sedute), fine = statistiche "fino al cambio di etichetta",
+    var = confronto dei tre ingressi A/B/C a 1, 2 e 4 settimane (solo per i gruppi principali)."""
+    st = statistiche(misurati, ("1s", "2s", "4s", "fine") if varianti else ("fine",))
+    out = {"g": giorni_stat(misurati), "fine": st.get("fine")}
+    if varianti:
+        out["var"] = {h: {"resa": x["resa"], "n": x["n"], "B": x["B"], "C": x["C"]} for h, x in st.items() if h != "fine"}
+    return out
+
+
+def snello(m):
+    """Misura senza il percorso giornaliero (per le schede della pagina: piu' leggera)."""
+    return {k: v for k, v in m.items() if k != "G"} if m else m
+
+
+def profilo(pts, giorni=250):
+    """NATURA DEL MERCATO di uno strumento nell'ultimo anno (circa 250 sedute), per leggere i drawdown nel contesto:
+      ann  = volatilita' annua in % (deviazione standard dei rendimenti giornalieri x radice di 252);
+      sett = movimento settimanale tipico in % (mediana delle variazioni a 5 sedute, in valore assoluto).
+    Un drawdown medio del 2% e' tanto su EURUSD (si muove ~1% a settimana) e poco sul gas (~8%)."""
+    p = [v for _, v in pts[-(giorni + 6):] if v and v > 0]
+    if len(p) < 60:
+        return None
+    r = [math.log(p[i] / p[i - 1]) for i in range(1, len(p))]
+    m = sum(r) / len(r)
+    ann = math.sqrt(sum((x - m) ** 2 for x in r) / (len(r) - 1)) * math.sqrt(252) * 100
+    w = sorted(abs(p[i] / p[i - 5] - 1) * 100 for i in range(5, len(p)))
+    return {"ann": round(ann, 1), "sett": round(w[len(w) // 2], 2)}

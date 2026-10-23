@@ -183,31 +183,37 @@ def calcola(cot_righe, prezzi, con_eventi=False):
         g = {}
         for x in lista:
             g.setdefault(fn(x[0]), []).append(x)
-        return {k: motore.statistiche(v) for k, v in sorted(g.items())}
+        return {k: motore.riassunto(v) for k, v in sorted(g.items())}
 
+    def periodo(padri_p, tutti_p):
+        """Un periodo (tutto / sviluppo / holdout): riassunto generale e tabelle per etichetta, affidabilita',
+        strumento. Le fasi STRONG ("figli") contano solo nella tabella per etichetta."""
+        return {"riass": motore.riassunto(padri_p, varianti=True),
+                "etichetta": gruppi(tutti_p, lambda s: s["etichetta"]),
+                "affid": gruppi(padri_p, lambda s: s.get("affid") or "n/d"),
+                "strumento": gruppi(padri_p, lambda s: s["strumento"])}
+
+    in_hold = lambda x: x[0]["generato"][:10] >= limite_h
     anni = {}
     for x in padri:
         anni.setdefault(x[0]["generato"][:4], []).append(x)
-    per_anno = {a: motore.statistiche(v, ("4s", "fine")) for a, v in sorted(anni.items())}
     conclusi = [x for x in padri if x[1]["A"].get("fine") and not x[1]["A"]["fine"].get("provvisorio")]
     ultimi = sorted(conclusi, key=lambda x: x[0]["generato"], reverse=True)[:ULTIMI]
     log.info("backtest: %d segnali simulati (%d nel holdout) dal %s al %s", len(padri), len(hold),
              padri and min(x[0]["generato"][:10] for x in padri), ultima)
     out = {
         "dal": min((x[0]["generato"][:10] for x in padri), default=None), "al": ultima, "holdout_dal": limite_h,
-        "n": len(padri), "n_strong": len(misurati) - len(padri),
-        "stat": {"tutti": motore.statistiche(padri), "sviluppo": motore.statistiche(svil),
-                 "holdout": motore.statistiche(hold)},
-        "etichetta": gruppi(misurati, lambda s: s["etichetta"]),
-        "affid": gruppi(padri, lambda s: s.get("affid") or "n/d"),
-        "affid_holdout": gruppi(hold, lambda s: s.get("affid") or "n/d"),
-        "strumento": gruppi(padri, lambda s: s["strumento"]),
-        "anni": per_anno,
+        "n": len(padri), "n_strong": len(misurati) - len(padri), "n_svil": len(svil), "n_hold": len(hold),
+        "periodi": {"tutti": periodo(padri, misurati),
+                    "sviluppo": periodo(svil, [x for x in misurati if not in_hold(x)]),
+                    "holdout": periodo(hold, [x for x in misurati if in_hold(x)])},
+        "anni": {a: motore.riassunto(v) for a, v in sorted(anni.items())},
         "ultimi": [{"id": s["id"], "strumento": s["strumento"], "etichetta": s["etichetta"], "affid": s.get("affid"),
                     "generato_it": motore.ora_italia(s["generato"]), "punteggio": s["punteggio"],
                     "chiuso": dict(s["chiuso"], quando_it=motore.ora_italia(s["chiuso"]["quando"])) if s["chiuso"] else None,
-                    "m": m} for s, m, c in ultimi],
+                    "m": motore.snello(m)} for s, m, c in ultimi],
         "costi": {k: v for k, v in motore.COSTI.items()},
+        "profilo": {k: motore.profilo(v["pts"]) for k, v in strum.items()},   # volatilita' dell'ultimo anno
     }
     if con_eventi:
         out["_eventi"] = eventi

@@ -94,6 +94,19 @@ class Misura(unittest.TestCase):
         self.assertAlmostEqual(f["res"], 5.0, places=2)           # da 100 a 95 in vendita = +5%
         self.assertFalse(f["provvisorio"])
 
+    def test_percorso_giornaliero(self):
+        pts = giorni("2026-01-05", [100, 101, 99, 102, 103, 104, 98] + [100] * 30)
+        s = {"verso": 1, "generato": "2026-01-05T20:00Z", "chiuso": None}
+        m = motore.misura(s, pts, "fx")
+        g = m["G"]                                                  # ingresso 101 il 6/1
+        self.assertEqual(len(g), motore.GIORNI_MAX)
+        self.assertAlmostEqual(g[0][0], (99 / 101 - 1) * 100, places=2)     # giorno 1: 99
+        self.assertAlmostEqual(g[3][1], (104 / 101 - 1) * 100, places=2)    # massimo fino al giorno 4
+        self.assertAlmostEqual(g[4][2], (98 / 101 - 1) * 100, places=2)     # drawdown fino al giorno 5
+        st = motore.giorni_stat([(s, m, 0.0)])
+        self.assertEqual(st[0][:2], [1, 0])                         # giorno 1 perso
+        self.assertEqual(st[3][:2], [1, 1])                         # giorno 4 vinto
+
     def test_wilson(self):
         lo, hi = motore.wilson(5, 10)
         self.assertTrue(lo < 50 < hi)
@@ -185,7 +198,8 @@ class Backtest(unittest.TestCase):
         prima = lambda r: [(e["tipo"], e["id"]) for e in r["_eventi"] if (e.get("quando") or e["generato"]) < "2020-01-01"]
         self.assertTrue(len(prima(a)) > 50)
         self.assertEqual(prima(a), prima(b))
-        self.assertTrue(a["n"] > 0 and "holdout" in a["stat"])
+        self.assertTrue(a["n"] > 0 and "holdout" in a["periodi"])
+        self.assertEqual(len(a["periodi"]["tutti"]["riass"]["g"]), 20)        # percorso 1..20 sedute
 
 
 if __name__ == "__main__":
