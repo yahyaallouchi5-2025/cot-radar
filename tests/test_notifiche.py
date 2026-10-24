@@ -54,6 +54,7 @@ class Avvisi(unittest.TestCase):
         self.assertIn("STRONG SELL", self.inviati[0])
         self.assertNotIn("GBP/USD", self.inviati[0])
         self.assertIn("/cot-radar/#registro", self.inviati[0])
+        self.assertNotIn("affid", self.inviati[0].lower())                    # mai l'affidabilita' su Telegram
         # stesso giro ripetuto (tentativo 2 della sera): niente doppioni
         r = notifiche.esegui(self.dir, "", ENV, ADESSO, dati_sito={})
         self.assertEqual((r["esito"], len(self.inviati)), ("niente_di_nuovo", 1))
@@ -151,6 +152,7 @@ class Settimanale(unittest.TestCase):
         t = self.inviati[0]
         self.assertIn("segnali della settimana", t)
         self.assertIn("COT del 20/10/2026", t)
+        self.assertNotIn("affid", t.lower())
         self.assertLess(t.index("<b>FOREX</b>"), t.index("<b>ENERGIA</b>"))           # Forex per primo
         self.assertIn("EUR/USD: <b>BUY</b> +31.0", t)
         self.assertIn("Wti: <b>STRONG SELL</b>", t)

@@ -18,7 +18,7 @@ dopo l'uscita del COT) parte il riepilogo di tutti i segnali attivi divisi per c
 messaggio sugli eventi. Il cursore ricorda la data COT dell'ultimo riepilogo ("riepilogo_cot"): uno a settimana.
 
 Negli altri giri (un solo messaggio per giro, diviso solo se supera il limite di Telegram) si avvisa di:
-  - NUOVO SEGNALE (apertura): direzione, punteggio, affidabilita' e motivi;
+  - NUOVO SEGNALE (apertura): direzione e punteggio (l'affidabilita' NON si mostra su Telegram);
   - RAFFORZAMENTO a STRONG (apertura "figlio") e INDEBOLIMENTO da STRONG;
   - CHIUSURA (torna neutro / si inverte) con la durata del segnale;
   - CONFERME del nuovo COT: raccolte in una riga sola (sono settimanali e numerose).
@@ -113,13 +113,10 @@ def righe_eventi(nuovi, aperture):
             if e.get("iniziale"):
                 continue
             lab = e["etichetta"]
-            motivi = ", ".join(e.get("perche") or []).replace("stagionalita'", "stagionalità")
             titolo = (f"rafforzato a <b>{lab}</b>" if e.get("padre") else f"nuovo segnale <b>{lab}</b>")
-            riga = (f"{_freccia(lab)} <b>{escape(nome(e))}</b>: {titolo}\n"
-                    f"    Punteggio {_punti(e.get('punteggio'))} · affidabilità {escape(e.get('affid') or 'n.d.')}")
-            if motivi:
-                riga += f" ({escape(motivi)})"
-            blocchi.append(riga)
+            # AFFIDABILITA' volutamente NON mostrata su Telegram (decisione del 25/10/2026): resta nel registro
+            blocchi.append(f"{_freccia(lab)} <b>{escape(nome(e))}</b>: {titolo}\n"
+                           f"    Punteggio {_punti(e.get('punteggio'))}")
         elif e["tipo"] == "chiusura":
             if a.get("padre") and e.get("motivo") != "indebolito":
                 continue                              # il figlio si chiude col padre: basta la riga del padre

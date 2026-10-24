@@ -31,4 +31,4 @@ Mappa dei moduli (in ordine di "viaggio" dei dati):
   notifiche.py   avvisi dei segnali: canale Telegram per gli iscritti + copia e-mail all'admin (cursore anti-doppioni)
   riepilogo.py   riepilogo settimanale dei segnali per categoria di asset (Telegram), dai dati della pagina online
 """
-__version__ = "6.14"
+__version__ = "6.15"
