@@ -1,0 +1,45 @@
+# notifiche.yml - AVVISI DEI SEGNALI (cot_radar/notifiche.py): canale Telegram + copia e-mail all'admin.
+# Parte da solo al termine di ogni giro del workflow "Sito" riuscito: si avvisa solo di cio' che e' gia' online.
+# Il cursore nel ramo "storico" evita doppioni: i giri senza novita' finiscono in pochi secondi senza inviare nulla.
+name: Notifiche
+on:
+  workflow_run:
+    workflows: [Sito]
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: write            # per salvare il cursore degli avvisi nel ramo "storico"
+concurrency:
+  group: pages               # stesso gruppo del sito: mai in parallelo con un aggiornamento del ramo "storico"
+  cancel-in-progress: false
+jobs:
+  avvisi:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Registro dei segnali (ramo "storico")
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch -q origin storico && git worktree add -q -B storico storico origin/storico
+      - name: Invia gli avvisi nuovi
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+        run: python -m cot_radar.notifiche storico "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+      - name: Salva il cursore degli avvisi
+        if: always()
+        run: |
+          cd storico
+          [ -f segnali/notificati.json ] || exit 0
+          git add -- segnali/notificati.json
+          if git diff --cached --quiet; then echo "cursore invariato"; exit 0; fi
+          git commit -qm "notifiche: cursore $(date -u +%F)"
+          git push -q origin storico || echo "::warning::cursore non salvato: possibile avviso ripetuto al prossimo giro"
