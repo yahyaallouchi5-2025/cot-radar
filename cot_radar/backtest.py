@@ -25,6 +25,7 @@ from bisect import bisect_left, bisect_right
 from datetime import date, timedelta
 
 from . import motore, volatilita
+from .eventi import Calendario
 from .config import ASSETS, EXTRA_PAIRS, FX_ORDER, NORMAL, PAIR_NAMES
 from .conferme import ORIZZONTE, MIN_SEGNALI, _al, accordo, commercials
 from .cot import cot_series, cot_strength, is_divergence, label
@@ -176,6 +177,8 @@ def simula(cot_righe, prezzi):
         m = motore.misura(s, st["pts"], st["cls"])
         if m and m.get("stato") == "ok":
             misurati.append((s, m, st["costo"]))
+    # giorni con annunci macro USA nel percorso di ogni trade (per lo studio del drawdown, vedi motore.drawdown)
+    motore.prepara_eventi(misurati, Calendario())
     return {"misurati": misurati, "strum": strum, "eventi": eventi, "ultima": ultima, "limite_h": limite_h}
 
 
@@ -201,12 +204,19 @@ def calcola(cot_righe, prezzi, con_eventi=False):
     def periodo(padri_p, tutti_p):
         """Un periodo (tutto / sviluppo / holdout): riassunto generale e tabelle per etichetta, affidabilita',
         strumento. Le fasi STRONG ("figli") contano solo nella tabella per etichetta."""
-        return {"riass": motore.riassunto(padri_p, varianti=True),
+        per_s = {}
+        for x in padri_p:
+            per_s.setdefault(x[0]["strumento"], []).append(x)
+        return {"dd": {"tutti": motore.drawdown(padri_p),
+                       "strumento": {k: motore.drawdown(v, unita[k]) for k, v in sorted(per_s.items())}},
+                "riass": motore.riassunto(padri_p, varianti=True),
                 "etichetta": gruppi(tutti_p, lambda s: s["etichetta"]),
                 "affid": gruppi(padri_p, lambda s: s.get("affid") or "n/d"),
                 "strumento": gruppi(padri_p, lambda s: s["strumento"]),
                 "vol": gruppi(padri_p, lambda s: (s.get("vol") or {}).get("nome") or "n/d")}
 
+    # unita' dei PUNTI di ogni strumento (pip, punti indice, $): vedi motore.unita
+    unita = {k: motore.unita(k, v.get("b"), v.get("q")) for k, v in strum.items()}
     in_hold = lambda x: x[0]["generato"][:10] >= limite_h
     anni = {}
     for x in padri:
@@ -227,6 +237,7 @@ def calcola(cot_righe, prezzi, con_eventi=False):
                     "chiuso": dict(s["chiuso"], quando_it=motore.ora_italia(s["chiuso"]["quando"])) if s["chiuso"] else None,
                     "m": motore.snello(m)} for s, m, c in ultimi],
         "costi": {k: v for k, v in motore.COSTI.items()},
+        "dd_campi": motore.DD_CAMPI, "unita": {k: v[0] for k, v in unita.items()},
         "profilo": {k: motore.profilo(v["pts"]) for k, v in strum.items()},   # volatilita' dell'ultimo anno
     }
     if con_eventi:

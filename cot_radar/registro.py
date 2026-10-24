@@ -27,6 +27,7 @@ import os
 from datetime import timezone
 
 from . import motore, volatilita
+from .eventi import Calendario as eventi_cal
 from .config import PRICES, ROOT
 from .log import log
 from .stagionalita import prezzo_coppia
@@ -174,6 +175,11 @@ def vista(eventi, strum, integra, completi):
     aperti = [r for r in righe if not r["chiuso"]]
     chiusi = sorted([r for r in righe if r["chiuso"]], key=lambda r: r["chiuso"]["quando"], reverse=True)
     padri = [x for x in misurati if not x[0].get("padre")]
+    motore.prepara_eventi(misurati, eventi_cal())
+    per_s = {}
+    for x in padri:
+        per_s.setdefault(x[0]["strumento"], []).append(x)
+    unita = {k: motore.unita(k, d.get("base"), d.get("quote")) for k, d in strum.items()}
 
     def gruppi(lista, fn):
         g = {}
@@ -182,7 +188,9 @@ def vista(eventi, strum, integra, completi):
         return {k: motore.riassunto(v) for k, v in sorted(g.items())}
 
     # stessa forma di un "periodo" del backtest (vedi backtest.py): la pagina li disegna con lo stesso codice
-    stat = {"riass": motore.riassunto(padri, varianti=True),
+    stat = {"dd": {"tutti": motore.drawdown(padri),
+                   "strumento": {k: motore.drawdown(v, unita.get(k)) for k, v in sorted(per_s.items())}},
+            "riass": motore.riassunto(padri, varianti=True),
             "etichetta": gruppi(misurati, lambda s: s["etichetta"]),
             "affid": gruppi(padri, lambda s: s.get("affid") or "n/d"),
             "strumento": gruppi(padri, lambda s: s["strumento"]),
@@ -190,7 +198,8 @@ def vista(eventi, strum, integra, completi):
     for r in righe:
         r["m"] = motore.snello(r["m"])
     return {"aperti": sorted(aperti, key=lambda r: r["generato"], reverse=True), "chiusi": chiusi[:MAX_CHIUSI],
-            "n_chiusi": len(chiusi), "stat": stat,
+            "n_chiusi": len(chiusi), "stat": stat, "dd_campi": motore.DD_CAMPI,
+            "unita": {k: v[0] for k, v in unita.items()},
             "profilo": {k: motore.profilo(d["_pts"]) for k, d in strum.items()}, "eventi": len(eventi), "integra": integra,
             "ultimo_hash": eventi[-1]["hash"] if eventi else None, "completi": completi,
             "dal": motore.ora_italia(eventi[0]["generato"]) if eventi and eventi[0].get("generato") else None}

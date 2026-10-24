@@ -330,14 +330,15 @@ def misura(segnale, pts, cls, oggi=None):
     # PERCORSO GIORNO PER GIORNO (uscita a tempo fisso, scelta da chi guarda: 1..20 sedute dopo l'ingresso).
     # Per ogni seduta k: [risultato a k, guadagno massimo fino a k, drawdown massimo fino a k] in %, nel verso
     # del segnale. Non dipende dal cambio di etichetta: risponde a "se chiudo dopo k giorni, cosa succede?".
-    g, mx, mn = [], 0.0, 0.0
+    g, gd, mx, mn = [], [], 0.0, 0.0
     for k in range(1, GIORNI_MAX + 1):
         if ie + k >= len(pts):
             break
         r = v * (pts[ie + k][1] / pe - 1) * 100
         mx, mn = max(mx, r), min(mn, r)
         g.append([round(r, 3), round(mx, 3), round(mn, 3)])
-    out["G"] = g
+        gd.append(pts[ie + k][0])
+    out["G"], out["Gd"], out["cls"] = g, gd, cls
 
     # A: ingresso immediato
     for nome, (j, prov) in uscite.items():
@@ -347,6 +348,9 @@ def misura(segnale, pts, cls, oggi=None):
 
     # B: ordine limite di ritracciamento, valido 5 chiusure
     tip = tipico_settimanale(pts, ie)
+    # movimento settimanale tipico all'ingresso, in %: l'unita' di misura del drawdown "in volatilita'"
+    # (calcolato con i soli prezzi fino all'ingresso: niente dati dal futuro)
+    out["tip"] = round((math.exp(tip) - 1) * 100, 4) if tip else None
     if tip is None:
         out["B"] = {"esito": "n/d"}
     else:
@@ -459,7 +463,7 @@ def riassunto(misurati, varianti=False):
 
 def snello(m):
     """Misura senza il percorso giornaliero (per le schede della pagina: piu' leggera)."""
-    return {k: v for k, v in m.items() if k != "G"} if m else m
+    return {k: v for k, v in m.items() if k not in ("G", "Gd", "E", "_dd")} if m else m
 
 
 def profilo(pts, giorni=250):
@@ -475,3 +479,133 @@ def profilo(pts, giorni=250):
     ann = math.sqrt(sum((x - m) ** 2 for x in r) / (len(r) - 1)) * math.sqrt(252) * 100
     w = sorted(abs(p[i] / p[i - 5] - 1) * 100 for i in range(5, len(p)))
     return {"ann": round(ann, 1), "sett": round(w[len(w) // 2], 2)}
+
+
+# --------------------------------------------------------------------------- DRAWDOWN (studio del rischio)
+# Obiettivo: capire QUANTO un segnale va contro prima di andare (o non andare) dove deve, rispetto a quanto si
+# muove di solito quel mercato e a quanto guadagna. Per ogni durata del trade (1..20 sedute e "al cambio segnale")
+# si calcola una riga compatta con i campi di DD_CAMPI (la pagina la legge per nome, vedi app.js "DD"):
+#   n            segnali misurati
+#   mae50/mae90  drawdown massimo tipico (mediana) e "brutto" (1 trade su 10 va peggio), in % (negativi)
+#   mfe50/res50  guadagno massimo tipico e risultato tipico (mediane), in %
+#   v50/v90      drawdown in VOLATILITA': drawdown / movimento settimanale tipico di quel mercato all'ingresso
+#   fv50/rv50    guadagno massimo e risultato tipici nella stessa unita' (per il grafico "in volatilita'")
+#   h1..h4       % di trade con drawdown <0,5 / 0,5-1 / 1-2 / oltre 2 settimane tipiche
+#   gmin         seduta tipica in cui si tocca il punto peggiore (solo trade andati in negativo)
+#   prima        % di trade in cui il guadagno massimo arriva PRIMA del drawdown massimo
+#   hit/resa     % vinti e resa media al netto dei costi (in piccolo nella pagina: il quadro resta completo)
+#   p50/p90      drawdown tipico e brutto in PUNTI (pip, punti indice, $): solo per un singolo strumento
+#   ev_*/no_*    drawdown (n, tipico) dei trade con almeno un annuncio macro USA nella finestra / senza
+#   pg/pa        % di trade il cui giorno peggiore cade su un annuncio, e % attesa per puro caso
+# Per "al cambio segnale" non c'e' il percorso giornaliero: tempi ed eventi restano vuoti (None).
+DD_CAMPI = ["n", "mae50", "mae90", "mfe50", "res50", "v50", "v90", "fv50", "rv50", "h1", "h2", "h3", "h4",
+            "gmin", "prima", "hit", "resa", "p50", "p90", "ev_n", "ev50", "no_n", "no50", "pg", "pa"]
+SOGLIE_VOL = (0.5, 1.0, 2.0)          # confini delle fasce di drawdown in "settimane tipiche"
+
+
+def quantile(v, q):
+    """Quantile con interpolazione lineare (v gia' ordinata). q=0,5 = mediana."""
+    if not v:
+        return None
+    x = (len(v) - 1) * q
+    i = int(x)
+    return v[i] if i + 1 >= len(v) else v[i] + (v[i + 1] - v[i]) * (x - i)
+
+
+def unita(strumento, base=None, quote=None):
+    """Unita' dei PUNTI di uno strumento: (nome, dimensione di un punto nel prezzo).
+    Cambi: pip = 0,0001 (0,01 se la quotata e' lo yen); indici: punti; petrolio, gas e crypto: dollari."""
+    if base:
+        return ("pip", 0.01 if quote == "JPY" else 0.0001)
+    cls = CLASSE_PREZZO.get(strumento, "indici")
+    return ("punti", 1.0) if cls == "indici" else ("$", 1.0)
+
+
+def prepara_eventi(misurati, cal):
+    """Per ogni trade, quali sedute del percorso contengono un annuncio macro (m["E"]). Una volta sola."""
+    if not cal:
+        return
+    for s, m, c in misurati:
+        if m and m.get("stato") == "ok" and "E" not in m and m.get("Gd"):
+            m["E"] = cal.giorni(m["ingresso"]["data"], m["Gd"], m.get("cls") or "fx")
+
+
+def _riga_dd(righe, u):
+    """righe = [(mae, mfe, res netto, tip, prezzo, gmin, prima, ev, peggiore_su_evento, quota_eventi)]."""
+    n = len(righe)
+    if not n:
+        return None
+    q = lambda v, p: round(quantile(sorted(v), p), 2) if v else None
+    pc = lambda k: round(100 * k / n)
+    mae = [r[0] for r in righe]
+    vol = [(abs(r[0]) / r[3], r[1] / r[3], r[2] / r[3]) for r in righe if r[3]]
+    nv = len(vol)
+    fasce = [0, 0, 0, 0]
+    for a, _, _ in vol:
+        fasce[sum(1 for t in SOGLIE_VOL if a >= t)] += 1
+    gmin = [r[5] for r in righe if r[5]]
+    con_t = [r for r in righe if r[6] is not None]
+    pts = [abs(r[0]) / 100 * r[4] / u[1] for r in righe if u and r[4]] if u else []
+    ev = [r[0] for r in righe if r[7] is True]
+    no = [r[0] for r in righe if r[7] is False]
+    pg = [r for r in righe if r[8] is not None]
+    riga = {
+        "n": n, "mae50": q(mae, .5), "mae90": q(mae, .1), "mfe50": q([r[1] for r in righe], .5),
+        "res50": q([r[2] for r in righe], .5),
+        "v50": q([x[0] for x in vol], .5), "v90": q([x[0] for x in vol], .9),
+        "fv50": q([x[1] for x in vol], .5), "rv50": q([x[2] for x in vol], .5),
+        "h1": round(100 * fasce[0] / nv) if nv else None, "h2": round(100 * fasce[1] / nv) if nv else None,
+        "h3": round(100 * fasce[2] / nv) if nv else None, "h4": round(100 * fasce[3] / nv) if nv else None,
+        "gmin": q(gmin, .5), "prima": round(100 * sum(1 for r in con_t if r[6]) / len(con_t)) if con_t else None,
+        "hit": pc(sum(1 for r in righe if r[2] > 0)), "resa": round(sum(r[2] for r in righe) / n, 3),
+        "p50": q(pts, .5), "p90": q(pts, .9),
+        "ev_n": len(ev), "ev50": q(ev, .5), "no_n": len(no), "no50": q(no, .5),
+        "pg": round(100 * sum(1 for r in pg if r[8]) / len(pg)) if pg else None,
+        "pa": round(100 * sum(r[9] for r in pg) / len(pg)) if pg else None,
+    }
+    return [riga[k] for k in DD_CAMPI]
+
+
+def _righe_trade(m, cst):
+    """Le righe di UN trade per ogni durata (1..20 sedute) e per "al cambio segnale". Calcolate una volta sola e
+    tenute in m["_dd"]: lo stesso trade entra in piu' gruppi (tutti, strumento, periodo) senza ricalcoli."""
+    if "_dd" in m:
+        return m["_dd"]
+    tip, prezzo, G, E = m.get("tip"), m["ingresso"]["prezzo"], m.get("G") or [], m.get("E")
+    delta = [G[0][0]] + [G[j][0] - G[j - 1][0] for j in range(1, len(G))] if G else []
+    righe, jmin, jmax = [], None, None
+    for k in range(1, len(G) + 1):
+        res, mfe, mae = G[k - 1]
+        # seduta in cui si tocca per la prima volta il punto peggiore / migliore (si aggiornano solo se migliorano)
+        if mae < 0 and (k == 1 or mae < G[k - 2][2]):
+            jmin = k
+        if mfe > 0 and (k == 1 or mfe > G[k - 2][1]):
+            jmax = k
+        prima = None if (mae == 0 and mfe == 0) else (True if mae == 0 else False if mfe == 0 else jmax < jmin)
+        ev = pegg = quota = None
+        if E is not None and len(E) >= k:
+            ev = any(E[:k])
+            dmin = min(delta[:k])
+            if dmin < 0:
+                pegg, quota = E[delta[:k].index(dmin)], sum(E[:k]) / k
+        righe.append((mae, mfe, res - cst, tip, prezzo, jmin if mae < 0 else None, prima, ev, pegg, quota))
+    f = (m.get("A") or {}).get("fine")
+    fine = (f["mae"], f["mfe"], f["res"] - cst, tip, prezzo, None, None, None, None, None) \
+        if f and not f.get("provvisorio") else None
+    m["_dd"] = (righe, fine)
+    return m["_dd"]
+
+
+def drawdown(misurati, u=None):
+    """Studio del drawdown per ogni durata: lista di 21 righe compatte (sedute 1..20, poi "al cambio segnale").
+    misurati = [(segnale, misura, costo%)]; u = unita' dei punti (solo per un singolo strumento)."""
+    per_k, fine = [[] for _ in range(GIORNI_MAX)], []
+    for s, m, cst in misurati:
+        if not m or m.get("stato") != "ok":
+            continue
+        righe, f = _righe_trade(m, cst)
+        for k, r in enumerate(righe):
+            per_k[k].append(r)
+        if f:
+            fine.append(f)
+    return [_riga_dd(r, u) for r in per_k] + [_riga_dd(fine, u)]

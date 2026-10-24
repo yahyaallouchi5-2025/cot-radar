@@ -27,5 +27,6 @@ Mappa dei moduli (in ordine di "viaggio" dei dati):
   backtest.py    backtest storico (simulato) con lo stesso motore, dal 1986, con holdout
   volatilita.py  natura di ogni mercato: volatilita' per giorno, settimana, mese, anno e regime attuale
   confronto.py   backtest delle letture COT alternative (opzioni, TFF, Disaggregated): NON entra nel sito
+  eventi.py      calendario storico degli annunci macro USA (NFP, CPI, Fed) per lo studio del drawdown
 """
-__version__ = "6.6"
+__version__ = "6.7"

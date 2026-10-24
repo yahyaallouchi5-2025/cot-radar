@@ -167,7 +167,8 @@ def build(data_source=load_all, demo=False, sito=False):
             "tv": {k: {"s": v[0], "inv": v[1]} for k, v in TV_SYMBOLS.items()}, "tvp": TV_PAIRS}
     # "stato" pubblico = solo esito e fonti; "admin" = segnaposto che main.py sostituisce con il registro
     # completo (cifrato sul sito, in chiaro sul PC). Vedi cot_radar/admin.py
-    payload = json.dumps(clean(data), ensure_ascii=False)
+    # JSON compatto (senza spazi dopo virgole e due punti): stessa informazione, pagina piu' leggera
+    payload = json.dumps(clean(data), ensure_ascii=False, separators=(",", ":"))
     # "</" dentro <script> chiuderebbe il tag per errore: lo "spezziamo" in "<\/"
     return template().replace("{{DATA}}", payload.replace("</", "<\\/")), clean(stato)
 

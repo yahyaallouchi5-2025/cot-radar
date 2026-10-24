@@ -29,6 +29,7 @@ cot-radar/
 │   ├── pagina.py            crea la pagina HTML
 │   ├── controlli.py         controlli di qualità dei dati (errori "invisibili")
 │   ├── confronto.py         backtest delle letture COT alternative (opzioni, TFF, Disaggregated)
+│   ├── eventi.py            calendario storico degli annunci USA (eventi_usa.csv) per lo studio del drawdown
 │   ├── demo.py              dati finti per provare senza internet
 │   └── log.py               registro: schermo + dati/registro.log + riepilogo
 ├── web/                     ← la grafica
@@ -162,6 +163,17 @@ Le stesse regole servono a due finestre separate (scheda "Backtest storico"):
 Ogni segnale (live e backtest) riceve il regime del giorno prima della generazione, quindi senza dati dal futuro. Le statistiche si possono leggere anche per regime. La volatilità è misurata da chiusura a chiusura.
 
 Test: `python -m unittest tests.test_motore -v`. Tra l'altro verificano la catena di hash, la manomissione e il backtest senza dati "dal futuro".
+
+## Studio del drawdown (scheda "Backtest storico")
+
+L'obiettivo del backtest non è solo "il segnale vince?", ma **quanto va contro prima di andare (o non andare) dove deve**, rispetto alla volatilità di ogni mercato e al guadagno. Per ogni durata del trade (da 1 giorno di mercato a 4 settimane, oppure al cambio di segnale) `motore.drawdown` calcola:
+
+- drawdown **tipico** (mediana) e **brutto** (1 trade su 10 va peggio), in % e, scegliendo uno strumento, in **punti** (pip, punti indice, dollari);
+- drawdown **in volatilità**: diviso il movimento di una settimana normale di quel mercato, misurato prima dell'ingresso (stessa scala per EURUSD, petrolio e Bitcoin), con le fasce "meno di ½ / ½–1 / 1–2 / oltre 2 settimane tipiche";
+- guadagno massimo tipico, quante volte il guadagno arriva prima del drawdown e il giorno tipico del punto peggiore;
+- **annunci macro USA** (occupazione NFP e inflazione CPI dal 1985, decisioni della Fed dal 1994; file `cot_radar/eventi_usa.csv`, fonti ALFRED/St. Louis Fed e Federal Reserve): drawdown con e senza annunci nel trade e quante volte il giorno peggiore cade su un annuncio rispetto al puro caso. Conta l'ora: i cambi FRED chiudono alle 12 di New York, quindi la Fed delle 14 entra nella chiusura del giorno dopo (`cot_radar/eventi.py`).
+
+Vinti e resa media restano visibili in piccolo, per non perdere il quadro completo. Test: `python -m unittest tests.test_drawdown -v`.
 
 ## Confronto: opzioni, TFF e Disaggregated (`cot_radar/confronto.py`)
 
