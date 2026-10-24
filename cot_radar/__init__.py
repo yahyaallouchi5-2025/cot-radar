@@ -28,5 +28,6 @@ Mappa dei moduli (in ordine di "viaggio" dei dati):
   volatilita.py  natura di ogni mercato: volatilita' per giorno, settimana, mese, anno e regime attuale
   confronto.py   backtest delle letture COT alternative (opzioni, TFF, Disaggregated): NON entra nel sito
   eventi.py      calendario storico degli annunci macro USA (NFP, CPI, Fed) per lo studio del drawdown
+  notifiche.py   avvisi dei segnali: canale Telegram per gli iscritti + copia e-mail all'admin (cursore anti-doppioni)
 """
-__version__ = "6.12"
+__version__ = "6.13"

@@ -122,6 +122,8 @@ try{
 document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#nav button,section").forEach(x=>x.classList.remove("on"));
  b.classList.add("on");$(b.dataset.t).classList.add("on");window.scrollTo({top:0});});
 var go=t=>document.querySelector(`#nav button[data-t=${t}]`).click();
+// LINK DIRETTO a una scheda (es. .../#registro dai messaggi Telegram): si apre dopo che tutte le schede sono pronte
+setTimeout(()=>{const t=location.hash.slice(1);if(/^[a-z]+$/.test(t)&&document.querySelector(`#nav button[data-t=${t}]`))go(t);},0);
 }catch(e){fail('Navigazione','nav',e);}
 
 /* ---------- grafici ----------

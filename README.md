@@ -191,6 +191,31 @@ Limite: si può misurare solo dove c'è un prezzo storico gratuito (cambi, indic
 
 Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il risultato completo finisce anche in `storico/confronto.json`. Test: `python -m unittest tests.test_archivi_cot -v`.
 
+## Notifiche dei segnali (Telegram + e-mail all'admin, `cot_radar/notifiche.py`)
+
+Dopo ogni pubblicazione riuscita il workflow **Notifiche** (parte da solo dopo ogni giro riuscito di *Sito*) legge il registro live dei segnali e manda
+**un solo messaggio** al canale Telegram con quello che è cambiato: nuovi segnali, rafforzamenti a STRONG,
+indebolimenti, chiusure (con la durata) e conferme del nuovo COT. Una copia arriva via e-mail all'admin (facoltativa).
+
+- **Niente doppioni**: un cursore (`storico/segnali/notificati.json`) ricorda l'ultimo evento avvisato.
+- **Niente avvisi persi**: se Telegram non risponde il cursore resta fermo e il messaggio parte al giro dopo
+  (il job fallisce e GitHub manda la mail all'admin).
+- **Niente arretrati**: al primo avvio il cursore parte dall'ultimo evento; eventi più vecchi di 36 ore non si mandano.
+- **Solo dati ufficiali**: si avvisa solo di eventi già scritti nel registro (catena di hash integra) e già online.
+
+Configurazione (una volta, le credenziali le inserisce solo il proprietario):
+1. Telegram → **@BotFather** → `/newbot` → copia il token del bot.
+2. Crea un **canale** (pubblico o privato) e aggiungi il bot come **amministratore** con il permesso di pubblicare.
+3. GitHub → *Settings* → *Secrets and variables* → *Actions* → *New repository secret*:
+   - `TELEGRAM_BOT_TOKEN` = token del bot
+   - `TELEGRAM_CHAT_ID` = `@nomecanale` (canale pubblico) oppure l'id numerico `-100…` (canale privato)
+   - facoltativi per l'e-mail all'admin: `SMTP_USER` (es. indirizzo Gmail), `SMTP_PASSWORD`
+     (**password per le app** di Google, non la password dell'account), `ADMIN_EMAIL` (destinatario)
+4. *Actions* → **Prova notifiche** → *Run workflow*: arriva un messaggio di prova sul canale.
+
+Anteprima senza inviare nulla: `python -m cot_radar.notifiche anteprima storico`.
+Più avanti: e-mail a tutti gli iscritti tramite Supabase (login e lista iscritti).
+
 ## Registro di monitoraggio e protezione anti-crollo
 
 | Dove | Cosa |
