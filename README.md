@@ -126,10 +126,10 @@ Ogni sera feriale (22:15 UTC) il sito si aggiorna; se qualcosa non va riprova al
 La mail all'admin parte **solo se falliscono tutti e 3** i tentativi. Nel frattempo online restano gli ultimi dati validi.
 (GitHub può ritardare gli avvii programmati di qualche minuto nelle ore di punta.)
 
-## Verifica dei segnali: registro live e backtest
+## Backtest storico: registro live e backtest
 
 Un **motore unico** (`cot_radar/motore.py`) decide quando nasce, si conferma e finisce un segnale, e lo misura.
-Le stesse regole servono a due finestre separate (scheda "Verifica segnali"):
+Le stesse regole servono a due finestre separate (scheda "Backtest storico"):
 
 - **Registro live** (`cot_radar/registro.py`): file `storico/segnali/registro.jsonl` nel ramo `storico`.
   - Ogni evento (apertura, conferma, chiusura) ha data e ora vere.

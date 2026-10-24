@@ -96,7 +96,7 @@ def build(data_source=load_all, demo=False, sito=False):
     except Exception:
         log.warning("stagionalita' non calcolata:\n%s", traceback.format_exc())
     # VERIFICA DEI SEGNALI (vedi motore.py): registro live (registro.py) e backtest simulato (backtest.py).
-    # Isolati come il resto: se falliscono manca solo la scheda "Verifica", la dashboard non cambia.
+    # Isolati come il resto: se falliscono manca solo la scheda "Backtest storico", la dashboard non cambia.
     prezzi = storico.prezzi_usd(archivio) if archivio else {}
     reg = bt = rie_cot = None
     try:
