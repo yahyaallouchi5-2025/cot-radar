@@ -128,7 +128,7 @@ def profilo(pts):
     oggi = r[-1]
     w = date.fromisoformat(oggi[0]).weekday()
     return {
-        "dal": pts[0][0], "al": pts[-1][0],
+        "dal": pts[0][0], "al": pts[-1][0], "prezzo": round(pts[-1][1], 6),   # ultimo prezzo: per i pip/punti
         "giorni": giorni, "settimane": settimane, "mesi": mesi, "anni": anni,
         "ann_storia": sd([x for _, x in r]), "ann_anno": sd([x for _, x in ultimo_anno]),
         "regime": {"nome": reg[0], "pct": reg[1], "vol": reg[2]} if reg else None,

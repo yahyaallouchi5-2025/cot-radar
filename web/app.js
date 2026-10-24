@@ -736,11 +736,16 @@ try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!el)return;
   const reg=R?`<div class="card vfregime" style="--vc:${VCOL[R.nome]}"><div><h3>Regime di adesso</h3><div class="big" style="color:var(--vc)">${R.nome.toUpperCase()}</div>
    <div class="note">ultime 4 settimane: <b>${fp(R.vol,1)}</b> di volatilit&agrave; annua, pi&ugrave; alta del <b>${R.pct}%</b> dei periodi degli ultimi 5 anni</div></div>
    <div class="vfpct"><div class="vfpbar"><i style="left:${R.pct}%"></i></div><div class="scale"><span>calma</span><span>normale</span><span>agitata</span></div></div></div>`:"";
-  return reg+`<div class="grid k4 vfkpi">
+  // movimento in PUNTI sull'ultimo prezzo: pip per i cambi (0,01 se la quotata e' lo yen), punti indice, dollari
+  const u=/^[A-Z]{6}$/.test(V.asset)?["pip",V.asset.endsWith("JPY")?0.01:0.0001]:["SP500","NASDAQ","DOW"].includes(V.asset)?["punti",1]:["$",1];
+  const inPt=x=>x!=null&&P.prezzo?" &middot; &asymp; "+fmtPt(x/100*P.prezzo/u[1],u[0]):"";
+  const rng=S.media_anno!=null?S.media_anno*2:null;   // range tipico STIMATO: circa il doppio della mossa chiusura-chiusura
+  return reg+`<h3 class="vft">Quanto si muove <span class="small">(Settimana tipica e "brutta" sono misurate DA CHIUSURA A CHIUSURA: quanto il prezzo si &egrave; spostato da un venerd&igrave; all'altro, in valore assoluto. Non sono il RANGE della candela (massimo &minus; minimo, stoppini compresi), che &egrave; sempre pi&ugrave; ampio: in media circa il doppio, per questo la scheda mostra anche un range tipico STIMATO. Il range vero richiede massimi e minimi (dati OHLC), che la fonte gratuita FRED non fornisce. Prezzi FRED: per i cambi &egrave; il fixing delle 12 di New York (18 in Italia), mentre il broker chiude alle 17 di New York (23 in Italia), e i cambi FRED possono arrivare con circa una settimana di ritardo: l'ultimo dato usato qui &egrave; del <b>${fd(P.al)}</b>, controlla che sia la stessa settimana che guardi sul grafico. Per verificare su TradingView: grafico settimanale, misura da chiusura a chiusura (corpo contro corpo) delle ultime 52 settimane e fai la media senza segno; per il range usa l'ATR(14) settimanale, da confrontare con il range stimato. I pip sono calcolati sull'ultimo prezzo disponibile)</span></h3>
+   <div class="grid k4 vfkpi">
    <div class="card kpi"><h3>Volatilit&agrave; annua</h3><div class="big">${fp(P.ann_anno,1)}</div><div class="note">ultimo anno &middot; storia ${fp(P.ann_storia,1)}</div></div>
-   <div class="card kpi"><h3>Settimana tipica</h3><div class="big">${fp(S.media_anno)}</div><div class="note">media ultimo anno &middot; storia ${fp(S.media)}</div></div>
-   <div class="card kpi"><h3>Settimana "brutta"</h3><div class="big">${fp(S.brutta)}</div><div class="note">1 settimana su 10 si muove pi&ugrave; di cos&igrave; &middot; l'ultima ${fp(S.ultima)}</div></div>
-   <div class="card kpi"><h3>Ultima seduta</h3><div class="big">${fp(o.mossa,2)}</div><div class="note">${fd(o.data)} &middot; media di quel giorno ${fp(o.media_giorno)}</div></div></div>
+   <div class="card kpi"><h3>Settimana tipica</h3><div class="big">${fp(S.media_anno)}</div><div class="note">da chiusura a chiusura${inPt(S.media_anno)} &middot; storia ${fp(S.media)}<br>range stimato &asymp; ${fp(rng)}${inPt(rng)}</div></div>
+   <div class="card kpi"><h3>Settimana "brutta"</h3><div class="big">${fp(S.brutta)}</div><div class="note">1 settimana su 10 si muove pi&ugrave; di cos&igrave;${inPt(S.brutta)} &middot; l'ultima ${fp(S.ultima)} (al ${fd(P.al)})</div></div>
+   <div class="card kpi"><h3>Ultima seduta</h3><div class="big">${fp(o.mossa,2)}</div><div class="note">${fd(o.data)}${inPt(o.mossa)} &middot; media di quel giorno ${fp(o.media_giorno)}</div></div></div>
    <h3 class="vft">Giorno per giorno <span class="small">(movimento medio per giorno della settimana: colonna piena = storia, chiara = ultimo anno)</span></h3>
    <div class="card">${barre(P.giorni.map(g=>({et:g.g,v:g.storia,v2:g.anno})),2)}</div>
    <h3 class="vft">Mese per mese <span class="small">(volatilit&agrave; annua media in quel mese del calendario, dal ${fd(P.dal)})</span></h3>
