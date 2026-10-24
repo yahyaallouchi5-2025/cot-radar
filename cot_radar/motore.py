@@ -486,21 +486,21 @@ def profilo(pts, giorni=250):
 # muove di solito quel mercato e a quanto guadagna. Per ogni durata del trade (1..20 sedute e "al cambio segnale")
 # si calcola una riga compatta con i campi di DD_CAMPI (la pagina la legge per nome, vedi app.js "DD"):
 #   n            segnali misurati
-#   mae50/mae90  drawdown massimo tipico (mediana) e "brutto" (1 trade su 10 va peggio), in % (negativi)
-#   mfe50/res50  guadagno massimo tipico e risultato tipico (mediane), in %
+#   mae50/mae90  drawdown ASSOLUTO (dal prezzo d'ingresso): mediano e al 90° percentile (P90: 1 trade su 10 va peggio), in % (negativi)
+#   mfe50/res50  guadagno massimo e risultato mediani, in %
 #   v50/v90      drawdown in VOLATILITA': drawdown / movimento settimanale tipico di quel mercato all'ingresso
-#   fv50/rv50    guadagno massimo e risultato tipici nella stessa unita' (per il grafico "in volatilita'")
-#   h1..h4       % di trade con drawdown <0,5 / 0,5-1 / 1-2 / oltre 2 settimane tipiche
-#   gmin         seduta tipica in cui si tocca il punto peggiore (solo trade andati in negativo)
+#   fv50/rv50    guadagno massimo e risultato mediani nella stessa unita' (per il grafico "in volatilita'")
+#   h1..h4       % di trade con drawdown <0,5x / 0,5-1x / 1-2x / oltre 2x il movimento settimanale mediano
+#   gmin         seduta mediana in cui si tocca il punto peggiore (solo trade andati in negativo)
 #   prima        % di trade in cui il guadagno massimo arriva PRIMA del drawdown massimo
 #   hit/resa     % vinti e resa media al netto dei costi (in piccolo nella pagina: il quadro resta completo)
-#   p50/p90      drawdown tipico e brutto in PUNTI (pip, punti indice, $): solo per un singolo strumento
-#   ev_*/no_*    drawdown (n, tipico) dei trade con almeno un annuncio macro USA nella finestra / senza
+#   p50/p90      drawdown mediano e P90 in PUNTI (pip, punti indice, $): solo per un singolo strumento
+#   ev_*/no_*    drawdown (n, mediano) dei trade con almeno un annuncio macro USA nella finestra / senza
 #   pg/pa        % di trade il cui giorno peggiore cade su un annuncio, e % attesa per puro caso
 # Per "al cambio segnale" non c'e' il percorso giornaliero: tempi ed eventi restano vuoti (None).
 DD_CAMPI = ["n", "mae50", "mae90", "mfe50", "res50", "v50", "v90", "fv50", "rv50", "h1", "h2", "h3", "h4",
             "gmin", "prima", "hit", "resa", "p50", "p90", "ev_n", "ev50", "no_n", "no50", "pg", "pa"]
-SOGLIE_VOL = (0.5, 1.0, 2.0)          # confini delle fasce di drawdown in "settimane tipiche"
+SOGLIE_VOL = (0.5, 1.0, 2.0)          # confini delle fasce di drawdown in multipli del movimento settimanale
 
 
 def quantile(v, q):
