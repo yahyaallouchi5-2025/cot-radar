@@ -189,13 +189,12 @@ function why(p){const b=verb(D.assets[p.base].score)[0],q=verb(D.assets[p.quote]
  return `Su ${p.base} gli speculatori ${st(b)}, su ${p.quote} ${st(q)}: nessuna divergenza netta, ${p.pair} ${dir} (segnale meno forte).`;}
 /* TAG DI CONFERMA (vedi cot_radar/conferme.py):
    ctag = i Commercials (hedger) agli estremi confermano o contrastano il segnale
-   atag = affidabilita' storica: % di volte in cui, dopo un segnale, il prezzo e' andato nel verso giusto in 4 settimane */
+   (v6.16: tolto il tag "storico %" e ogni voto di AFFIDABILITA': il backtest ha mostrato che non ordina i
+   risultati, BASSA andava meglio di MEDIA. Il dato grezzo "Storico" resta solo nel pannello sotto il grafico.) */
 function ctag(acc){return acc?`<span class="tag ${acc=="conferma"?"ok":"ko"}" title="Commercials (hedger) agli estremi">Commercials: ${acc}</span>`:"";}
 /* stagtag = stagionalita' delle prossime 4 settimane: verde se va nel verso del segnale, arancio se contro */
 function stagtag(st,score){if(!st||!st.robusto)return "";const su=st.score>0;
  return `<span class="tag ${Math.sign(st.score)==Math.sign(score)?"ok":"ko"}" title="Stagionalita': ${su?"salito":"sceso"} ${su?st.su:st.n-st.su} anni su ${st.n} nelle prossime 4 settimane">stagione ${su?"&uarr;":"&darr;"} ${su?st.su:st.n-st.su}/${st.n}</span>`;}
-function atag(e){if(!e)return "";const c=e.pochi?"":e.hit>=60?"ok":e.hit<50?"ko":"";
- return `<span class="tag ${c}" title="Backtest: ${e.n} segnali passati, resa media ${e.resa>=0?"+":""}${fx(e.resa)}% in 4 settimane">storico ${e.hit}%${e.pochi?" (pochi dati)":""}</span>`;}
 /* CARD A 3 RIGHE: Smart money (COT) / Macro (modello di mercato) / Notizie (motore notizie).
    Verde = spinge la coppia su, rosso = giu', grigio = neutro. Il dettaglio resta nel pannello sotto il grafico. */
 function riga(nome,txt,v,breve){const c=v>0?"up":v<0?"down":"flat";
@@ -228,13 +227,13 @@ function trio(p){const n=p.news,cot=p.cot,mac=p.macro,det=[];
  return `<div class="trio">${sm}${ma}${ne}${sa}</div>${det.length?`<div class="det">${det.join(" &middot; ")}</div>`:""}`;}
 function card(p){return `<div class="card clic" data-tv="p:${p.pair}" title="Clic: grafico a candele"><div class="pairhead"><div><span class="pair">${p.pair}</span><div class="sotto">${badge(p.label)}</div></div>${anello(p.score)}</div>${trio(p)}
  <div class="rows">${sideRow(p.base)}${sideRow(p.quote)}</div>
- <div class="tags">${p.div?'<span class="tag div">Divergenza</span>':''}${mtag(p.cot,p.macro)}${p.new?`<span class="tag new">Nuovo (prima ${p.prev})</span>`:''}${ctag(p.comm_acc)}${atag(p.affid)}</div>
+ <div class="tags">${p.div?'<span class="tag div">Divergenza</span>':''}${mtag(p.cot,p.macro)}${p.new?`<span class="tag new">Nuovo (prima ${p.prev})</span>`:''}${ctag(p.comm_acc)}</div>
  <div class="why">${why(p)}</div></div>`;}
 var act=D.pairs.filter(p=>p.label!="NEUTRO");
 $("cards").innerHTML=act.length?act.map(card).join(""):`<div class="card">Nessun segnale attivo sulle valute questa settimana.</div>`;
 function acard(a){const v=verb(a.score),m=a.mkt;return `<div class="card clic" data-tv="a:${a.key}" title="Clic: grafico a candele"><div class="pairhead"><div><span class="pair" style="font-size:19px">${a.name}</span><div class="sotto">${badge(a.label)}</div></div>${anello(a.score)}</div>
  <div class="small" style="margin-top:8px">${a.it?esc(a.it)+" &middot; ":""}${a.group} &middot; ${a.key} &middot; COT Index ${a.idx}/100</div>${split(a.cot,a.macro)}
- <div class="tags">${mtag(a.cot,a.macro)}${a.new?`<span class="tag new">Nuovo (prima ${a.prev_label})</span>`:''}${a.crowded?'<span class="tag ko">affollato</span>':''}${ctag(a.comm_acc)}${atag(a.affid)}${stagtag(a.stag,a.score)}</div>
+ <div class="tags">${mtag(a.cot,a.macro)}${a.new?`<span class="tag new">Nuovo (prima ${a.prev_label})</span>`:''}${a.crowded?'<span class="tag ko">affollato</span>':''}${ctag(a.comm_acc)}${stagtag(a.stag,a.score)}</div>
  <div class="why">Speculatori: <b class="${v[1]}">${v[0]}</b>, ${fmt(a.d_net)} contratti in settimana, ${fmt(a.d_net4)} in 4 settimane.${m?` Mercato: ${m.status.toLowerCase()}.`:''}${NOTE[a.key]||NOTE[a.group]?' '+(NOTE[a.key]||NOTE[a.group]):''}</div></div>`;}
 var oth=Object.values(D.assets).filter(a=>a.group!="Valute"&&a.label!="NEUTRO").sort((x,y)=>Math.abs(y.score)-Math.abs(x.score));
 $("acards").innerHTML=oth.length?oth.map(acard).join(""):`<div class="card">Nessun segnale attivo.</div>`;
@@ -622,23 +621,12 @@ function disegnaCOT(spec){const box=$("tvcot");try{
  man.addEventListener("pointermove",ev=>{if(pan.classList.contains("trascino"))imposta(h0+(y0-ev.clientY));});   // su = piu' alto
  const fine=()=>pan.classList.remove("trascino");man.addEventListener("pointerup",fine);man.addEventListener("pointercancel",fine);
  man.addEventListener("dblclick",()=>imposta(STD));})();
-/* AFFIDABILITA' DEL SEGNALE (etichetta in testa al pannello del grafico): somma di tre conferme
-   storico (>=60% +1, <50% -1, "pochi dati" non conta) + Commercials (conferma +1, contrasto -1)
-   + stagionalita' affidabile (stesso verso del segnale +1, contrario -1).  >=2 ALTA, <=-1 BASSA, altrimenti MEDIA. */
-function affidabilitaSegnale(spec){const[t,id]=spec.split(":"),o=t=="p"?D.pairs.find(x=>x.pair==id):D.assets[id];
- if(!o||o.label=="NEUTRO")return "";
- let v=0;const perche=[],e=o.affid,st=o.stag,acc=o.comm_acc;
- if(e&&!e.pochi){if(e.hit>=60){v++;perche.push(`storico ${e.hit}%`);}else if(e.hit<50){v--;perche.push(`storico solo ${e.hit}%`);}}
- if(acc=="conferma"){v++;perche.push("Commercials a favore");}else if(acc=="contrasto"){v--;perche.push("Commercials contrari");}
- if(st&&st.robusto){if(Math.sign(st.score)==Math.sign(o.score)){v++;perche.push("stagionalita' a favore");}else{v--;perche.push("stagionalita' contraria");}}
- const liv=v>=2?["ALTA","var(--sb)"]:v<=-1?["BASSA","var(--ss)"]:["MEDIA","var(--warn)"];
- return `<span class="badge" style="--bc:${liv[1]}" title="${esc(perche.join(", ")||"nessuna conferma o contrasto")}">AFFIDABILIT&Agrave; ${liv[0]}</span>`;}
-/* Nel pannello del grafico l'affidabilita' si mostra SOLO quando la abbassa una notizia (es. CPI, Fed)
-   che va contro il segnale: e' l'unico caso che cambia il "quando" entrare. Il resto e' nel riepilogo sotto. */
+/* AVVISO NOTIZIA nel pannello del grafico: compare SOLO quando una notizia (es. CPI, Fed) va contro il
+   segnale, perche' cambia il "quando" entrare. Nessun voto di affidabilita' (tolto in v6.16). */
 function avvisoNotizia(spec){const[t,id]=spec.split(":");if(t!="p")return "";const p=D.pairs.find(x=>x.pair==id);
  if(!p||!p.news||p.news.effetto!="penalizza"||p.label=="NEUTRO")return "";
  const ev=[...(p.news.oggi||[]),...(p.news.eventi||[]).map(x=>x.nome)].filter(Boolean);
- return `<span class="badge" style="--bc:var(--ss)" title="${esc("Notizia contraria al segnale: "+(ev.join(", ")||"vedi riepilogo"))}">AFFIDABILIT&Agrave; BASSA &middot; NOTIZIA</span>`;}
+ return `<span class="badge" style="--bc:var(--ss)" title="${esc("Notizia contraria al segnale: "+(ev.join(", ")||"vedi riepilogo"))}">NOTIZIA CONTRARIA</span>`;}
 function apriGrafico(spec){TV.spec=spec;const info=tvInfo(spec),m=$("tvmodal");disegnaCOT(spec);
  $("tvtitolo").innerHTML=`<span class="pair">${esc(info.nome)}</span> ${info.label?badge(info.label):""} ${avvisoNotizia(spec)} <span class="small">punteggio ${fmt(info.score)}</span>`;
  $("tvsotto").innerHTML=`${esc(info.sotto)}`+   /* simbolo TradingView tolto: si vede gia' nel grafico */(info.inv?` &middot; <b style="color:var(--warn)">grafico quotato al contrario: BUY sul segnale = grafico che SCENDE</b>`:"");
@@ -695,8 +683,6 @@ try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!el)return;
  const oraIt=u=>{if(!u)return"";const t=new Date(u.replace("Z",":00Z"));
   return t.toLocaleDateString("it-IT",{timeZone:"Europe/Rome",day:"2-digit",month:"2-digit",year:"numeric"})+" ore "+t.toLocaleTimeString("it-IT",{timeZone:"Europe/Rome",hour:"2-digit",minute:"2-digit"});};
  const sett=(a,b)=>Math.max(1,Math.round((new Date(b)-new Date(a))/864e5/7));
- const AFC={ALTA:"var(--sb)",MEDIA:"var(--warn)",BASSA:"var(--ss)"};
- const aff=l=>l?`<span class="badge" style="--bc:${AFC[l]||"var(--n)"}">AFFIDABILIT&Agrave; ${l}</span>`:"";
  const MOT={neutro:"tornato NEUTRO",inversione:"segnale invertito",indebolito:"tornato da STRONG a normale","12 settimane":"limite di 12 settimane"};
 
  /* tabellina dei risultati: periodo, risultato, guadagno massimo e drawdown massimo lungo il percorso */
@@ -705,7 +691,7 @@ try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!el)return;
 
  /* scheda di un segnale nel formato approvato */
  function scheda(s,sim){const m=s.m||{},A=m.A||{},ing=m.ingresso;
-  const testa=`<div class="vfh"><span class="pair">${esc(s.strumento)}</span> ${badge(s.etichetta)} ${aff(s.affid)}${s.iniziale?' <span class="tag" title="Era gia\' attivo quando il registro e\' partito: escluso dalle statistiche">gi&agrave; attivo all\'avvio</span>':''}${s.padre?' <span class="tag" title="Fase STRONG di un segnale gia\' aperto">fase STRONG</span>':''}${volTag(s.vol)}</div>`;
+  const testa=`<div class="vfh"><span class="pair">${esc(s.strumento)}</span> ${badge(s.etichetta)}${s.iniziale?' <span class="tag" title="Era gia\' attivo quando il registro e\' partito: escluso dalle statistiche">gi&agrave; attivo all\'avvio</span>':''}${s.padre?' <span class="tag" title="Fase STRONG di un segnale gia\' aperto">fase STRONG</span>':''}${volTag(s.vol)}</div>`;
   let h=`<div class="vfr"><span>Segnale generato</span><b>${esc(s.generato_it)}</b></div>`+
    (ing?`<div class="vfr"><span>Ingresso</span><b>${prezzo(ing.prezzo)} <span class="small">&middot; ${oraIt(ing.utc)}</span></b></div>`
        :`<div class="vfr"><span>Ingresso</span><span class="small">${esc(m.stato||"prezzo non disponibile")}</span></div>`);
@@ -718,8 +704,7 @@ try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!el)return;
     h+=`<div class="small vfnota">${s.chiuso?"Chiuso il "+esc(quando):"Misura conclusa"} &middot; ${esc(MOT[fm.motivo]||MOT[(s.chiuso||{}).motivo]||"")}</div>`;}
    const b=m.B||{};const bt=b.esito=="eseguito"?`eseguito a ${prezzo(b.limite)} il ${fd(b.data)}`:b.esito=="non eseguito"?`non eseguito (limite ${prezzo(b.limite)})`:b.esito=="in attesa"?`limite a ${prezzo(b.limite)} in attesa`:"n/d";
    h+=`<div class="small vfnota">Ingresso B (ritracciamento): ${bt}</div>`;}
-  const perche=(s.perche||[]).length?`<div class="small vfp">Affidabilit&agrave;: ${esc(s.perche.join(", "))}</div>`:"";
-  return `<div class="card vfcard${sim?" vfsim":""}">${testa}<div class="vfrighe">${h}</div>${perche}</div>`;}
+  return `<div class="card vfcard${sim?" vfsim":""}">${testa}<div class="vfrighe">${h}</div></div>`;}
 
  /* ---- VOLATILITA' PER ASSET (D.vol, calcolata da cot_radar/volatilita.py) ----
     La "natura" di ogni mercato: quanto si muove per giorno della settimana, per settimana, per mese del
@@ -846,7 +831,7 @@ try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!el)return;
   <p class="small vfcontesto">Durata <b>${durata(V.d)}</b> &middot; ${V.strum=="tutti"?"tutti gli strumenti":"<b>"+esc(V.strum)+"</b>"}${V.fin=="bt"?" &middot; storico: "+{tutti:"tutto",sviluppo:"sviluppo",holdout:"holdout (ultimi 2 anni)"}[V.per]:""}</p>`+
   kpiDD(o,u)+graficoDD(lista,campi)+fasce(o)+annunci(o);}
 
- /* tabella per gruppo (etichetta, affidabilita', periodo, strumento): gr = {nome: riassunto} */
+ /* tabella per gruppo (etichetta, volatilita', periodo, strumento): gr = {nome: riassunto} */
  function tabella(titolo,gr,ordine,min,prof){const ks=(ordine||Object.keys(gr||{})).filter(k=>gr&&gr[k]&&st(gr[k])&&st(gr[k]).n>=(min||1));
   if(!ks.length)return "";
   return `<h3 class="vft">${titolo}</h3><div class="tablewrap"><table class="compatta"><tr><th></th><th class="num">Segnali</th><th class="num">Vinti</th><th class="num">Probabile tra</th><th class="num">Resa media</th><th class="num" title="Media dei guadagni massimi (le schede in alto usano invece la mediana)">Guadagno max medio</th><th class="num" title="Media dei drawdown massimi (le schede in alto usano invece la mediana: i casi estremi pesano meno)">Drawdown max medio</th><th class="num">Rapporto</th>${prof?`<th class="num" title="Volatilita' annua dell'ultimo anno">Volatilit&agrave; annua</th><th class="num" title="Movimento tipico in una settimana (mediana), ultimo anno">Mossa tipica sett.</th><th class="num" title="Drawdown medio diviso la mossa settimanale tipica: sotto 1 = drawdown nella norma per quel mercato, sopra 1 = il segnale soffre piu' del normale rumore">Drawdown / mossa</th>`:""}</tr>
@@ -885,7 +870,7 @@ try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!el)return;
    `<h2>Segnali aperti <span class="small">(${ap.length})</span></h2><div class="grid vfgrid">${ap.map(s=>scheda(s)).join("")||'<div class="small">Nessun segnale aperto.</div>'}</div>
    <h2>Segnali chiusi <span class="small">(${R.n_chiusi})</span></h2><div class="grid vfgrid" id="vfchiusi">${ch.slice(0,12).map(s=>scheda(s)).join("")||'<div class="small">Ancora nessuno.</div>'}</div>
    ${ch.length>12?`<button class="vfaltro" id="vfaltro">Mostra tutti (${ch.length})</button>`:""}
-   ${tabella("Per etichetta",P.etichetta,["STRONG BUY","BUY","SELL","STRONG SELL"])}${tabella("Per affidabilit&agrave;",P.affid,["ALTA","MEDIA","BASSA"])}${tabella("Per volatilit&agrave; al momento del segnale",P.vol,["calma","normale","agitata"])}${varianti(P.riass)}${tabella("Per strumento",P.strumento,null,1,R.profilo)}`;}
+   ${tabella("Per etichetta",P.etichetta,["STRONG BUY","BUY","SELL","STRONG SELL"])}${tabella("Per volatilit&agrave; al momento del segnale",P.vol,["calma","normale","agitata"])}${varianti(P.riass)}${tabella("Per strumento",P.strumento,null,1,R.profilo)}`;}
 
  function datiBt(){const P=B.periodi[V.per]||B.periodi.tutti,nomeP={tutti:"tutto il periodo",sviluppo:"sviluppo",holdout:"holdout"}[V.per];
   const per={"Tutto il periodo":B.periodi.tutti.riass,"Sviluppo":B.periodi.sviluppo.riass,"Holdout (ultimi 2 anni)":B.periodi.holdout.riass};
@@ -895,7 +880,7 @@ try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!el)return;
   const ordS=Object.keys(P.strumento||{}).sort((a,b)=>((st(P.strumento[b])||{}).resa??-99)-((st(P.strumento[a])||{}).resa??-99));
   return bloccoDD(P,B.dd_campi,B.unita)+tabella("Sviluppo e holdout a confronto",per,Object.keys(per))+
    `<p class="small">Il periodo di <b>holdout</b> (ultimi 2 anni) non va mai usato per tarare pesi o soglie: &egrave; il controllo onesto. Se sviluppo e holdout dicono cose molto diverse, il risultato del passato non &egrave; affidabile.</p>
-   ${tabella(`Per affidabilit&agrave; <span class="small">(${nomeP})</span>`,P.affid,["ALTA","MEDIA","BASSA"])}${tabella(`Per etichetta <span class="small">(${nomeP})</span>`,P.etichetta,["STRONG BUY","BUY","SELL","STRONG SELL"])}${tabella(`Per volatilit&agrave; al momento del segnale <span class="small">(${nomeP}: calma / normale / agitata rispetto ai 5 anni prima)</span>`,P.vol,["calma","normale","agitata"])}${varianti(P.riass)}${barre}
+   ${tabella(`Per etichetta <span class="small">(${nomeP})</span>`,P.etichetta,["STRONG BUY","BUY","SELL","STRONG SELL"])}${tabella(`Per volatilit&agrave; al momento del segnale <span class="small">(${nomeP}: calma / normale / agitata rispetto ai 5 anni prima)</span>`,P.vol,["calma","normale","agitata"])}${varianti(P.riass)}${barre}
    ${tabella(`Per strumento <span class="small">(${nomeP}, almeno ${V.per=="holdout"?5:20} segnali)</span>`,P.strumento,ordS,V.per=="holdout"?5:20,B.profilo)}`;}
 
  function live(){if(!R)return `<div class="card vfvuoto">Registro non disponibile in questo aggiornamento.</div>`;
@@ -911,7 +896,7 @@ try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!el)return;
    ${comandi(B.periodi.tutti)}<div id="vfdati">${datiBt()}</div>
    <details class="vfdett"><summary>Come &egrave; costruito (e cosa manca rispetto al live)</summary><ul class="small">
     <li>Ogni settimana il punteggio COT &egrave; ricalcolato con i <b>soli report disponibili allora</b>; il segnale nasce alla pubblicazione (venerd&igrave; 15:30 di New York, 21:30 in Italia) ed entra alla prima chiusura successiva: da l&igrave; partono il percorso e i risultati.</li>
-    <li>Stesse regole del sito per etichette, divergenza, dollaro composito, nascita/conferma/chiusura dei segnali e affidabilit&agrave; (storico e Commercials di allora).</li>
+    <li>Stesse regole del sito per etichette, divergenza, dollaro composito, nascita/conferma/chiusura dei segnali.</li>
     <li>Non incluse: la parte <b>Mercato e macro</b> (30% del punteggio live), le notizie e la stagionalit&agrave;.</li>
     <li>Costi stimati andata e ritorno sottratti: cambi principali ${B.costi.major}%, incroci ${B.costi.cross}%, emergenti ${B.costi.em}%, indici ${B.costi.indici}%, petrolio ${B.costi.energia}%, gas ${B.costi.NATGAS}%, crypto ${B.costi.crypto}%. Swap e rollover esclusi.</li>
     <li>Prezzi solo di chiusura giornaliera (FRED): guadagno e drawdown massimi sono misurati sulle chiusure.</li></ul></details>
