@@ -34,7 +34,8 @@ def scarica(sito, timeout=30):
     if not sito:
         return None
     try:
-        with urllib.request.urlopen(f"{sito.rstrip('/')}/?r={int(time.time())}", timeout=timeout) as r:
+        # il terminale sta in /terminale/ (v6.17); la radice e' la landing page
+        with urllib.request.urlopen(f"{sito.rstrip('/')}/terminale/?r={int(time.time())}", timeout=timeout) as r:
             html = r.read().decode("utf-8")
         inizio = html.index("const D=") + len("const D=")
         dati, _ = json.JSONDecoder().raw_decode(html, inizio)
@@ -97,6 +98,6 @@ def testi(dati, sito, test=False):
                        "\n".join(f"■ {escape(c['nome'])}: era {escape(c['prima'])}, ora NEUTRO" for c in chiusi))
     if not blocchi:
         blocchi.append("Nessun segnale attivo questa settimana.")
-    piede = "\n\n" + (f'<a href="{_escape(sito.rstrip("/"))}/">Apri la dashboard</a>\n' if sito else "") + \
+    piede = "\n\n" + (f'<a href="{_escape(sito.rstrip("/"))}/">Apri il terminale Edge Board</a>\n' if sito else "") + \
         "<i>Informazione statistica dalla dashboard pubblica, non consulenza finanziaria.</i>"
     return impagina(testa, blocchi, piede)

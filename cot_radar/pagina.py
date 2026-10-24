@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 from .analisi import analyse
 from .calendario import sources_status
 from .config import (ARCHIVI_COT, ASSETS, DIVERGENCE_MIN, MACRO_WEIGHT, NORMAL, REG_WEEKS, SECTORS, STRONG,
-                     TV_PAIRS, TV_SYMBOLS, WEB_DIR, WEIGHTS)
+                     TELEGRAM_CANALE, TV_PAIRS, TV_SYMBOLS, WEB_DIR, WEIGHTS)
 from .controlli import controlla
 from .cot import cot_series
 from .fonti import get_cftc_tutto, get_fred, load_all, scarica_archivio
@@ -46,7 +46,12 @@ def template():
     def read(name):
         with open(os.path.join(WEB_DIR, name), encoding="utf-8") as f:
             return f.read()
-    return read("index.html").replace("{{CSS}}", read("stile.css")).replace("{{JS}}", read("app.js"))
+    return read("index.html").replace("{{CSS}}", read("stile.css")).replace("{{JS}}", read("app.js")) \
+        .replace("{{TELEGRAM}}", TELEGRAM_CANALE)
+
+
+# Dati dell'ultima dashboard creata, per la landing page (vetrina.py): segnali e numeri VERI, mai inventati.
+ULTIMI = {}
 
 
 def build(data_source=load_all, demo=False, sito=False):
@@ -169,6 +174,9 @@ def build(data_source=load_all, demo=False, sito=False):
     # completo (cifrato sul sito, in chiaro sul PC). Vedi cot_radar/admin.py
     # JSON compatto (senza spazi dopo virgole e due punti): stessa informazione, pagina piu' leggera
     payload = json.dumps(clean(data), ensure_ascii=False, separators=(",", ":"))
+    ULTIMI.clear()
+    ULTIMI.update(data=clean({"assets": assets, "pairs": pairs}), bt_dal=(bt or {}).get("dal"), bt_n=(bt or {}).get("n"),
+                  demo=demo)
     # "</" dentro <script> chiuderebbe il tag per errore: lo "spezziamo" in "<\/"
     return template().replace("{{DATA}}", payload.replace("</", "<\\/")), clean(stato)
 

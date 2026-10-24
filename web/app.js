@@ -120,10 +120,11 @@ $("alerts").innerHTML=al.join("");
    Le schede sono <section>: si mostra solo quella con la classe "on". */
 try{
 document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#nav button,section").forEach(x=>x.classList.remove("on"));
- b.classList.add("on");$(b.dataset.t).classList.add("on");window.scrollTo({top:0});});
+ b.classList.add("on");const sez=$(b.dataset.t);if(sez)sez.classList.add("on");window.scrollTo({top:0});});
 var go=t=>document.querySelector(`#nav button[data-t=${t}]`).click();
 // LINK DIRETTO a una scheda (es. .../#registro dai messaggi Telegram): si apre dopo che tutte le schede sono pronte
-setTimeout(()=>{const t=location.hash.slice(1);if(/^[a-z]+$/.test(t)&&document.querySelector(`#nav button[data-t=${t}]`))go(t);},0);
+// (solo schede che esistono davvero: "registro" sparisce quando il registro admin non e' pubblicato)
+setTimeout(()=>{const t=location.hash.slice(1);if(/^[a-z]+$/.test(t)&&$(t)&&document.querySelector(`#nav button[data-t=${t}]`))go(t);},0);
 }catch(e){fail('Navigazione','nav',e);}
 
 /* ---------- grafici ----------

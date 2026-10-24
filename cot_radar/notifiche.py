@@ -146,7 +146,7 @@ def componi(blocchi, nuovi, sito):
     testa = "<b>Edge Board · aggiornamento segnali</b>\n<i>" + \
             (t.strftime("%d/%m/%Y %H:%M UTC") if t else "") + \
             (f" · COT del {cot[8:10]}/{cot[5:7]}/{cot[:4]}" if cot else "") + "</i>\n\n"
-    piede = "\n\n" + (f'<a href="{_escape(sito.rstrip("/"))}/#registro">Registro completo e statistiche</a>\n'
+    piede = "\n\n" + (f'<a href="{_escape(sito.rstrip("/"))}/terminale/#verifica">Registro completo e statistiche</a>\n'
                       if sito else "") + f"<i>{AVVERTENZA}</i>"
     return impagina(testa, blocchi, piede)
 
@@ -313,7 +313,7 @@ def prova(sito, env=None, dati_sito=None):
     else:
         testi = ["<b>Edge Board · messaggio di prova</b>\n\nIl canale è collegato: qui arriveranno il riepilogo "
                  "settimanale dei segnali e gli aggiornamenti." +
-                 (f'\n\n<a href="{_escape(sito.rstrip("/"))}/">Apri la dashboard</a>' if sito else "")]
+                 (f'\n\n<a href="{_escape(sito.rstrip("/"))}/">Apri il terminale</a>' if sito else "")]
     if not (token and chat):
         log.error("mancano i Secrets TELEGRAM_BOT_TOKEN e/o TELEGRAM_CHAT_ID")
         return {"telegram": None, "email": invia_email(testi, env), "messaggi": len(testi)}

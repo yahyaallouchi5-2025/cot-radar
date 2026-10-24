@@ -244,8 +244,20 @@ html.guidaon,html.guidaon body{overflow:hidden}
  transition:width .22s ease,transform .22s ease;z-index:40}
 .side svg,.sbtn svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .sbrand{display:flex;align-items:center;gap:10px}
-.slogo{width:34px;height:34px;flex:none;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;letter-spacing:.5px;
- color:#eaf6ff;background:linear-gradient(135deg,rgba(46,196,182,.35),rgba(91,155,255,.25));border:1px solid rgba(190,225,255,.25);text-shadow:0 0 10px rgba(200,235,255,.6)}
+.side svg.slogo{width:36px;height:36px;flex:none;border-radius:10px;stroke:none;box-shadow:0 0 0 1px rgba(190,225,255,.22),0 0 18px rgba(46,196,182,.25)}
+/* invito al canale Telegram: in evidenza (bordo turchese e luce), primo elemento dopo il marchio */
+.stg{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;text-decoration:none;color:var(--ink);
+ background:linear-gradient(135deg,rgba(46,196,182,.20),rgba(91,155,255,.12));border:1px solid rgba(46,196,182,.55);
+ box-shadow:0 0 22px rgba(46,196,182,.18);transition:transform .15s,box-shadow .15s}
+.stg:hover{transform:translateY(-1px);box-shadow:0 0 28px rgba(46,196,182,.35)}
+.stg svg{width:22px;height:22px;color:#7fe3d8}
+.stg span{min-width:0}.stg b{display:block;font-size:13.5px;white-space:nowrap}.stg small{display:block;font-size:11.5px;color:var(--mute);white-space:nowrap}
+html.ridotta .stg{justify-content:center;padding:10px}html.ridotta .stg span{display:none}
+/* pulsante Telegram in alto: solo su telefono/tablet, dove la sidebar e' nascosta */
+.tgtop{display:none;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;font:700 13px system-ui;text-decoration:none;color:#7fe3d8;
+ border:1px solid rgba(46,196,182,.55);background:rgba(46,196,182,.12)}
+.tgtop svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
+.topdx{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .snome{flex:1;white-space:nowrap;font-size:16px;color:#eef6ff;text-shadow:0 0 14px rgba(185,225,255,.35)}
 .sbtn{flex:none;width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:none;color:var(--mute);display:flex;align-items:center;justify-content:center;cursor:pointer}
 .sbtn:hover{color:var(--ink);border-color:var(--acc)}
@@ -274,7 +286,9 @@ h1.ghiaccio{color:#eef6ff;text-shadow:0 0 18px rgba(185,225,255,.32),0 0 2px rgb
  .side{position:fixed;left:0;top:0;bottom:0;height:auto;transform:translateX(-105%);box-shadow:20px 0 40px rgba(0,0,0,.4)}
  html.sideon .side{transform:none}
  html.ridotta .side{width:264px;padding:20px 16px}
- html.ridotta .snome,html.ridotta .stx,html.ridotta .stit span,html.ridotta .sitem span{display:revert}
+ html.ridotta .snome,html.ridotta .stx,html.ridotta .stit span,html.ridotta .sitem span,html.ridotta .stg span{display:revert}
+ html.ridotta .stg{justify-content:flex-start;padding:12px}
+ .tgtop{display:inline-flex}
  html.ridotta .sbrand{flex-direction:row}html.ridotta .sbtn svg{transform:none}
  .smenu{display:flex}}
 /* telefono: conferme del pannello COT in mini-riquadri su due colonne */

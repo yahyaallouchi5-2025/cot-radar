@@ -191,6 +191,15 @@ Limite: si può misurare solo dove c'è un prezzo storico gratuito (cambi, indic
 
 Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il risultato completo finisce anche in `storico/confronto.json`. Test: `python -m unittest tests.test_archivi_cot -v`.
 
+## Sito: landing page + terminale (v6.17)
+
+- `https://…github.io/cot-radar/` = **landing page** (`web/landing.html`, riempita da `cot_radar/vetrina.py` con i numeri veri:
+  data del COT, segnali attivi, mercati, anteprima dei segnali con i nomi sfocati).
+- `https://…github.io/cot-radar/terminale/` = **terminale** (la dashboard). Accesso con un **pass gratuito** salvato nel
+  browser (un clic sulla landing): NON è un login vero, serve a far passare i visitatori dalla landing.
+  Il login vero (Supabase) sostituirà la funzione `entra()` della landing e il controllo in testa a `web/index.html`.
+- Il link del canale Telegram è in `config.TELEGRAM_CANALE` (sidebar del terminale, landing, pulsante in alto su telefono).
+
 ## Notifiche dei segnali (Telegram + e-mail all'admin, `cot_radar/notifiche.py`)
 
 Dopo ogni pubblicazione riuscita il workflow **Notifiche** (parte da solo dopo ogni giro riuscito di *Sito*) legge il registro live dei segnali e manda

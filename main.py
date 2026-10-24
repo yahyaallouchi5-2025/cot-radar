@@ -6,7 +6,8 @@ main.py - punto di partenza. Doppio clic oppure da terminale:
     python main.py                 scarica i dati, crea cot_radar.html e lo apre nel browser
     python main.py --demo          stessa cosa con dati FINTI (nessun internet): per provare e fare debug
     python main.py --debug         stampa i dettagli di ogni passaggio (quale serie arriva, quanto ci mette...)
-    python main.py --out public    modalita' sito: crea public/index.html (usata da GitHub Actions)
+    python main.py --out public    modalita' sito (GitHub Actions): public/index.html = landing page,
+                                   public/terminale/index.html = terminale (dashboard), public/stato.json
     python main.py --no-open       non apre il browser
     python main.py --pianifica     Windows: aggiornamento automatico ogni venerdi' alle 21:45
 
@@ -24,7 +25,7 @@ from datetime import datetime
 # permette di lanciare main.py da qualsiasi cartella (anche con doppio clic)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from cot_radar.config import OUT, REGISTRO, STATO     # noqa: E402
+from cot_radar.config import OUT, REGISTRO, STATO, TERMINALE  # noqa: E402
 from cot_radar import admin                           # noqa: E402
 from cot_radar.log import log, raccoglitore, setup   # noqa: E402
 from cot_radar.pagina import build, error_page       # noqa: E402
@@ -92,7 +93,9 @@ def main(argv):
     if site:
         folder = argv[argv.index("--out") + 1]
         os.makedirs(folder, exist_ok=True)
-        out = os.path.join(folder, "index.html")
+        # landing page nella radice (scritta da vetrina.py a fine giro), terminale nella sottocartella
+        os.makedirs(os.path.join(folder, TERMINALE), exist_ok=True)
+        out = os.path.join(folder, TERMINALE, "index.html")
     log.info("===== COT Radar: avvio (%s) =====", "sito" if site else "locale")
 
     if "--demo" in argv:
@@ -131,7 +134,7 @@ def main(argv):
                 return 1      # niente pubblicazione: online resta l'ultima versione buona (e parte la mail all'admin)
             log.critical("Pagina NON aggiornata: tengo quella precedente (%s)", out)
             return 1
-        scrivi_stato(stato, [os.path.dirname(STATO)], os.path.dirname(out) if site else None)
+        scrivi_stato(stato, [os.path.dirname(STATO)], folder if site else None)   # stato.json nella radice del sito
         # REGISTRO LIVE dei segnali: si salva solo adesso, ad aggiornamento approvato, e mai con esito critico
         # (dati sospetti = possibili segnali finti). Vedi cot_radar/registro.py
         if stato["esito"] != "critico":
@@ -152,6 +155,13 @@ def main(argv):
     with open(out, "w", encoding="utf-8") as f:
         f.write(page)
     log.info("Pagina creata: %s  |  registro: %s", out, REGISTRO)
+    if site:
+        # LANDING PAGE (vetrina.py) con i numeri veri di questo giro. Isolata: se fallisce il terminale e' gia' salvo
+        try:
+            from cot_radar import vetrina
+            vetrina.crea(folder)
+        except Exception:
+            log.error("landing page non creata:\n%s", traceback.format_exc())
     if not site and "--no-open" not in argv:
         webbrowser.open("file:///" + out.replace("\\", "/").lstrip("/"))
     return 0

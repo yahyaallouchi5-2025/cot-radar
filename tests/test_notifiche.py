@@ -53,7 +53,7 @@ class Avvisi(unittest.TestCase):
         self.assertIn("Petrolio WTI", self.inviati[0])
         self.assertIn("STRONG SELL", self.inviati[0])
         self.assertNotIn("GBP/USD", self.inviati[0])
-        self.assertIn("/cot-radar/#registro", self.inviati[0])
+        self.assertIn("/cot-radar/terminale/#verifica", self.inviati[0])
         self.assertNotIn("affid", self.inviati[0].lower())                    # mai l'affidabilita' su Telegram
         # stesso giro ripetuto (tentativo 2 della sera): niente doppioni
         r = notifiche.esegui(self.dir, "", ENV, ADESSO, dati_sito={})

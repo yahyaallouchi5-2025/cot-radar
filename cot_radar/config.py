@@ -176,6 +176,10 @@ COUNTRIES = [("IT", "Italia"), ("U2", "Eurozona"), ("DE", "Germania"), ("FR", "F
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # cartella principale del progetto
 WEB_DIR = os.path.join(ROOT, "web")                                    # template HTML/CSS/JS
 CACHE = os.path.join(ROOT, "dati", "cache.json")                       # ultima copia dei dati scaricati
+# CANALE TELEGRAM pubblico (gratuito): link nella sidebar del terminale e nella landing page (vetrina.py)
+TELEGRAM_CANALE = "https://t.me/edgeboard"
+# SITO: la landing page sta nella radice, il terminale nella sottocartella TERMINALE (vedi main.py e vetrina.py)
+TERMINALE = "terminale"
 OUT = os.path.join(ROOT, "cot_radar.html")                             # dashboard creata in locale
 REGISTRO = os.path.join(ROOT, "dati", "registro.log")                  # file di registro (a rotazione)
 STATO = os.path.join(ROOT, "dati", "stato.json")                       # riepilogo dell'ultima esecuzione
