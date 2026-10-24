@@ -191,6 +191,12 @@ Limite: si può misurare solo dove c'è un prezzo storico gratuito (cambi, indic
 
 Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il risultato completo finisce anche in `storico/confronto.json`. Test: `python -m unittest tests.test_archivi_cot -v`.
 
+## Stagionalità agganciata al COT (v6.18)
+
+La stagionalità (settimana e 4 settimane) parte dal **venerdì di uscita del report COT in uso** (`stagionalita.ancora_cot`),
+non da oggi: resta ferma per tutta la settimana e si sposta insieme al segnale quando esce il COT nuovo.
+Nel pannello del grafico il giudizio è rispetto al segnale: **favorevole** (verde), **non favorevole** (rosso), **neutra** (ambra).
+
 ## Sito: landing page + terminale (v6.17)
 
 - `https://…github.io/cot-radar/` = **landing page** (`web/landing.html`, riempita da `cot_radar/vetrina.py` con i numeri veri:

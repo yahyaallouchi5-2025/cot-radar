@@ -117,7 +117,12 @@ tr.clic:hover td{background:var(--soft)}
 .tvmodal[hidden]{display:none}
 /* i gesti sul pannello del grafico non devono "passare" alla pagina sotto (iPhone: trascinare/disegnare sul grafico) */
 .tvmodal{overscroll-behavior:contain;touch-action:none}.tvpannello{touch-action:none;overscroll-behavior:contain}
-.tvpannello{background:var(--card);border:1px solid var(--line);border-radius:16px;width:min(1200px,100%);height:min(820px,100%);display:flex;flex-direction:column;overflow:hidden}
+/* v6.18: il pannello del grafico occupa TUTTA la finestra del browser, come una scheda a se'
+   (100dvh = altezza reale visibile anche su telefono, con le barre del browser; safe-area = notch dell'iPhone) */
+.tvmodal{padding:0}
+.tvpannello{background:var(--card);border:0;border-radius:0;width:100vw;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;
+ padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+.tvcot{max-height:46vh;overflow-y:auto}
 .tvpannello:fullscreen{width:100%;height:100%;border-radius:0}
 /* finto schermo intero (iPhone): il pannello copre tutta la finestra visibile; 100dvh tiene conto delle barre di Safari */
 .tvpannello.pieno{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;max-width:none;border-radius:0;border:0;z-index:70;
@@ -145,7 +150,8 @@ html.bloccato,html.bloccato body{overflow:hidden;overscroll-behavior:none}
 .tvcot .assi{display:flex;justify-content:space-between;font-size:11px;color:var(--ink2);margin-top:4px}
 .corto{display:none}
 /* TELEFONO: testata del grafico su una riga sola, pulsanti compatti, pannello COT essenziale */
-@media (max-width:600px){.tvmodal{padding:0}.tvpannello{height:100%;border-radius:0}
+@media (max-width:600px){.tvmodal{padding:0}.tvpannello{height:100dvh;border-radius:0}
+ .tvcot{max-height:42vh}.tvcot .cotinfo p{font-size:13px;line-height:1.5;margin:6px 0}.sintesi{font-size:12px;padding:8px 10px;line-height:1.45}
  .tvtesta{padding:10px 12px;gap:8px}.tvtesta .pair{font-size:18px}.tvtesta .small{font-size:11px}
  .tvcomandi{gap:4px;flex-wrap:nowrap;width:100%}.tvcomandi .filters{gap:4px;flex-wrap:nowrap}
  .tvcomandi .filters button,.tvbtn{padding:6px 9px;font-size:12px}.tvcomandi #tvchiudi{margin-left:auto}
@@ -244,6 +250,13 @@ html.guidaon,html.guidaon body{overflow:hidden}
  transition:width .22s ease,transform .22s ease;z-index:40}
 .side svg,.sbtn svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .sbrand{display:flex;align-items:center;gap:10px}
+/* MARCHIO BoardEdge (logo v3): barra luminosa turchese/blu + BOARD sopra EDGE */
+.blogo{display:flex;align-items:stretch;gap:9px;flex:1;min-width:0;text-decoration:none}
+.blogo i{width:5px;border-radius:3px;background:linear-gradient(180deg,#3ee0cf,#5b9bff);box-shadow:0 0 12px rgba(46,196,182,.55)}
+.blogo b{font:900 17px/0.92 "Inter Display","Inter",system-ui,sans-serif;letter-spacing:-.6px;color:#eef5ff}
+.blogo em{font-style:normal;background:linear-gradient(100deg,#3ee0cf,#5b9bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.snome:empty{display:none}
+html.ridotta .blogo b{font-size:11px}
 .side svg.slogo{width:36px;height:36px;flex:none;border-radius:10px;stroke:none;box-shadow:0 0 0 1px rgba(190,225,255,.22),0 0 18px rgba(46,196,182,.25)}
 /* invito al canale Telegram: in evidenza (bordo turchese e luce), primo elemento dopo il marchio */
 .stg{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;text-decoration:none;color:var(--ink);
@@ -273,7 +286,7 @@ html.ridotta .stg{justify-content:center;padding:10px}html.ridotta .stg span{dis
 /* barra ridotta: solo icone e pallini */
 html.ridotta .side{width:72px;padding:20px 12px}
 html.ridotta .snome,html.ridotta .stx,html.ridotta .stit span,html.ridotta .sitem span{display:none}
-html.ridotta .sbrand{flex-direction:column}
+html.ridotta .sbrand{flex-direction:column;align-items:center}
 html.ridotta .sbtn svg{transform:rotate(180deg)}
 html.ridotta .srow{justify-content:center}html.ridotta .sitem{justify-content:center}
 /* titolo "bianco ghiaccio": luminoso ma morbido */

@@ -83,7 +83,7 @@ def testi(dati, sito, test=False):
     attivi, chiusi = segnali(dati)
     cot = data_cot(dati)
     n = sum(len(v) for v in attivi.values())
-    testa = (("[TEST] " if test else "") + "<b>Edge Board · segnali della settimana</b>\n<i>" +
+    testa = (("[TEST] " if test else "") + "<b>BoardEdge · segnali della settimana</b>\n<i>" +
              (f"COT del {cot[8:10]}/{cot[5:7]}/{cot[:4]} · " if cot else "") +
              f"{n} segnali attivi</i>\n▲ acquisto · ▼ vendita · ★ nuovo con questo report\n\n")
     blocchi = []
@@ -98,6 +98,6 @@ def testi(dati, sito, test=False):
                        "\n".join(f"■ {escape(c['nome'])}: era {escape(c['prima'])}, ora NEUTRO" for c in chiusi))
     if not blocchi:
         blocchi.append("Nessun segnale attivo questa settimana.")
-    piede = "\n\n" + (f'<a href="{_escape(sito.rstrip("/"))}/">Apri il terminale Edge Board</a>\n' if sito else "") + \
+    piede = "\n\n" + (f'<a href="{_escape(sito.rstrip("/"))}/">Apri il terminale BoardEdge</a>\n' if sito else "") + \
         "<i>Informazione statistica dalla dashboard pubblica, non consulenza finanziaria.</i>"
     return impagina(testa, blocchi, piede)

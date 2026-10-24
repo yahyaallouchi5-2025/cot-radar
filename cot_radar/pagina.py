@@ -96,7 +96,9 @@ def build(data_source=load_all, demo=False, sito=False):
                                                      fred_giu=status.get("fred") == "manutenzione")
         serie = cot_series(cache["cot"]["data"])
         hist = {a[0]: serie[a[1]] for a in ASSETS if a[1] in serie and a[0] in assets}
-        stag, stag_meta = stagionalita.calcola(hist, storico.prezzi_usd(archivio), pairs, assets)
+        # partenza = venerdi' di uscita del COT in uso: la stagionalita' segue il ciclo settimanale del segnale
+        stag, stag_meta = stagionalita.calcola(hist, storico.prezzi_usd(archivio), pairs, assets,
+                                               oggi=stagionalita.ancora_cot(assets))
         log.info("stagionalita': %d strumenti/coppie, peso dal backtest %s", len(stag), stag_meta.get("peso"))
     except Exception:
         log.warning("stagionalita' non calcolata:\n%s", traceback.format_exc())

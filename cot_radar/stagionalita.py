@@ -265,6 +265,7 @@ def settimana(s, giorno, giorni=7):
     hit = round(100 * su / n)
     med, media = median(v), sum(v) / n
     return {"n": n, "su": su, "hit": hit, "med": round(med, 2), "media": round(media, 2), "dal": min(anni),
+            "giorno": giorno.isoformat(),          # inizio della settimana misurata (venerdi' di uscita del COT)
             "robusto": n >= 10 and abs(hit - 50) >= 20 and _verso(med) == _verso(media) != 0}
 
 
@@ -336,9 +337,24 @@ def backtest(hist, prezzi, pairs):
     return res
 
 
+def ancora_cot(assets, oggi=None):
+    """GIORNO DI PARTENZA della stagionalita' (v6.18): il venerdi' in cui e' uscito il report COT in uso
+    (data del report = martedi', +3 giorni). Cosi' la finestra stagionale segue il ciclo settimanale del segnale:
+    resta ferma per tutta la settimana e si sposta solo quando esce il COT nuovo, insieme al segnale.
+    Se la data del COT manca (o fosse nel futuro) si usa oggi."""
+    oggi = oggi or date.today()
+    d = max((a.get("date") or "" for a in assets.values()), default="")
+    try:
+        venerdi = date.fromisoformat(d[:10]) + timedelta(days=3)
+    except ValueError:
+        return oggi
+    return min(venerdi, oggi)
+
+
 def calcola(hist, prezzi, pairs, assets, oggi=None):
     """Calcola la stagionalita' di strumenti e coppie, il peso dal backtest e aggiunge a coppie/strumenti
-    la sintesi "stag" (score, correzione, testo). Restituisce (dati per la scheda Stagionalita', meta)."""
+    la sintesi "stag" (score, correzione, testo). Restituisce (dati per la scheda Stagionalita', meta).
+    oggi = giorno di partenza delle finestre: di norma il venerdi' di uscita del COT (vedi ancora_cot)."""
     oggi = oggi or date.today()
     tab = {}
     for k in assets:
@@ -354,7 +370,7 @@ def calcola(hist, prezzi, pairs, assets, oggi=None):
                 tab[p["pair"]] = r
     meta = backtest(hist, prezzi, pairs)
     for chiave, obj in [(p["pair"], p) for p in pairs] + list(assets.items()):
-        obj["stag1s"] = (tab.get(chiave) or {}).get("sett")       # prossima settimana da oggi (pannello grafico)
+        obj["stag1s"] = (tab.get(chiave) or {}).get("sett")       # settimana dal venerdi' del COT (pannello grafico)
         f = (tab.get(chiave) or {}).get("finestra")
         if not f:
             continue

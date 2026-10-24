@@ -143,7 +143,7 @@ def componi(blocchi, nuovi, sito):
     cot = next((e.get("cot_data") for e in reversed(nuovi) if e.get("cot_data")), None)
     quando = next((e.get("quando") or e.get("generato") for e in reversed(nuovi)), "")
     t = _ora(quando)
-    testa = "<b>Edge Board · aggiornamento segnali</b>\n<i>" + \
+    testa = "<b>BoardEdge · aggiornamento segnali</b>\n<i>" + \
             (t.strftime("%d/%m/%Y %H:%M UTC") if t else "") + \
             (f" · COT del {cot[8:10]}/{cot[5:7]}/{cot[:4]}" if cot else "") + "</i>\n\n"
     piede = "\n\n" + (f'<a href="{_escape(sito.rstrip("/"))}/terminale/#verifica">Registro completo e statistiche</a>\n'
@@ -225,7 +225,7 @@ def invia_email(testi, env):
     corpo = "\n\n".join(re.sub(r"<[^>]+>", "", t) for t in testi).replace("&amp;", "&").replace("&lt;", "<") \
         .replace("&gt;", ">").replace("&quot;", '"').replace("&#x27;", "'")
     msg = EmailMessage()
-    msg["Subject"], msg["From"], msg["To"] = "Edge Board: aggiornamento segnali", utente, dest
+    msg["Subject"], msg["From"], msg["To"] = "BoardEdge: aggiornamento segnali", utente, dest
     msg.set_content(corpo)
     try:
         with smtplib.SMTP_SSL(env.get("SMTP_HOST", "smtp.gmail.com"), int(env.get("SMTP_PORT", "465")),
@@ -311,7 +311,7 @@ def prova(sito, env=None, dati_sito=None):
     if dati and dati.get("assets"):
         testi = riepilogo.testi(dati, sito, test=True)
     else:
-        testi = ["<b>Edge Board · messaggio di prova</b>\n\nIl canale è collegato: qui arriveranno il riepilogo "
+        testi = ["<b>BoardEdge · messaggio di prova</b>\n\nIl canale è collegato: qui arriveranno il riepilogo "
                  "settimanale dei segnali e gli aggiornamenti." +
                  (f'\n\n<a href="{_escape(sito.rstrip("/"))}/">Apri il terminale</a>' if sito else "")]
     if not (token and chat):

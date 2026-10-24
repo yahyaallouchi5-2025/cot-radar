@@ -1,225 +1,306 @@
 <!doctype html>
 <!--
-  landing.html - LANDING PAGE del sito (radice). Il terminale vero sta in /terminale/.
+  landing.html - LANDING PAGE di BoardEdge (radice del sito). Il terminale sta in /terminale/.
   cot_radar/vetrina.py sostituisce i segnaposto tra doppie graffe con i numeri VERI dell'ultimo aggiornamento
-  (data del COT, segnali attivi, mercati seguiti, anteprima dei segnali): niente numeri inventati.
+  (segnali attivi, mercati seguiti, coppie, inizio del backtest, anteprima dei segnali): niente numeri inventati.
   Accesso: per ora un "pass gratuito" salvato nel browser (localStorage "eb_pass"), NON un vero login.
   Il login vero (Supabase) sostituira' la funzione entra() in fondo alla pagina.
+
+  EFFETTI (tutti in JavaScript semplice, senza librerie; si spengono se il sistema chiede "riduci movimento"):
+   - titolo scritto a macchina (effetto tastiera) con cursore lampeggiante;
+   - numeri che contano fino al valore vero quando entrano nello schermo;
+   - card che entrano una dopo l'altra durante lo scroll;
+   - terminale di anteprima che si inclina seguendo lo scroll e scorre i segnali;
+   - linea del tempo "una settimana con BoardEdge" che si riempie mentre scorri;
+   - nastro dei mercati che scorre.
 -->
 <html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Edge Board · Il terminale del posizionamento COT</title>
-<meta name="description" content="Ogni settimana Edge Board legge i report CFTC su {{N_MERCATI}} mercati futures, li incrocia con macro, notizie e stagionalità e li trasforma in segnali chiari. Pass gratuito.">
-<meta name="theme-color" content="#0a1628">
-<meta property="og:title" content="Edge Board · Il terminale del posizionamento COT">
-<meta property="og:description" content="Dove si posizionano i grandi speculatori, ogni venerdì. {{N_SEGNALI}} segnali attivi questa settimana.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='120' fill='%230a1628'/%3E%3Cg fill='none' stroke='%239fb6d6' stroke-width='26'%3E%3Crect x='120' y='140' width='116' height='116' rx='28'/%3E%3Crect x='120' y='276' width='116' height='116' rx='28'/%3E%3Crect x='256' y='276' width='116' height='116' rx='28'/%3E%3C/g%3E%3Crect x='268' y='120' width='124' height='124' rx='30' fill='%232ec4b633' stroke='%232ec4b6' stroke-width='26'/%3E%3C/svg%3E">
+<title>BoardEdge · Il posizionamento istituzionale, settimana per settimana</title>
+<meta name="description" content="Segnali swing di giorni e settimane dal posizionamento di hedger istituzionali e grandi speculatori (report CFTC) su {{N_MERCATI}} mercati, con macro e stagionalità accanto a ogni segnale.">
+<meta name="theme-color" content="#050c1d">
+<meta property="og:title" content="BoardEdge · Il posizionamento istituzionale, settimana per settimana">
+<meta property="og:description" content="Pochi guardano chi muove il prezzo. {{N_SEGNALI}} segnali attivi questa settimana.">
+<link rel="icon" href="{{FAVICON}}">
 <style>
-/* --- colori: stessi del terminale (blu notte, turchese, azzurro) --- */
-:root{--bg:#060d1a;--bg2:#0a1628;--card:#0b1424;--line:#1f3557;--ink:#f1f5fb;--ink2:#c9d6e8;--mute:#93a6c2;
- --acc:#2ec4b6;--acc2:#5b9bff;--buy:#1fc48c;--sell:#f2716b;--r:18px}
+/* --- colori: navy profondo, turchese e azzurro (come il terminale) --- */
+:root{--bg:#040b1a;--navy:#071431;--navy2:#0b1d42;--card:#0a1630;--line:#1b3260;--ink:#f1f5fb;--ink2:#c3d1e6;--mute:#8ea3c4;
+ --acc:#2ec4b6;--acc2:#5b9bff;--buy:#1fc48c;--sell:#f2716b;--r:20px}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:inherit}
-.box{max-width:1180px;margin:0 auto;padding:0 clamp(16px,4vw,40px)}
-/* sfondo: due luci soffuse + griglia sottile (richiama le linee di un terminale) */
-.cielo{position:fixed;inset:0;z-index:-1;pointer-events:none;
- background:radial-gradient(900px 520px at 12% -10%,rgba(46,196,182,.16),transparent 60%),radial-gradient(800px 500px at 100% 10%,rgba(91,155,255,.14),transparent 60%),
- linear-gradient(rgba(159,182,214,.05) 1px,transparent 1px) 0 0/48px 48px,linear-gradient(90deg,rgba(159,182,214,.05) 1px,transparent 1px) 0 0/48px 48px,var(--bg)}
+.box{max-width:1200px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+/* sfondo: navy profondo con due "aurore" che si muovono lentamente (niente griglia) */
+.cielo{position:fixed;inset:0;z-index:-2;background:linear-gradient(180deg,#040b1a 0%,#061331 45%,#040b1a 100%)}
+.aurora{position:fixed;z-index:-1;border-radius:50%;filter:blur(90px);opacity:.55;pointer-events:none;will-change:transform}
+.aurora.a1{width:620px;height:620px;left:-160px;top:-180px;background:radial-gradient(circle,rgba(46,196,182,.55),transparent 65%);animation:vaga1 22s ease-in-out infinite alternate}
+.aurora.a2{width:700px;height:700px;right:-220px;top:10vh;background:radial-gradient(circle,rgba(91,155,255,.45),transparent 65%);animation:vaga2 26s ease-in-out infinite alternate}
+@keyframes vaga1{to{transform:translate(120px,160px) scale(1.15)}}@keyframes vaga2{to{transform:translate(-140px,120px) scale(.9)}}
 
 /* --- barra in alto --- */
-header{position:sticky;top:0;z-index:20;background:rgba(6,13,26,.72);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid rgba(31,53,87,.6)}
-header .box{display:flex;align-items:center;gap:20px;height:68px}
-.marchio{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;text-decoration:none;letter-spacing:-.2px}
-.marchio svg{width:34px;height:34px;border-radius:9px}
-.voci{display:flex;gap:22px;margin-left:auto;font-size:14.5px}
-.voci a{text-decoration:none;color:var(--ink2)}.voci a:hover{color:var(--ink)}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:13px 22px;border-radius:12px;font:700 15px system-ui;text-decoration:none;cursor:pointer;border:1px solid transparent;transition:transform .15s,box-shadow .15s,background .15s;white-space:nowrap}
+header{position:sticky;top:0;z-index:20;transition:background .3s,border-color .3s;border-bottom:1px solid transparent}
+header.su{background:rgba(4,11,26,.78);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-color:rgba(27,50,96,.7)}
+header .box{display:flex;align-items:center;gap:22px;height:72px}
+.blogo{display:flex;align-items:stretch;gap:10px;text-decoration:none}
+.blogo i{width:5px;border-radius:3px;background:linear-gradient(180deg,#3ee0cf,#5b9bff);box-shadow:0 0 14px rgba(46,196,182,.6)}
+.blogo b{font:900 19px/.9 "Inter Display","Inter",system-ui,sans-serif;letter-spacing:-.7px}
+.g{background:linear-gradient(100deg,#3ee0cf,#2ec4b6 35%,#5b9bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.voci{display:flex;gap:26px;margin-left:auto;font-size:14.5px}
+.voci a{text-decoration:none;color:var(--ink2);transition:color .2s}.voci a:hover{color:var(--ink)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 24px;border-radius:14px;font:700 15px "Inter",system-ui;text-decoration:none;cursor:pointer;border:1px solid transparent;transition:transform .2s,box-shadow .2s,border-color .2s;white-space:nowrap;position:relative;overflow:hidden}
 .btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.btn.pri{color:#03141a;background:linear-gradient(135deg,#3ee0cf,#2ec4b6 45%,#5b9bff);box-shadow:0 8px 30px rgba(46,196,182,.35)}
-.btn.pri:hover{transform:translateY(-2px);box-shadow:0 12px 38px rgba(46,196,182,.5)}
-.btn.sec{color:var(--ink);background:rgba(17,32,56,.7);border-color:var(--line)}
+.btn.pri{color:#03141a;background:linear-gradient(135deg,#46e6d5,#2ec4b6 45%,#5b9bff);box-shadow:0 10px 34px rgba(46,196,182,.35)}
+.btn.pri::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-20deg);animation:luce 3.8s ease-in-out infinite}
+@keyframes luce{0%,60%{left:-60%}100%{left:130%}}
+.btn.pri:hover{transform:translateY(-2px);box-shadow:0 14px 44px rgba(46,196,182,.5)}
+.btn.sec{color:var(--ink);background:rgba(11,29,66,.55);border-color:var(--line)}
 .btn.sec:hover{border-color:var(--acc);transform:translateY(-2px)}
-.btn.pic{padding:9px 16px;font-size:14px}
-@media (max-width:820px){.voci{display:none}header .btn.pic{margin-left:auto}}
+.btn.pic{padding:10px 18px;font-size:14px}
+@media (max-width:860px){.voci{display:none}header .btn.pic{margin-left:auto}}
 
 /* --- hero --- */
-.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;padding:84px 0 72px}
-.kicker{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:700;color:#8ff0e5;border:1px solid rgba(46,196,182,.4);background:rgba(46,196,182,.08)}
-.kicker i{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 0 rgba(46,196,182,.7);animation:pulsa 2s infinite}
-@keyframes pulsa{0%{box-shadow:0 0 0 0 rgba(46,196,182,.7)}70%{box-shadow:0 0 0 10px rgba(46,196,182,0)}100%{box-shadow:0 0 0 0 rgba(46,196,182,0)}}
-h1{font-size:clamp(36px,5.2vw,62px);line-height:1.04;letter-spacing:-1.6px;margin:22px 0 18px}
-h1 em{font-style:normal;background:linear-gradient(90deg,#3ee0cf,#5b9bff);-webkit-background-clip:text;background-clip:text;color:transparent}
-.sub{font-size:clamp(16px,1.6vw,19px);color:var(--ink2);max-width:560px;margin:0 0 30px}
+.hero{display:grid;grid-template-columns:1.08fr .92fr;gap:60px;align-items:center;min-height:calc(100vh - 72px);padding:40px 0 70px}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:13px;font-weight:700;letter-spacing:.4px;color:#9ff3e9;text-transform:uppercase}
+.eyebrow::before{content:"";width:28px;height:2px;background:linear-gradient(90deg,#3ee0cf,#5b9bff)}
+h1{font:800 clamp(38px,5.4vw,66px)/1.04 "Inter Display","Inter",system-ui,sans-serif;letter-spacing:-2px;margin:20px 0 22px;min-height:3.2em}
+.cursore{display:inline-block;width:.07em;height:.95em;margin-left:4px;vertical-align:-.1em;background:#3ee0cf;box-shadow:0 0 12px #3ee0cf;animation:lampeggia 1s steps(2) infinite}
+@keyframes lampeggia{50%{opacity:0}}
+.sub{font-size:clamp(16px,1.6vw,19px);color:var(--ink2);max-width:580px;margin:0 0 32px}
+.sub b{color:var(--ink);font-weight:650}
 .cta{display:flex;flex-wrap:wrap;gap:12px}
-.nota{margin-top:14px;font-size:13px;color:var(--mute)}
-.numeri{display:flex;flex-wrap:wrap;gap:28px;margin-top:38px;padding-top:26px;border-top:1px solid var(--line)}
-.numeri b{display:block;font-size:26px;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.numeri{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;gap:34px;margin-top:44px}
+.numeri b{display:block;font:800 32px "Inter Display","Inter",system-ui;letter-spacing:-1px;font-variant-numeric:tabular-nums}
 .numeri span{font-size:13px;color:var(--mute)}
-@media (max-width:960px){.hero{grid-template-columns:1fr;padding:56px 0 48px;gap:40px}}
-@media (max-width:620px){.numeri{display:grid;grid-template-columns:1fr 1fr;gap:18px}}
+@media (max-width:980px){.hero{grid-template-columns:1fr;min-height:0;padding:36px 0 56px;gap:44px}}
+@media (max-width:620px){.numeri{grid-template-columns:1fr 1fr;gap:20px}h1{min-height:4.3em}}
 
-/* --- anteprima del terminale (dati veri, nomi sfocati: si sbloccano col pass) --- */
-.schermo{position:relative;border-radius:22px;padding:1px;background:linear-gradient(140deg,rgba(62,224,207,.6),rgba(31,53,87,.6) 40%,rgba(91,155,255,.5));box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 60px rgba(46,196,182,.12)}
-.schermo>div{border-radius:21px;background:linear-gradient(180deg,#0b1628,#070d18);overflow:hidden}
-.barra{display:flex;align-items:center;gap:7px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--mute)}
-.barra i{width:10px;height:10px;border-radius:50%;background:#26426b}.barra i:first-child{background:#f2716b}.barra i:nth-child(2){background:#e9b44c}.barra i:nth-child(3){background:#1fc48c}
-.barra span{margin-left:auto}
-.grafico{height:120px;padding:10px 16px 0}
-.grafico svg{width:100%;height:100%}
-.linea{stroke-dasharray:900;stroke-dashoffset:900;animation:disegna 2.6s ease-out .3s forwards}
+/* --- terminale di anteprima (dati veri, nomi sfocati) --- */
+.scena{perspective:1400px}
+.schermo{position:relative;border-radius:24px;padding:1px;background:linear-gradient(140deg,rgba(70,230,213,.7),rgba(27,50,96,.5) 40%,rgba(91,155,255,.6));
+ box-shadow:0 40px 100px rgba(0,0,0,.6),0 0 80px rgba(46,196,182,.14);transform:rotateY(-12deg) rotateX(6deg);transition:transform .25s ease-out;will-change:transform}
+.schermo>div{border-radius:23px;background:linear-gradient(180deg,#0a1835,#050d1f);overflow:hidden;position:relative}
+.schermo .scan{position:absolute;left:0;right:0;height:80px;background:linear-gradient(180deg,transparent,rgba(46,196,182,.07),transparent);animation:scan 5s linear infinite;pointer-events:none}
+@keyframes scan{from{top:-80px}to{top:100%}}
+.barra{display:flex;align-items:center;gap:8px;padding:13px 18px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--mute)}
+.barra i{width:10px;height:10px;border-radius:50%;background:#1b3260}.barra i:first-child{background:#f2716b}.barra i:nth-child(2){background:#e9b44c}.barra i:nth-child(3){background:#1fc48c}
+.barra span{margin-left:auto;display:flex;align-items:center;gap:6px}.barra span::before{content:"";width:7px;height:7px;border-radius:50%;background:#1fc48c;box-shadow:0 0 8px #1fc48c}
+.grafico{height:118px;padding:12px 18px 0}.grafico svg{width:100%;height:100%}
+.linea{stroke-dasharray:900;stroke-dashoffset:900;animation:disegna 2.8s ease-out .6s forwards}
 @keyframes disegna{to{stroke-dashoffset:0}}
-.lista{padding:8px 16px 16px;display:grid;gap:8px}
-.cat{font-size:11px;font-weight:800;letter-spacing:.9px;color:var(--mute);text-transform:uppercase;margin-top:8px;display:flex;justify-content:space-between}
+.lista{padding:10px 18px 18px;display:grid;gap:8px;min-height:330px}
+.cat{font-size:11px;font-weight:800;letter-spacing:1px;color:var(--mute);text-transform:uppercase;margin-top:8px;display:flex;justify-content:space-between}
 .cat em{font-style:normal;color:var(--acc)}
-.riga{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;background:rgba(18,29,49,.75);border:1px solid rgba(38,66,107,.6);font-size:14px}
+.riga{display:flex;align-items:center;gap:10px;padding:10px 13px;border-radius:12px;background:rgba(14,30,62,.75);border:1px solid rgba(27,50,96,.7);font-size:14px;
+ animation:entra .5s ease both}
+@keyframes entra{from{opacity:0;transform:translateX(14px)}}
 .riga .nome{filter:blur(5px);user-select:none;flex:1}
-.etic{font-size:11.5px;font-weight:800;padding:3px 9px;border-radius:999px}
+.riga .sett{font-size:11px;color:var(--mute);white-space:nowrap}
+.etic{font-size:11.5px;font-weight:800;padding:3px 10px;border-radius:999px}
 .etic.b{color:#06261a;background:var(--buy)}.etic.s{color:#2a0606;background:var(--sell)}
-.lucchetto{position:absolute;inset:auto 16px 16px 16px;display:flex;align-items:center;justify-content:center;gap:10px;padding:13px;border-radius:14px;
- background:rgba(6,13,26,.82);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid rgba(46,196,182,.45);font-size:14px;font-weight:700;cursor:pointer;color:var(--ink)}
-.lucchetto:hover{border-color:var(--acc)}
+.lucchetto{width:calc(100% - 36px);margin:0 18px 18px;display:flex;align-items:center;justify-content:center;gap:10px;padding:14px;border-radius:14px;
+ background:rgba(4,11,26,.85);border:1px solid rgba(46,196,182,.5);font:700 14px "Inter",system-ui;cursor:pointer;color:var(--ink)}
+.lucchetto:hover{border-color:var(--acc);box-shadow:0 0 24px rgba(46,196,182,.25)}
 .lucchetto svg{width:17px;height:17px;fill:none;stroke:var(--acc);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+@media (max-width:980px){.schermo{transform:none}}
+
+/* --- nastro dei mercati --- */
+.nastro{border-block:1px solid rgba(27,50,96,.7);background:rgba(7,20,49,.6);overflow:hidden;padding:16px 0;mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent)}
+.nastro div{display:flex;gap:44px;width:max-content;animation:scorri 40s linear infinite;font:700 14px "Inter",system-ui;color:var(--mute);letter-spacing:.3px}
+.nastro span{display:flex;align-items:center;gap:44px}.nastro span::after{content:"◆";color:var(--acc);font-size:9px}
+@keyframes scorri{to{transform:translateX(-50%)}}
 
 /* --- sezioni --- */
-section{padding:84px 0}
-.titsez{max-width:720px;margin-bottom:44px}
-.titsez small{font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--acc)}
-.titsez h2{font-size:clamp(28px,3.4vw,42px);letter-spacing:-1px;line-height:1.12;margin:10px 0 12px}
-.titsez p{color:var(--ink2);margin:0;font-size:17px}
-.griglia{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-@media (max-width:960px){.griglia{grid-template-columns:repeat(2,1fr)}}@media (max-width:620px){.griglia{grid-template-columns:1fr}}
-.card{position:relative;padding:26px;border-radius:var(--r);background:linear-gradient(180deg,rgba(13,24,42,.92),rgba(8,14,26,.92));border:1px solid var(--line);transition:transform .2s,border-color .2s}
-.card:hover{transform:translateY(-4px);border-color:rgba(46,196,182,.55)}
-.ico{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;background:linear-gradient(135deg,rgba(46,196,182,.22),rgba(91,155,255,.14));border:1px solid rgba(46,196,182,.35)}
-.ico svg{width:22px;height:22px;fill:none;stroke:#7fe3d8;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-.card h3{margin:0 0 8px;font-size:18px}.card p{margin:0;color:var(--ink2);font-size:15px}
-/* come funziona: tre passi collegati */
-.passi{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;counter-reset:p}
-@media (max-width:820px){.passi{grid-template-columns:1fr}}
-.passo{padding:26px;border-radius:var(--r);border:1px dashed rgba(46,196,182,.4);background:rgba(10,20,36,.6)}
-.passo::before{counter-increment:p;content:counter(p);display:inline-flex;width:34px;height:34px;border-radius:50%;align-items:center;justify-content:center;font-weight:800;color:#03141a;background:linear-gradient(135deg,#3ee0cf,#5b9bff);margin-bottom:14px}
-.passo h3{margin:0 0 6px;font-size:17px}.passo p{margin:0;color:var(--ink2);font-size:15px}
-/* fascia trasparenza */
-.fiducia{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-@media (max-width:820px){.fiducia{grid-template-columns:1fr}}
-.fiducia .card{display:flex;gap:16px}.fiducia .ico{flex:none;margin:0}
+section{padding:110px 0}
+.titsez{max-width:760px;margin-bottom:56px}
+.titsez small{font-size:13px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--acc)}
+.titsez h2{font:800 clamp(30px,3.8vw,48px)/1.1 "Inter Display","Inter",system-ui;letter-spacing:-1.4px;margin:12px 0 14px}
+.titsez p{color:var(--ink2);margin:0;font-size:18px}
+/* tre livelli del vantaggio */
+.livelli{display:grid;gap:22px}
+.livello{display:grid;grid-template-columns:120px 1fr 1fr;gap:34px;align-items:center;padding:34px 38px;border-radius:24px;
+ background:linear-gradient(135deg,rgba(11,29,66,.75),rgba(7,20,49,.55));border:1px solid var(--line);position:relative;overflow:hidden}
+.livello::before{content:"";position:absolute;inset:0;background:radial-gradient(500px 200px at var(--mx,20%) 0,rgba(46,196,182,.12),transparent 70%);opacity:0;transition:opacity .4s}
+.livello:hover::before{opacity:1}
+.livello .n{font:800 64px/1 "Inter Display","Inter",system-ui;letter-spacing:-3px;color:transparent;-webkit-text-stroke:1.5px rgba(91,155,255,.6)}
+.livello h3{font:750 23px/1.25 "Inter Display","Inter",system-ui;margin:0 0 8px;letter-spacing:-.4px}
+.livello .tag{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--acc)}
+.livello p{margin:0;color:var(--ink2);font-size:16px}
+@media (max-width:860px){.livello{grid-template-columns:1fr;gap:12px;padding:28px}.livello .n{font-size:44px}}
+/* settimana tipo: linea del tempo che si riempie con lo scroll */
+.tempo{position:relative;display:grid;gap:26px;padding-left:46px}
+.tempo .asse{position:absolute;left:14px;top:6px;bottom:6px;width:3px;border-radius:3px;background:var(--line)}
+.tempo .asse i{display:block;width:100%;height:var(--pr,0%);border-radius:3px;background:linear-gradient(180deg,#3ee0cf,#5b9bff);box-shadow:0 0 14px rgba(46,196,182,.6)}
+.tappa{position:relative;padding:24px 28px;border-radius:20px;background:rgba(10,22,48,.7);border:1px solid var(--line)}
+.tappa::before{content:"";position:absolute;left:-40px;top:30px;width:15px;height:15px;border-radius:50%;background:var(--bg);border:3px solid var(--line);transition:all .4s}
+.tappa.accesa::before{border-color:#3ee0cf;box-shadow:0 0 14px #3ee0cf;background:#3ee0cf}
+.tappa .q{font-size:12.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--acc2)}
+.tappa h3{margin:6px 0 6px;font-size:19px}.tappa p{margin:0;color:var(--ink2)}
+/* scheda "per chi e'" */
+.per{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media (max-width:900px){.per{grid-template-columns:1fr}}
+.dato{padding:30px;border-radius:22px;background:linear-gradient(180deg,rgba(11,29,66,.7),rgba(7,20,49,.5));border:1px solid var(--line)}
+.dato b{display:block;font:800 30px "Inter Display","Inter",system-ui;letter-spacing:-1px;margin-bottom:6px}
+.dato p{margin:0;color:var(--ink2);font-size:15.5px}
 /* chiamata finale */
-.finale{position:relative;text-align:center;padding:64px clamp(20px,5vw,64px);border-radius:28px;overflow:hidden;
- background:radial-gradient(600px 260px at 50% 0,rgba(46,196,182,.25),transparent 70%),linear-gradient(180deg,#0c1a30,#08111f);border:1px solid rgba(46,196,182,.4)}
-.finale h2{font-size:clamp(28px,3.6vw,44px);letter-spacing:-1px;margin:0 0 12px}
-.finale p{color:var(--ink2);max-width:600px;margin:0 auto 28px;font-size:17px}
+.finale{position:relative;text-align:center;padding:84px clamp(22px,6vw,80px);border-radius:32px;overflow:hidden;
+ background:radial-gradient(700px 300px at 50% 0,rgba(46,196,182,.28),transparent 70%),linear-gradient(180deg,#0b1d42,#061331);border:1px solid rgba(46,196,182,.45)}
+.finale h2{font:800 clamp(30px,4vw,52px)/1.08 "Inter Display","Inter",system-ui;letter-spacing:-1.5px;margin:0 0 16px}
+.finale p{color:var(--ink2);max-width:620px;margin:0 auto 32px;font-size:18px}
 .finale .cta{justify-content:center}
-footer{padding:40px 0 60px;color:var(--mute);font-size:13px;border-top:1px solid var(--line);margin-top:40px}
+footer{padding:44px 0 64px;color:var(--mute);font-size:13px;border-top:1px solid rgba(27,50,96,.7);margin-top:60px}
 footer .box{display:grid;gap:10px}
-/* comparsa morbida delle sezioni mentre si scorre */
-.appare{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}.appare.vista{opacity:1;transform:none}
-@media (prefers-reduced-motion:reduce){.appare{opacity:1;transform:none;transition:none}.linea{animation:none;stroke-dashoffset:0}.kicker i{animation:none}}
+/* comparsa durante lo scroll: dal basso, una card dopo l'altra (ritardo in --d) */
+.appare{opacity:0;transform:translateY(34px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1);transition-delay:var(--d,0s)}
+.appare.vista{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.appare{opacity:1;transform:none;transition:none}.schermo{transform:none}.linea{stroke-dashoffset:0}}
 </style></head>
-<body><div class="cielo"></div>
+<body><div class="cielo"></div><div class="aurora a1"></div><div class="aurora a2"></div>
 
-<header><div class="box">
- <a class="marchio" href="#"><svg viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="120" fill="#0a1628"/><g fill="none" stroke="#9fb6d6" stroke-opacity=".6" stroke-width="22"><rect x="120" y="140" width="116" height="116" rx="28"/><rect x="120" y="276" width="116" height="116" rx="28"/><rect x="256" y="276" width="116" height="116" rx="28"/></g><rect x="268" y="120" width="124" height="124" rx="30" fill="rgba(46,196,182,.22)" stroke="#2ec4b6" stroke-width="22"/><path d="M296 214l26-30 18 14 24-40" fill="none" stroke="#5b9bff" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/></svg>Edge Board</a>
- <nav class="voci"><a href="#terminale">Il terminale</a><a href="#come">Come funziona</a><a href="#trasparenza">Trasparenza</a><a href="{{TELEGRAM}}" target="_blank" rel="noopener">Telegram</a></nav>
- <button class="btn pri pic" data-entra>Entra gratis</button>
+<header id="testata"><div class="box">
+ <a class="blogo" href="#" aria-label="BoardEdge"><i></i><b>BOARD<br><span class="g">EDGE</span></b></a>
+ <nav class="voci"><a href="#vantaggio">Il vantaggio</a><a href="#settimana">La settimana</a><a href="#swing">Per lo swing</a><a href="{{TELEGRAM}}" target="_blank" rel="noopener">Telegram</a></nav>
+ <button class="btn pri pic" data-entra><span data-etichetta>Entra gratis</span></button>
 </div></header>
 
-<main class="box">
- <!-- HERO: promessa + numeri veri + anteprima del terminale -->
- <div class="hero">
+<main>
+ <div class="box hero">
   <div>
-   <span class="kicker"><i></i>Aggiornato con il COT del {{COT}}</span>
-   <h1>Guarda dove si posizionano <em>i grandi speculatori</em>. Prima di entrare a mercato.</h1>
-   <p class="sub">Ogni venerdì la CFTC pubblica le posizioni di fondi e banche sui futures. Edge Board le legge su {{N_MERCATI}} mercati, le incrocia con macro, notizie e stagionalità e le trasforma in segnali chiari, in un unico terminale.</p>
+   <span class="eyebrow">Segnali swing · giorni e settimane</span>
+   <!-- titolo scritto a macchina: il testo completo resta nell'aria-label per lettori di schermo e motori di ricerca -->
+   <h1 id="titolo" aria-label="Guarda dove si posizionano i grandi speculatori. Prima di entrare a mercato."><span id="tt"></span><span class="cursore"></span></h1>
+   <p class="sub">La maggior parte dei trader guarda il prezzo. Pochi guardano <b>chi lo muove</b>. BoardEdge legge ogni settimana il posizionamento di <b>hedger istituzionali e grandi speculatori</b> su {{N_MERCATI}} mercati futures e lo trasforma in segnali pensati per lo <b>swing di giorni e settimane</b>.</p>
    <div class="cta">
     <button class="btn pri" data-entra><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span data-etichetta>Ottieni il pass gratuito</span></button>
-    <a class="btn sec" href="{{TELEGRAM}}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M21.5 3.5L2.8 10.7c-.9.4-.9 1.6.1 1.9l4.6 1.5 1.8 5.6c.3.8 1.3 1 1.9.4l2.6-2.5 4.7 3.5c.7.5 1.7.1 1.9-.7l3.1-15c.2-1.1-.9-1.9-2-1.4z"/></svg>Segnali gratis su Telegram</a>
+    <a class="btn sec" href="{{TELEGRAM}}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M21.5 3.5L2.8 10.7c-.9.4-.9 1.6.1 1.9l4.6 1.5 1.8 5.6c.3.8 1.3 1 1.9.4l2.6-2.5 4.7 3.5c.7.5 1.7.1 1.9-.7l3.1-15c.2-1.1-.9-1.9-2-1.4z"/></svg>Canale Telegram</a>
    </div>
-   <p class="nota">Nessuna registrazione, nessuna carta: il pass si attiva con un clic.</p>
    <div class="numeri">
-    <div><b>{{N_SEGNALI}}</b><span>segnali attivi ora</span></div>
-    <div><b>{{N_MERCATI}}</b><span>mercati futures</span></div>
-    <div><b>{{N_COPPIE}}</b><span>coppie Forex</span></div>
-    <div><b>dal {{BT_DAL}}</b><span>backtest storico</span></div>
+    <div><b data-conta="{{N_SEGNALI}}">0</b><span>segnali attivi ora</span></div>
+    <div><b data-conta="{{N_MERCATI}}">0</b><span>mercati futures</span></div>
+    <div><b data-conta="{{N_COPPIE}}">0</b><span>coppie Forex</span></div>
+    <div><b data-conta="{{ANNI_BT}}" data-suffisso=" anni">0</b><span>di backtest</span></div>
    </div>
   </div>
-  <div class="schermo appare"><div>
-   <div class="barra"><i></i><i></i><i></i><b style="margin-left:8px;color:var(--ink2)">Edge Board · segnali</b><span>COT {{COT}}</span></div>
+  <div class="scena"><div class="schermo" id="schermo"><div><div class="scan"></div>
+   <div class="barra"><i></i><i></i><i></i><b style="margin-left:8px;color:var(--ink2)">BoardEdge · terminale</b><span>live</span></div>
    <div class="grafico"><svg viewBox="0 0 400 110" preserveAspectRatio="none" aria-hidden="true">
     <defs><linearGradient id="lg" x1="0" x2="1"><stop offset="0" stop-color="#2ec4b6"/><stop offset="1" stop-color="#5b9bff"/></linearGradient>
-    <linearGradient id="la" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2ec4b6" stop-opacity=".25"/><stop offset="1" stop-color="#2ec4b6" stop-opacity="0"/></linearGradient></defs>
+    <linearGradient id="la" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2ec4b6" stop-opacity=".28"/><stop offset="1" stop-color="#2ec4b6" stop-opacity="0"/></linearGradient></defs>
     <path d="M0 92 L40 84 L80 88 L120 70 L160 74 L200 56 L240 62 L280 40 L320 46 L360 22 L400 14 L400 110 L0 110Z" fill="url(#la)"/>
     <path class="linea" d="M0 92 L40 84 L80 88 L120 70 L160 74 L200 56 L240 62 L280 40 L320 46 L360 22 L400 14" fill="none" stroke="url(#lg)" stroke-width="3" stroke-linejoin="round"/>
    </svg></div>
-   <div class="lista">{{ANTEPRIMA}}</div>
-   <div style="height:64px"></div>
-   <button class="lucchetto" data-entra><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Sblocca i nomi con il pass gratuito</button>
-  </div></div>
+   <div class="lista" id="lista"></div>
+   <button class="lucchetto" data-entra><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Scopri quali mercati con il pass gratuito</button>
+  </div></div></div>
  </div>
 
- <!-- COSA C'E' NEL TERMINALE -->
- <section id="terminale" class="appare">
-  <div class="titsez"><small>Il terminale</small><h2>Tutto quello che serve per leggere il COT, in una schermata.</h2>
-   <p>Non un foglio di numeri: ogni dato è già tradotto in direzione, forza e contesto.</p></div>
-  <div class="griglia">
-   <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg></div><h3>Segnali settimanali</h3><p>BUY, SELL e STRONG su Forex, indici, tassi, energia, metalli, agricoli e crypto, con un punteggio da −100 a +100.</p></div>
-   <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c1-3.5 3.5-5.5 6.5-5.5s5.5 2 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.5c1.6.8 2.6 2.5 3 5.5"/></svg></div><h3>Smart money vs hedger</h3><p>Speculatori e Commercials a confronto, con gli estremi storici che anticipano le svolte.</p></div>
-   <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div><h3>Mercato e macro</h3><p>Tassi, spread, volatilità e liquidità della Fed: cosa è già scontato nei prezzi e cosa no.</p></div>
-   <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div><h3>Stagionalità</h3><p>Come si è mosso ogni mercato nelle prossime 4 settimane, anno dopo anno, solo quando l'effetto è robusto.</p></div>
-   <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/></svg></div><h3>Backtest e drawdown</h3><p>Ogni regola provata sui dati dal {{BT_DAL}}: quanto va contro un trade prima di andare a favore, in punti e in volatilità.</p></div>
-   <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1 6.3L12 16.6 6.5 19.5l1-6.3L3 8.9 9 8z"/></svg></div><h3>Notizie ad alto impatto</h3><p>CPI, NFP, Fed e BCE: la sorpresa misurata dal mercato corregge il segnale nei giorni che contano.</p></div>
-  </div>
- </section>
+ <!-- nastro: i mercati coperti (solo nomi, nessun segnale) -->
+ <div class="nastro" aria-hidden="true"><div>{{NASTRO}}{{NASTRO}}</div></div>
 
- <!-- COME FUNZIONA -->
- <section id="come" class="appare">
-  <div class="titsez"><small>Come funziona</small><h2>Dal report della CFTC al tuo telefono, ogni venerdì.</h2></div>
-  <div class="passi">
-   <div class="passo"><h3>La CFTC pubblica</h3><p>Il venerdì alle 21:30 italiane escono le posizioni aggiornate al martedì di fondi, banche e produttori.</p></div>
-   <div class="passo"><h3>Edge Board calcola</h3><p>Posizionamento, macro, notizie e stagionalità diventano un punteggio e un segnale per ogni mercato.</p></div>
-   <div class="passo"><h3>Tu ricevi</h3><p>Il riepilogo arriva sul canale Telegram e il terminale si aggiorna con grafici, storico e dettagli.</p></div>
+ <!-- I TRE LIVELLI DEL VANTAGGIO -->
+ <section id="vantaggio"><div class="box">
+  <div class="titsez appare"><small>Il vantaggio</small><h2>Tre letture che di solito richiedono ore. In una schermata.</h2>
+   <p>Ogni segnale nasce dal posizionamento, viene filtrato dal contesto macro e misurato contro la stagionalità. Tu vedi solo la sintesi.</p></div>
+  <div class="livelli">
+   <div class="livello appare"><div class="n">01</div><div><span class="tag">Posizionamento COT</span><h3>Dove stanno i soldi grandi, prima che si veda sul grafico.</h3></div>
+    <p>Hedger istituzionali e grandi speculatori dichiarano ogni settimana le loro posizioni sui futures. Sapere da che parte stanno, e da quante settimane, significa leggere la direzione su cui si sta costruendo il trend.</p></div>
+   <div class="livello appare" style="--d:.08s"><div class="n">02</div><div><span class="tag">Macro semplificata</span><h3>Il rumore che allarga il drawdown, ridotto a un colore.</h3></div>
+    <p>Tassi, spread, volatilità, dati USA: nel breve termine sono noiosi da interpretare e pesano soprattutto sul drawdown. BoardEdge li riassume in un verdetto: a favore, contro o neutro rispetto al segnale.</p></div>
+   <div class="livello appare" style="--d:.16s"><div class="n">03</div><div><span class="tag">Stagionalità accanto al segnale</span><h3>Come si è comportata questa stessa settimana negli anni passati.</h3></div>
+    <p>Dal venerdì in cui esce il report, per ogni mercato: quante volte è salito o sceso nella stessa settimana dell'anno. Favorevole, non favorevole o neutra, accanto a ogni segnale, aggiornata al ritmo del COT.</p></div>
   </div>
- </section>
+ </div></section>
 
- <!-- TRASPARENZA -->
- <section id="trasparenza" class="appare">
-  <div class="titsez"><small>Trasparenza</small><h2>Niente promesse. Solo dati verificabili.</h2></div>
-  <div class="fiducia">
-   <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div><div><h3>Registro pubblico e immutabile</h3><p>Ogni segnale viene scritto con data e ora vere in un registro a catena di hash: qualsiasi modifica successiva romperebbe la catena e si vedrebbe subito.</p></div></div>
-   <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="9"/></svg></div><div><h3>Fonti ufficiali</h3><p>CFTC, Federal Reserve (FRED) e BCE. Se una fonte non risponde, il terminale lo dice invece di inventare.</p></div></div>
+ <!-- UNA SETTIMANA CON BOARDEDGE: linea del tempo che si riempie con lo scroll -->
+ <section id="settimana"><div class="box">
+  <div class="titsez appare"><small>La settimana</small><h2>Un ciclo preciso. Ogni venerdì si riparte.</h2>
+   <p>Il report CFTC fotografa il martedì e viene pubblicato il venerdì. BoardEdge lavora sullo stesso ritmo.</p></div>
+  <div class="tempo" id="tempo"><div class="asse"><i></i></div>
+   <div class="tappa appare"><span class="q">Venerdì · 21:30</span><h3>Esce il report</h3><p>Le posizioni aggiornate di fondi, banche e produttori su tutti i mercati seguiti.</p></div>
+   <div class="tappa appare"><span class="q">Venerdì sera</span><h3>Nuovi segnali, nuova settimana</h3><p>Punteggi ricalcolati, segnali aperti, confermati o chiusi. Il riepilogo per categoria arriva sul canale Telegram.</p></div>
+   <div class="tappa appare"><span class="q">Lunedì → venerdì</span><h3>Il contesto ogni giorno</h3><p>Macro, notizie ad alto impatto e stagionalità della settimana accanto a ogni segnale, per scegliere il momento e reggere il drawdown.</p></div>
+   <div class="tappa appare"><span class="q">Venerdì successivo</span><h3>Conferma o cambio di rotta</h3><p>Il nuovo report dice se il posizionamento continua a costruirsi o si sta girando.</p></div>
   </div>
- </section>
+ </div></section>
+
+ <!-- PER LO SWING -->
+ <section id="swing"><div class="box">
+  <div class="titsez appare"><small>Per lo swing</small><h2>Non segnali da scalping. Direzione per giorni e settimane.</h2></div>
+  <div class="per">
+   <div class="dato appare"><b>Giorni → settimane</b><p>L'orizzonte naturale del COT: il posizionamento istituzionale cambia lentamente e guida i movimenti di fondo.</p></div>
+   <div class="dato appare" style="--d:.08s"><b>dal {{BT_DAL}}</b><p>Ogni regola è provata sullo storico, compreso quanto un trade va contro prima di andare a favore, in punti e in volatilità.</p></div>
+   <div class="dato appare" style="--d:.16s"><b>{{N_MERCATI}} + {{N_COPPIE}}</b><p>Mercati futures e coppie Forex: valute, indici, tassi, energia, metalli, agricoli e crypto nello stesso terminale.</p></div>
+  </div>
+ </div></section>
 
  <!-- CHIAMATA FINALE -->
- <section class="appare">
-  <div class="finale">
-   <h2>Il prossimo report esce venerdì.</h2>
-   <p>Attiva il pass gratuito ed entra nel terminale adesso, oppure ricevi il riepilogo dei segnali direttamente su Telegram.</p>
+ <section><div class="box">
+  <div class="finale appare">
+   <h2>Venerdì esce il prossimo report.<br><span class="g">Sarai già posizionato a guardarlo?</span></h2>
+   <p>Entra nel terminale con il pass gratuito oppure ricevi ogni venerdì il riepilogo dei segnali sul canale Telegram.</p>
    <div class="cta">
     <button class="btn pri" data-entra><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span data-etichetta>Ottieni il pass gratuito</span></button>
     <a class="btn sec" href="{{TELEGRAM}}" target="_blank" rel="noopener">Iscriviti al canale</a>
    </div>
   </div>
- </section>
+ </div></section>
 </main>
 
 <footer><div class="box">
- <div><b style="color:var(--ink2)">Edge Board</b> · aggiornato il {{AGGIORNATO}} · dati CFTC, FRED, BCE</div>
+ <div><b style="color:var(--ink2)">BoardEdge</b> · dati CFTC, Federal Reserve (FRED), BCE · aggiornato il {{AGGIORNATO}}</div>
  <div>Le informazioni pubblicate sono analisi statistiche di dati pubblici e non costituiscono consulenza finanziaria né raccomandazioni personalizzate di investimento. I risultati passati non garantiscono quelli futuri. Il trading comporta il rischio di perdere il capitale.</div>
 </div></footer>
 
 <script>
-/* PASS GRATUITO (provvisorio): un clic salva il pass nel browser e apre il terminale.
+/* ===== DATI dell'anteprima (veri, dall'ultimo aggiornamento; i nomi sono sfocati nella pagina) ===== */
+var ANTEPRIMA={{ANTEPRIMA_JSON}};
+var fermo=matchMedia("(prefers-reduced-motion:reduce)").matches;
+
+/* ===== PASS GRATUITO (provvisorio): un clic salva il pass nel browser e apre il terminale.
    Se si arriva qui da un link al terminale (es. .../terminale/#verifica dal canale Telegram) si torna li'.
-   Il login vero (Supabase) sostituira' questa funzione. */
+   Il login vero (Supabase) sostituira' questa funzione. ===== */
 var vai=new URLSearchParams(location.search).get("vai")||"";
 function haPass(){try{return !!localStorage.getItem("eb_pass");}catch(e){return true;}}
 function entra(){try{localStorage.setItem("eb_pass",new Date().toISOString());}catch(e){}
  location.href="terminale/"+(/^#[a-z]+$/.test(vai)?vai:"");}
 document.querySelectorAll("[data-entra]").forEach(function(b){b.addEventListener("click",entra);});
 if(haPass())document.querySelectorAll("[data-etichetta]").forEach(function(s){s.textContent="Apri il terminale";});
-/* comparsa delle sezioni mentre si scorre (senza IntersectionObserver: tutto visibile subito) */
-var el=document.querySelectorAll(".appare");
-if("IntersectionObserver" in window){var io=new IntersectionObserver(function(v){v.forEach(function(x){if(x.isIntersecting){x.target.classList.add("vista");io.unobserve(x.target);}});},{threshold:.12});
- el.forEach(function(x){io.observe(x);});}else el.forEach(function(x){x.classList.add("vista");});
+
+/* ===== EFFETTO TASTIERA sul titolo: scrive lettera per lettera; "i grandi speculatori" in gradiente ===== */
+(function(){var pezzi=[["Guarda dove si posizionano ",""],["i grandi speculatori","g"],[". Prima di entrare a mercato.",""]],el=document.getElementById("tt");
+ if(fermo){el.innerHTML=pezzi.map(function(p){return p[1]?'<span class="g">'+p[0]+'</span>':p[0];}).join("");return;}
+ var i=0,j=0,cur=null;
+ function passo(){if(i>=pezzi.length)return;var p=pezzi[i];
+  if(j==0){cur=p[1]?document.createElement("span"):document.createTextNode("");if(p[1])cur.className=p[1];el.appendChild(cur);}
+  var c=p[0][j];if(p[1])cur.textContent+=c;else cur.textContent+=c;j++;
+  if(j>=p[0].length){i++;j=0;}
+  setTimeout(passo,c=="."?320:c==" "?45:28+Math.random()*40);}
+ setTimeout(passo,350);})();
+
+/* ===== ANTEPRIMA DEL TERMINALE: mostra 6 segnali alla volta e ogni 4 secondi passa alla categoria dopo ===== */
+(function(){var box=document.getElementById("lista"),k=0;if(!ANTEPRIMA.length){box.innerHTML='<div class="riga">Nessun segnale attivo questa settimana.</div>';return;}
+ function mostra(){var gruppi=[ANTEPRIMA[k%ANTEPRIMA.length],ANTEPRIMA[(k+1)%ANTEPRIMA.length]].filter(function(g,i,a){return a.indexOf(g)==i;});
+  box.innerHTML=gruppi.map(function(g){return '<div class="cat">'+g.cat+'<em>'+g.n+' segnali</em></div>'+g.righe.map(function(r,i){
+   return '<div class="riga" style="animation-delay:'+(i*.08)+'s"><span class="nome">'+r.nome+'</span><span class="sett">'+(r.nuovo?'nuovo':'')+'</span><span class="etic '+(r.buy?'b':'s')+'">'+r.etichetta+'</span></div>';}).join("");}).join("");
+  k+=2;}
+ mostra();if(!fermo&&ANTEPRIMA.length>2)setInterval(mostra,4200);})();
+
+/* ===== NUMERI che contano fino al valore vero quando entrano nello schermo ===== */
+function conta(el){var fine=+el.dataset.conta||0,suf=el.dataset.suffisso||"",t0=null;if(fermo){el.textContent=fine+suf;return;}
+ function f(t){t0=t0||t;var x=Math.min(1,(t-t0)/1400),e=1-Math.pow(1-x,3);el.textContent=Math.round(fine*e)+suf;if(x<1)requestAnimationFrame(f);}
+ requestAnimationFrame(f);}
+
+/* ===== COMPARSA durante lo scroll + numeri ===== */
+var io="IntersectionObserver" in window?new IntersectionObserver(function(v){v.forEach(function(x){if(!x.isIntersecting)return;
+ if(x.target.dataset.conta!=null)conta(x.target);else x.target.classList.add("vista");io.unobserve(x.target);});},{threshold:.15}):null;
+document.querySelectorAll(".appare,[data-conta]").forEach(function(x){if(io)io.observe(x);else{x.classList.add("vista");if(x.dataset.conta!=null)conta(x);}});
+
+/* ===== SCROLL: testata che si scurisce, terminale che si raddrizza, linea del tempo che si riempie ===== */
+var schermo=document.getElementById("schermo"),tempo=document.getElementById("tempo"),testata=document.getElementById("testata");
+function suScroll(){var y=window.scrollY,h=innerHeight;testata.classList.toggle("su",y>20);
+ if(!fermo&&innerWidth>980){var p=Math.min(1,y/(h*.8));schermo.style.transform="rotateY("+(-12+12*p)+"deg) rotateX("+(6-6*p)+"deg) translateY("+(-30*p)+"px)";}
+ var r=tempo.getBoundingClientRect(),pr=Math.max(0,Math.min(1,(h*.6-r.top)/r.height));tempo.style.setProperty("--pr",(pr*100)+"%");
+ tempo.querySelectorAll(".tappa").forEach(function(t){t.classList.toggle("accesa",t.getBoundingClientRect().top<h*.6);});}
+addEventListener("scroll",suScroll,{passive:true});suScroll();
+/* luce che segue il mouse sulle card dei tre livelli */
+document.querySelectorAll(".livello").forEach(function(c){c.addEventListener("mousemove",function(e){var r=c.getBoundingClientRect();c.style.setProperty("--mx",((e.clientX-r.left)/r.width*100)+"%");});});
 </script>
 </body></html>

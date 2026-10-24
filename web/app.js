@@ -51,7 +51,7 @@ function fd(s){if(!s)return"";const m=["gen","feb","mar","apr","mag","giu","lug"
 window.__errori=[];
 function fail(sezione,contenitore,e){
  window.__errori.push({sezione,errore:String(e&&e.stack||e)});
- console.error("[Edge Board] sezione '"+sezione+"' non disponibile:",e);
+ console.error("[BoardEdge] sezione '"+sezione+"' non disponibile:",e);
  const box=`<div class="alert red"><b>Sezione "${sezione}" non disponibile.</b> Errore: ${esc(e&&e.message||e)}. Le altre sezioni funzionano normalmente.</div>`;
  const el=contenitore&&document.getElementById(contenitore);
  if(el)el.insertAdjacentHTML("afterbegin",box);else{const a=document.getElementById("alerts");if(a)a.insertAdjacentHTML("beforeend",box);}
@@ -122,6 +122,8 @@ try{
 document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#nav button,section").forEach(x=>x.classList.remove("on"));
  b.classList.add("on");const sez=$(b.dataset.t);if(sez)sez.classList.add("on");window.scrollTo({top:0});});
 var go=t=>document.querySelector(`#nav button[data-t=${t}]`).click();
+document.addEventListener("click",ev=>{const a=ev.target.closest("[data-vai]");if(!a)return;ev.preventDefault();
+ try{if(!$("tvmodal").hidden)chiudiGrafico();}catch(e){}go(a.dataset.vai);});
 // LINK DIRETTO a una scheda (es. .../#registro dai messaggi Telegram): si apre dopo che tutte le schede sono pronte
 // (solo schede che esistono davvero: "registro" sparisce quando il registro admin non e' pubblicato)
 setTimeout(()=>{const t=location.hash.slice(1);if(/^[a-z]+$/.test(t)&&$(t)&&document.querySelector(`#nav button[data-t=${t}]`))go(t);},0);
@@ -407,7 +409,7 @@ try{(function(){const S=D.stag||{},el=$("stag"),M12=["Gen","Feb","Mar","Apr","Ma
   const fcard=`<div class="card"><h3>Prossime 4 settimane</h3><div class="kpi"><div class="big" style="color:${!f||!f.robusto?"var(--ink)":f.score>0?"var(--b)":"var(--s)"}">${verd}</div>
    <div class="note">${f?`salito <b>${f.su}</b> anni su <b>${f.n}</b> (dal ${f.da}) &middot; mediana ${pc(f.med)} &middot; senza trend ${pc(f.med_d)}`:"storico insufficiente"}</div>
    <div class="note">${f?(f.robusto?`<span class="tag ok">effetto affidabile</span> punteggio stagionale ${fmt(f.score)}`:`<span class="tag">non affidabile: ${esc(f.perche||"")}</span>`):""}</div></div>
-   ${f?percorso(f.percorso):""}<div class="small">Percorso mediano degli anni passati da oggi alle prossime 8 settimane.</div></div>`;
+   ${f?percorso(f.percorso):""}<div class="small">Percorso mediano degli anni passati dal venerd&igrave; di uscita del COT alle 8 settimane successive.</div></div>`;
   const gcard=`<div class="card"><h3>Giorni della settimana</h3>${gg?`<div class="tablewrap" style="box-shadow:none;margin-top:10px"><table class="compatta"><tr><th>Giorno</th><th class="num">In rialzo</th><th class="num">Media</th><th class="num">Mov. tipico</th><th class="num">Ultimi 10a</th><th>Effetto</th></tr>
    ${gg.map(g=>{const vmax=Math.max(...gg.map(x=>x.vol));return `<tr><td><b>${esc(g.giorno)}</b></td><td class="num">${g.su}%</td><td class="num ${g.media>0?"up":g.media<0?"down":""}">${pc(g.media,3)}</td>
    <td class="num">${fx(g.vol,2)}%${g.vol==vmax?' <b title="giorno piu\' mosso" style="color:var(--acc)">&#9679;</b>':""}</td><td class="num">${pc(g.rec,3)}</td><td>${g.robusto?`<span class="tag ${g.t>0?"ok":"ko"}">${g.t>0?"rialzo":"ribasso"} (t ${fx(g.t,1)})</span>`:'<span class="small">non significativo</span>'}</td></tr>`}).join("")}</table></div>
@@ -449,7 +451,7 @@ $("guide").innerHTML=`
 <h3>10. Aggiornamenti</h3><p>${/^https?:/.test(location.protocol)?"Il sito si aggiorna da solo: venerdi' sera dopo il COT, ogni mattina feriale (mercati e BCE) e ogni sera feriale a fine giornata (fino a 3 tentativi a 5 minuti di distanza). Se una fonte non risponde restano online gli ultimi dati validi.":"Ogni apertura scarica tutto. Aggiornamento automatico ogni venerdi': nel Prompt dei comandi <code>python cot_radar.py --pianifica</code>."}</p>
 <h3>11. Limiti</h3><ul><li>Sono stime statistiche, non certezze: le relazioni cambiano nel tempo.</li><li>Il COT ha 3 giorni di ritardo; i mutui circa 5 settimane.</li><li>Oro, materie agricole e altri strumenti senza prezzo gratuito su FRED usano solo il COT.</li><li>Non e' una consulenza finanziaria.</li></ul>`;
 /* AVVERTENZA LEGALE: testo fisso in fondo a ogni pagina (tutela: il sito e' informativo, non consulenza) */
-$("foot").innerHTML=`<div class="legale">Edge Board ha finalit&agrave; esclusivamente informative, didattiche e di studio. I contenuti (segnali, punteggi, statistiche, stagionalit&agrave;, analisi e qualsiasi altra informazione) non costituiscono consulenza finanziaria, consulenza in materia di investimenti, raccomandazione personalizzata, sollecitazione o offerta all'acquisto o alla vendita di strumenti finanziari, ai sensi della normativa vigente (tra cui D.Lgs. 58/1998 - TUF e direttiva MiFID II). I modelli sono stime statistiche e i risultati passati non sono indicativi di quelli futuri. Il trading su futures, forex, CFD e criptovalute comporta un rischio elevato di perdita, anche superiore al capitale investito. Ogni decisione di investimento &egrave; presa in autonomia e sotto la propria esclusiva responsabilit&agrave;.</div>
+$("foot").innerHTML=`<div class="legale">BoardEdge ha finalit&agrave; esclusivamente informative, didattiche e di studio. I contenuti (segnali, punteggi, statistiche, stagionalit&agrave;, analisi e qualsiasi altra informazione) non costituiscono consulenza finanziaria, consulenza in materia di investimenti, raccomandazione personalizzata, sollecitazione o offerta all'acquisto o alla vendita di strumenti finanziari, ai sensi della normativa vigente (tra cui D.Lgs. 58/1998 - TUF e direttiva MiFID II). I modelli sono stime statistiche e i risultati passati non sono indicativi di quelli futuri. Il trading su futures, forex, CFD e criptovalute comporta un rischio elevato di perdita, anche superiore al capitale investito. Ogni decisione di investimento &egrave; presa in autonomia e sotto la propria esclusiva responsabilit&agrave;.</div>
  <div>Fonti: CFTC Commitments of Traders (Legacy, Futures Only) &middot; FRED, Federal Reserve Bank of St. Louis &middot; Banca Centrale Europea, ECB Data Portal. Generato il ${M.now}.</div>`;
 }catch(e){fail('Metodo','guide',e);}
 
@@ -505,7 +507,7 @@ function disegnaTV(){const info=tvInfo(TV.spec),box=$("tvchart");box.innerHTML="
    ...({"60":{range:"3M"},"D":{range:"12M"},"W":{range:"60M"}}[TV.iv]||{}),
    timezone:"Europe/Rome",theme:scuro?"dark":"light",style:"1",locale:"it",allow_symbol_change:true,withdateranges:true,hide_side_toolbar:false,save_image:true,
    /* telefono: niente barra in alto di TradingView (timeframe doppi), grafico piu' alto */ hide_top_toolbar:matchMedia("(max-width:600px)").matches});})
- .catch(e=>{box.innerHTML=`<div class="tvmsg">${esc(e.message)}. <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(info.sym)}" target="_blank" rel="noopener">Apri il grafico su TradingView</a></div>`;console.error("[Edge Board] grafico:",e);});}
+ .catch(e=>{box.innerHTML=`<div class="tvmsg">${esc(e.message)}. <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(info.sym)}" target="_blank" rel="noopener">Apri il grafico su TradingView</a></div>`;console.error("[BoardEdge] grafico:",e);});}
 /* Pannello COT sotto il grafico: per ogni settimana la variazione del netto Non Commercial (% open interest).
    Coppia = flusso della valuta base MENO quello della quotata: verde = flussi a favore della coppia in SALITA.
    Strumento quotato al contrario (es. JPY -> grafico USDJPY): il segno viene girato per seguire il grafico.
@@ -534,7 +536,7 @@ function conferme(k,p){const parti=[],col=v=>v=="conferma"?"var(--sb)":v=="contr
  if(p&&p.news){const n=p.news,ev=(n.eventi||[]).filter(x=>x.z!=null).map(x=>`${esc(x.nome)} ${x.z>=0?"+":""}${fx(x.z,1)}&sigma; (${x.pb>=0?"+":""}${fx(x.pb,1)} pb)`);
   parti.push(`<b>Notizie:</b> ${n.oggi.length?"&#9889; "+n.oggi.map(esc).join(", ")+" ":""}${ev.join(" &middot; ")}${ev.length?` &rarr; <b style="color:${n.effetto=="rafforza"?"var(--sb)":n.effetto=="penalizza"?"var(--ss)":"var(--ink)"}">${n.effetto}</b> (${n.adj>=0?"+":""}${fx(n.adj,0)}, punteggio ${fmt(n.score)})`:""}`);}
  const st=p?p.stag:(D.assets[k]||{}).stag,sc=p?p.score:(D.assets[k]||{}).score;
- if(st)parti.push(`<b>Stagionalit&agrave;:</b> ${st.robusto?`${st.score>0?"salito":"sceso"} ${st.score>0?st.su:st.n-st.su}/${st.n} anni nelle prossime 4 sett. (mediana ${st.med>=0?"+":""}${fx(st.med)}%) &rarr; <b style="color:${Math.sign(st.score)==Math.sign(sc)?"var(--sb)":"var(--ss)"}">${Math.sign(st.score)==Math.sign(sc)?"conferma":"contrasto"}</b>${st.adj?` (${st.adj>0?"+":""}${fx(st.adj,0)})`:""}`:"nessun effetto affidabile in questo periodo"}`);
+ if(st)parti.push(`<b>Stagionalit&agrave;:</b> ${st.robusto?`${st.score>0?"salito":"sceso"} ${st.score>0?st.su:st.n-st.su}/${st.n} anni nelle 4 sett. dal COT (mediana ${st.med>=0?"+":""}${fx(st.med)}%) &rarr; <b style="color:${Math.sign(st.score)==Math.sign(sc)?"var(--sb)":"var(--ss)"}">${Math.sign(st.score)==Math.sign(sc)?"favorevole":"non favorevole"}</b>${st.adj?` (${st.adj>0?"+":""}${fx(st.adj,0)})`:""}`:`<b style="color:var(--warn)">neutra</b> (nessuna tendenza costante)`}`);
  const e=p?p.affid:(D.assets[k]||{}).affid;
  if(e)parti.push(`<b>Storico:</b> <b style="color:${e.pochi?"var(--ink)":e.hit>=60?"var(--sb)":e.hit<50?"var(--ss)":"var(--ink)"}">${e.hit}%</b> su ${e.n} segnali <span class="lungo">(resa media ${e.resa>=0?"+":""}${fx(e.resa)}% a 4 sett.)</span>`);
  return parti.length?`<div class="riga tre">${parti.map(x=>`<span>${x}</span>`).join("")}</div>`:"";}
@@ -563,17 +565,22 @@ function lettura(spec,f,p,k,inv){
   righe.push(`<b>Notizie</b>: ${ev.length?esc(ev.join(", "))+" &rarr; ":""}<b style="color:${nw.effetto=="rafforza"?verde:rosso}">${nw.effetto=="rafforza"?"rafforzano il segnale":"vanno contro il segnale"}</b>.`);}
  // --- storico del segnale
  const e=o.affid;if(e)righe.push(`<b>Storico</b>: su ${e.n} segnali simili in passato ha funzionato <b style="color:${e.pochi?"var(--ink)":e.hit>=60?verde:e.hit<50?rosso:"var(--ink)"}">${e.hit}% delle volte</b> (resa media ${pc1(e.resa)} dopo 4 settimane)${e.pochi?", pochi casi: da prendere con le pinze":""}.`);
- // --- stagionalita': da oggi a una settimana, su tutto lo storico
- const s1=o.stag1s,st4=o.stag;
- if(s1){const su=s1.med>=0,giu=s1.n-s1.su;
-  let stg=`<b>Prossima settimana</b> (stagionalit&agrave;): dal ${s1.dal}, da questa data a 7 giorni dopo ${esc(nome)} &egrave; salito in <b>${s1.su} anni su ${s1.n}</b> e sceso in ${giu}${s1.robusto?`, con una variazione tipica di ${pc1(s1.med)}: <b style="color:${su?verde:rosso}">tendenza ${su?"al rialzo":"al ribasso"} abbastanza costante</b>`:`: <b>quasi testa o croce</b>, nessuna tendenza da seguire`}.`;
-  if(st4&&st4.robusto)stg+=` Sulle prossime 4 settimane invece la stagione tende ${st4.score>0?"al rialzo":"al ribasso"} (${st4.score>0?st4.su:st4.n-st4.su} anni su ${st4.n}).`;
-  stg+=` <a href="#" data-vai="stag">Approfondisci nella scheda Stagionalit&agrave;</a>`;righe.push(stg);}
+ // --- stagionalita' (v6.18): la settimana parte dal VENERDI' DI USCITA DEL COT (s1.giorno), cosi' segue il ciclo
+ //     settimanale del segnale. Giudizio rispetto al segnale: FAVOREVOLE (stessa direzione), NON FAVOREVOLE
+ //     (direzione opposta), NEUTRA (nessuna tendenza costante negli anni passati). Colori: verde / rosso / ambra.
+ const s1=o.stag1s,st4=o.stag,vs=(o.label||"").includes("BUY")?1:(o.label||"").includes("SELL")?-1:0;
+ const giudizio=(robusto,m)=>!robusto?["neutra","var(--warn)"]:!vs?[m>0?"tende al rialzo":"tende al ribasso",m>0?verde:rosso]
+  :Math.sign(m)==vs?["favorevole",verde]:["non favorevole",rosso];
+ const g1=s1?giudizio(s1.robusto,s1.med):null;
+ if(s1){const giu=s1.n-s1.su,g0=s1.giorno?new Date(s1.giorno):null,g7=g0?new Date(g0.getTime()+7*864e5):null;
+  let stg=`<b>Stagionalit&agrave; della settimana</b>${g0?` (da venerd&igrave; ${fd(s1.giorno)}, uscita del COT, a venerd&igrave; ${fd(g7.toISOString().slice(0,10))})`:""}: dal ${s1.dal} ${esc(nome)} &egrave; salito in <b>${s1.su} anni su ${s1.n}</b> e sceso in ${giu}${s1.robusto?`, variazione tipica ${pc1(s1.med)}`:""} &rarr; <b style="color:${g1[1]}">${g1[0].toUpperCase()}</b>${vs?` al segnale ${esc(o.label)}`:""}${s1.robusto?"":" (quasi testa o croce)"}.`;
+  if(st4){const g4=giudizio(st4.robusto,st4.score);stg+=` Sulle 4 settimane: <b style="color:${g4[1]}">${g4[0]}</b>${st4.robusto?` (${st4.score>0?st4.su:st4.n-st4.su} anni su ${st4.n})`:""}.`;}
+  stg+=` <a href="#stag" data-vai="stag">Approfondisci nella scheda Stagionalit&agrave;</a>`;righe.push(stg);}
  // --- riga riassuntiva (sempre visibile)
  const pezzi=[`Speculatori: <b style="color:${n3<2?"var(--ink)":compra?verde:rosso}">${dir}</b>`];
  if(acc)pezzi.push(`Commercials: <b style="color:${acc=="conferma"?verde:rosso}">${acc=="conferma"?"a favore":"contrari"}</b>`);
  if(nw&&nw.effetto=="penalizza")pezzi.push(`<b style="color:${rosso}">notizia contraria</b>`);
- if(s1)pezzi.push(`Prossima settimana: ${s1.robusto?`<b style="color:${s1.med>=0?verde:rosso}">${s1.med>=0?"di solito sale":"di solito scende"}</b>`:"nessuna tendenza"}`);
+ if(g1)pezzi.push(`Stagionalit&agrave;: <b style="color:${g1[1]}">${g1[0]}</b>`);
  return `<button class="sintesi" id="cotinfo" title="Mostra / nascondi il riepilogo"><b>Riepilogo:</b> ${pezzi.join(" &middot; ")} <span class="freccia">&#9662;</span></button>
   <div class="cotinfo">${righe.map(r=>`<p>${r}</p>`).join("")}</div>`;}
 /* SINTESI DEI FLUSSI COT in una riga (al posto delle barre, che si aprono con un clic):
@@ -607,9 +614,9 @@ function disegnaCOT(spec){const box=$("tvcot");try{
  let infoChiuse=true;try{const v=localStorage.getItem("cotInfo");if(v)infoChiuse=v=="chiuse";}catch(e){}
  pan.classList.toggle("infochiuse",infoChiuse);
  $("cotinfo").onclick=()=>{const c=pan.classList.toggle("infochiuse");try{localStorage.setItem("cotInfo",c?"chiuse":"aperte");}catch(e){}};
- box.querySelectorAll("[data-vai]").forEach(a=>a.onclick=ev=>{ev.preventDefault();chiudiGrafico();go(a.dataset.vai);});
+ /* i link [data-vai] (es. "Approfondisci nella scheda Stagionalita'") sono gestiti da un unico ascoltatore globale (vedi navigazione) */
  $("cotsint").onclick=()=>{const c=pan.classList.toggle("barrechiuse");try{localStorage.setItem("cotBarre",c?"chiuse":"aperte");}catch(e){}};
- }catch(e){box.innerHTML="";console.error("[Edge Board] pannello COT:",e);}}   // se si rompe sparisce il pannello, non il grafico
+ }catch(e){box.innerHTML="";console.error("[BoardEdge] pannello COT:",e);}}   // se si rompe sparisce il pannello, non il grafico
 /* MANIGLIA: trascinando la barretta tra grafico e pannello COT si allarga o si schiaccia il pannello.
    Doppio clic = misura iniziale. La misura scelta resta salvata in questo browser (se il browser lo permette). */
 (function(){const man=$("tvmaniglia"),pan=$("tvpannello");if(!man||!pan)return;

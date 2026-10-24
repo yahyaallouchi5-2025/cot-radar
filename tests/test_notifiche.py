@@ -172,7 +172,7 @@ class Settimanale(unittest.TestCase):
     def test_prova_manda_il_riepilogo_marcato_test_senza_toccare_il_cursore(self):
         r = notifiche.prova("https://x/", ENV, dati_sito=dashboard("2026-10-20", WTI=("SELL", "SELL")))
         self.assertTrue(r["telegram"])
-        self.assertTrue(self.inviati[0].startswith("[TEST] <b>Edge Board · segnali della settimana"))
+        self.assertTrue(self.inviati[0].startswith("[TEST] <b>BoardEdge · segnali della settimana"))
         self.assertIsNone(notifiche.leggi_cursore(self.dir))
 
 
