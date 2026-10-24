@@ -28,6 +28,30 @@ TIMEOUT = 45                     # secondi massimi di attesa per ogni download
 # --------------------------------------------------------------------------- indirizzi delle fonti
 # CFTC: API "Socrata" del report Legacy, Futures Only (gratis, senza registrazione)
 CFTC_URL = "https://publicreporting.cftc.gov/resource/6dca-aqww.json"
+# Altri report COT, archiviati per il CONFRONTO nel backtest (vedi storico.aggiorna_extra e confronto.py).
+# NON entrano nel punteggio del sito: prima si misura se migliorano qualcosa, poi eventualmente si pesano.
+#   COMB = Legacy "Futures and Options Combined": come il nostro, ma con le opzioni convertite in futures (delta)
+#   TFF  = Traders in Financial Futures (combined): valute, indici, tassi, crypto divisi in Dealer,
+#          Asset Manager (fondi lenti: pensioni, assicurazioni) e Leveraged Funds (fondi veloci: hedge fund, CTA)
+#   DIS  = Disaggregated (combined): materie prime divise in Producer/Merchant, Swap Dealer e Managed Money
+# Nomi di colonna verificati sull'API CFTC il 24/10/2026. ATTENZIONE: non sono uniformi
+# (es. "swap__positions_short_all" con DUE trattini bassi, "asset_mgr_positions_long" senza "_all"):
+# vanno copiati esattamente, un nome sbagliato fa fallire la richiesta.
+CFTC_RISORSA = "https://publicreporting.cftc.gov/resource/{id}.json"
+_BASE_COT = ["cftc_contract_market_code", "report_date_as_yyyy_mm_dd", "open_interest_all"]
+ARCHIVI_COT = {
+    "COMB": {"id": "jun7-fc8e", "file": "COT_COMB.csv", "dal": "1995-01-01", "min": 20000,
+             "campi": _BASE_COT + ["noncomm_positions_long_all", "noncomm_positions_short_all",
+                                   "comm_positions_long_all", "comm_positions_short_all"]},
+    "TFF": {"id": "yw9f-hn96", "file": "TFF.csv", "dal": "2006-01-01", "min": 8000,
+            "campi": _BASE_COT + ["dealer_positions_long_all", "dealer_positions_short_all",
+                                  "asset_mgr_positions_long", "asset_mgr_positions_short",
+                                  "lev_money_positions_long", "lev_money_positions_short"]},
+    "DIS": {"id": "kh3c-gbw2", "file": "DIS.csv", "dal": "2006-01-01", "min": 8000,
+            "campi": _BASE_COT + ["prod_merc_positions_long", "prod_merc_positions_short",
+                                  "swap_positions_long_all", "swap__positions_short_all",
+                                  "m_money_positions_long_all", "m_money_positions_short_all"]},
+}
 # FRED (Fed di St. Louis): ogni serie si scarica come CSV con il suo codice (id)
 FRED_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}&cosd={since}"
 # API ufficiale FRED (serve una chiave gratuita, vedi README): piu' affidabile dai server cloud

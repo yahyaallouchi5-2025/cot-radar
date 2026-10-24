@@ -28,6 +28,7 @@ cot-radar/
 │   ├── calendario.py        orari di uscita, ritardi, stato delle fonti
 │   ├── pagina.py            crea la pagina HTML
 │   ├── controlli.py         controlli di qualità dei dati (errori "invisibili")
+│   ├── confronto.py         backtest delle letture COT alternative (opzioni, TFF, Disaggregated)
 │   ├── demo.py              dati finti per provare senza internet
 │   └── log.py               registro: schermo + dati/registro.log + riepilogo
 ├── web/                     ← la grafica
@@ -161,6 +162,22 @@ Le stesse regole servono a due finestre separate (scheda "Verifica segnali"):
 Ogni segnale (live e backtest) riceve il regime del giorno prima della generazione, quindi senza dati dal futuro. Le statistiche si possono leggere anche per regime. La volatilità è misurata da chiusura a chiusura.
 
 Test: `python -m unittest tests.test_motore -v`. Tra l'altro verificano la catena di hash, la manomissione e il backtest senza dati "dal futuro".
+
+## Confronto: opzioni, TFF e Disaggregated (`cot_radar/confronto.py`)
+
+Il sito usa il report CFTC **Legacy, solo futures**. La CFTC pubblica anche altri report, che ora vengono archiviati nel ramo `storico` (un file per report, stesse regole dei prezzi: scaricati una volta, poi solo le settimane nuove, mai riscritti):
+
+| File | Report | Dal | Cosa aggiunge |
+|---|---|---|---|
+| `COT_COMB.csv` | Legacy **futures + opzioni** (`jun7-fc8e`) | 1995 | le opzioni convertite in futures equivalenti (delta) |
+| `TFF.csv` | Traders in Financial Futures, combined (`yw9f-hn96`) | 2006 | valute/indici/tassi/crypto: Leveraged Funds (fondi veloci) e Asset Manager (fondi lenti) |
+| `DIS.csv` | Disaggregated, combined (`kh3c-gbw2`) | 2006 | materie prime: Managed Money, Producer/Merchant, Swap Dealer |
+
+**Questi dati NON entrano nel punteggio.** Prima si misura se migliorano qualcosa: `confronto.py` rifà il backtest con lo stesso motore cambiando solo chi conta come "speculatore", sullo stesso periodo e con gli stessi costi, e confronta ogni variante con la versione di oggi sugli stessi strumenti. In più verifica un filtro: le opzioni degli speculatori vanno a favore o contro il segnale? Una lettura entra nel sito solo se migliora sia lo sviluppo sia l'holdout.
+
+Limite: si può misurare solo dove c'è un prezzo storico gratuito (cambi, indici USA, petrolio, gas, crypto). Oro, cereali e bestiame, dove le opzioni pesano di più, restano fuori.
+
+Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il risultato completo finisce anche in `storico/confronto.json`. Test: `python -m unittest tests.test_archivi_cot -v`.
 
 ## Registro di monitoraggio e protezione anti-crollo
 

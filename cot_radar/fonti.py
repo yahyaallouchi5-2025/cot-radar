@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta
 
 from . import riserva
-from .config import (ASSETS, CACHE, CFTC_URL, ECB_REQ, ECB_URL, FRED_API_URL, FRED_IDS, FRED_URL, HISTORY_WEEKS,
+from .config import (ARCHIVI_COT, ASSETS, CACHE, CFTC_RISORSA, CFTC_URL, ECB_REQ, ECB_URL, FRED_API_URL, FRED_IDS, FRED_URL, HISTORY_WEEKS,
                      TIMEOUT)
 from .log import log
 
@@ -58,23 +58,37 @@ def get_cftc():
     return rows
 
 
-def get_cftc_tutto(inizio="1986-01-01", pagina=50000):
-    """TUTTO lo storico COT dei nostri mercati (dal 1986): serve UNA volta sola per creare l'archivio del backtest
-    (vedi storico.aggiorna_cot). Circa 75.000 righe, scaricate a pagine da 50.000."""
+def get_cftc_archivio(url, campi, inizio, pagina=50000):
+    """Righe di un report CFTC (qualsiasi: Legacy, Combined, TFF, Disaggregated) per i NOSTRI mercati,
+    dalla data 'inizio' in poi, scaricate a pagine da 50.000 (limite dell'API). Solo le colonne 'campi'."""
     codes = ",".join(f"'{a[1]}'" for a in ASSETS)
     righe, offset = [], 0
     while True:
         q = {
-            "$select": "report_date_as_yyyy_mm_dd,cftc_contract_market_code,open_interest_all,"
-                       "noncomm_positions_long_all,noncomm_positions_short_all,comm_positions_long_all,comm_positions_short_all",
+            "$select": ",".join(campi),
             "$where": f"cftc_contract_market_code in({codes}) AND report_date_as_yyyy_mm_dd >= '{inizio}'",
             "$order": "cftc_contract_market_code,report_date_as_yyyy_mm_dd", "$limit": str(pagina), "$offset": str(offset),
         }
-        blocco = json.loads(http(CFTC_URL + "?" + urllib.parse.urlencode(q)))
+        blocco = json.loads(http(url + "?" + urllib.parse.urlencode(q)))
         righe += blocco
         if len(blocco) < pagina:
             return righe
         offset += pagina
+
+
+def get_cftc_tutto(inizio="1986-01-01", pagina=50000):
+    """TUTTO lo storico COT Legacy (futures only) dei nostri mercati (dal 1986): serve UNA volta sola per creare
+    l'archivio del backtest (vedi storico.aggiorna_cot). Circa 75.000 righe."""
+    campi = ["report_date_as_yyyy_mm_dd", "cftc_contract_market_code", "open_interest_all",
+             "noncomm_positions_long_all", "noncomm_positions_short_all", "comm_positions_long_all",
+             "comm_positions_short_all"]
+    return get_cftc_archivio(CFTC_URL, campi, inizio, pagina)
+
+
+def scarica_archivio(nome):
+    """Funzione di download per storico.aggiorna_extra: scarica(inizio) -> righe del report 'nome' di ARCHIVI_COT."""
+    a = ARCHIVI_COT[nome]
+    return lambda inizio: get_cftc_archivio(CFTC_RISORSA.format(id=a["id"]), a["campi"], inizio)
 
 
 def get_fred(sid, since):

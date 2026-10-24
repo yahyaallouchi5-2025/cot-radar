@@ -22,5 +22,10 @@ Mappa dei moduli (in ordine di "viaggio" dei dati):
   storico.py     archivio permanente dei prezzi (ramo git "storico"), mai riscritto, dati controllati
   stagionalita.py stagionalita': prossime 4 settimane, mesi, giorni della settimana + backtest del peso
   admin.py       registro riservato: sul sito cifrato con la password admin (Secret ADMIN_PASSWORD)
+  motore.py      motore unico dei segnali (nascita, conferme, chiusura, misura, statistiche)
+  registro.py    registro LIVE dei segnali: immutabile, con catena di hash
+  backtest.py    backtest storico (simulato) con lo stesso motore, dal 1986, con holdout
+  volatilita.py  natura di ogni mercato: volatilita' per giorno, settimana, mese, anno e regime attuale
+  confronto.py   backtest delle letture COT alternative (opzioni, TFF, Disaggregated): NON entra nel sito
 """
-__version__ = "6.0"
+__version__ = "6.4"

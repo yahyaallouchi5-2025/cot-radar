@@ -89,10 +89,10 @@ class Esiti:
         return {"n": n, "hit": round(100 * (self.cum[hi] - self.cum[lo]) / n), "pochi": n < MIN_SEGNALI}
 
 
-def calcola(cot_righe, prezzi, con_eventi=False):
-    """cot_righe = righe CFTC (archivio completo o ultimi anni); prezzi = {chiave: [(data, prezzo $)]}.
-    Restituisce il riepilogo per la pagina (statistiche e ultimi segnali simulati), None senza dati.
-    con_eventi=True: aggiunge "_eventi" (tutti gli eventi simulati), usato dalla modalita' demo."""
+def simula(cot_righe, prezzi):
+    """La simulazione vera e propria, senza statistiche: settimana per settimana con il MOTORE UNICO, poi la misura
+    di ogni segnale. Separata da calcola() perche' la usa anche confronto.py (stesso identico motore).
+    Restituisce {"misurati": [(segnale, misura, costo%)], "strum", "eventi", "ultima", "limite_h"} oppure None."""
     serie = cot_series(cot_righe)
     per_k = {a[0]: serie[a[1]] for a in ASSETS if a[1] in serie}
     utili = set(MAJORS) | {"DXY"} | {b for b, q in EXTRA_PAIRS} | {q for b, q in EXTRA_PAIRS} | set(FX_ORDER)
@@ -176,6 +176,18 @@ def calcola(cot_righe, prezzi, con_eventi=False):
         m = motore.misura(s, st["pts"], st["cls"])
         if m and m.get("stato") == "ok":
             misurati.append((s, m, st["costo"]))
+    return {"misurati": misurati, "strum": strum, "eventi": eventi, "ultima": ultima, "limite_h": limite_h}
+
+
+def calcola(cot_righe, prezzi, con_eventi=False):
+    """cot_righe = righe CFTC (archivio completo o ultimi anni); prezzi = {chiave: [(data, prezzo $)]}.
+    Restituisce il riepilogo per la pagina (statistiche e ultimi segnali simulati), None senza dati.
+    con_eventi=True: aggiunge "_eventi" (tutti gli eventi simulati), usato dalla modalita' demo."""
+    sim = simula(cot_righe, prezzi)
+    if not sim:
+        return None
+    misurati, strum, eventi = sim["misurati"], sim["strum"], sim["eventi"]
+    ultima, limite_h = sim["ultima"], sim["limite_h"]
     padri = [x for x in misurati if not x[0].get("padre")]
     svil = [x for x in padri if x[0]["generato"][:10] < limite_h]
     hold = [x for x in padri if x[0]["generato"][:10] >= limite_h]

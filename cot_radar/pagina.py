@@ -18,11 +18,11 @@ from datetime import datetime, timezone
 
 from .analisi import analyse
 from .calendario import sources_status
-from .config import (ASSETS, DIVERGENCE_MIN, MACRO_WEIGHT, NORMAL, REG_WEEKS, SECTORS, STRONG, TV_PAIRS, TV_SYMBOLS,
-                     WEB_DIR, WEIGHTS)
+from .config import (ARCHIVI_COT, ASSETS, DIVERGENCE_MIN, MACRO_WEIGHT, NORMAL, REG_WEEKS, SECTORS, STRONG,
+                     TV_PAIRS, TV_SYMBOLS, WEB_DIR, WEIGHTS)
 from .controlli import controlla
 from .cot import cot_series
-from .fonti import get_cftc_tutto, get_fred, load_all
+from .fonti import get_cftc_tutto, get_fred, load_all, scarica_archivio
 from .log import log, raccoglitore
 from .mercato import fed_liquidity
 from .mutui import mortgages
@@ -118,6 +118,16 @@ def build(data_source=load_all, demo=False, sito=False):
                                  registro.strumenti(pairs, assets, prezzi), True, True)
     except Exception:
         log.warning("backtest non calcolato:\n%s", traceback.format_exc())
+    # ARCHIVI COT EXTRA (combined, TFF, Disaggregated): solo per il confronto nel backtest (confronto.py),
+    # non cambiano nulla nella pagina. Ognuno isolato: se uno non arriva, gli altri e il sito vanno avanti.
+    rie_extra = {}
+    if not demo:
+        for nome in ARCHIVI_COT:
+            try:
+                rie_extra[nome] = storico.aggiorna_extra(nome, scarica_archivio(nome))[1]
+            except Exception:
+                log.warning("archivio %s non aggiornato:\n%s", nome, traceback.format_exc())
+                rie_extra[nome] = {"stato": "errore"}
     # VOLATILITA' di ogni strumento (giorni, settimane, mesi, anni, regime attuale): vedi volatilita.py
     vol = {}
     try:
@@ -146,7 +156,7 @@ def build(data_source=load_all, demo=False, sito=False):
         "errori": n_err, "avvisi": n_warn, "fonti": status,
         "strumenti": len(assets), "coppie": len(pairs), "mercato": bool(market), "mutui": bool(mort),
         "voci": raccoglitore.voci[-200:],             # ultimi avvisi/errori di questa esecuzione
-        "controlli": controlli, "demo": demo, "storico": rie_storico, "archivio_cot": rie_cot,
+        "controlli": controlli, "demo": demo, "storico": rie_storico, "archivio_cot": rie_cot, "archivi_extra": rie_extra,
     }
     meta = {"now": datetime.now().strftime("%d/%m/%Y %H:%M"), "w": WEIGHTS, "strong": STRONG, "normal": NORMAL,
             "divmin": DIVERGENCE_MIN, "mw": MACRO_WEIGHT, "regw": REG_WEEKS, "demo": demo}

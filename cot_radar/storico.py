@@ -21,9 +21,9 @@ import csv
 import json
 import math
 import os
-from datetime import date
+from datetime import date, timedelta
 
-from .config import PRICES, ROOT
+from .config import ARCHIVI_COT, PRICES, ROOT
 from .log import log
 
 CARTELLA = os.path.join(ROOT, "storico")
@@ -266,3 +266,108 @@ def aggiorna_cot(recenti, scarica=None, cartella=CARTELLA):
         _scrivi_cot(cartella, sorted(vecchie, key=lambda r: (r[0], r[1])))
         log.info("archivio COT: %d settimane nuove aggiunte", len(agg))
     return [dict(zip(COT_CAMPI, r)) for r in vecchie], {"stato": "ok", "righe": len(vecchie), "nuove": len(agg)}
+
+
+# --------------------------------------------------------------------------- archivi COT "extra" (per il confronto)
+# Combined (futures + opzioni), TFF e Disaggregated: un file per report (COT_COMB.csv, TFF.csv, DIS.csv).
+# Servono SOLO a confronto.py, per misurare nel backtest se aggiungono qualcosa: non entrano nel sito.
+# Stesse regole degli altri archivi: tutto scaricato UNA volta, poi solo settimane nuove; mai riscritto.
+# A differenza di COT.csv, le settimane nuove arrivano con UNA richiesta piccola (dal giorno dopo l'ultima
+# settimana salvata), e solo quando puo' esserci un report nuovo: il sito gira piu' volte al giorno.
+ATTESA_NUOVO = 10   # giorni: il report del martedi' T esce venerdi' T+3, il successivo (martedi' T+7) esce a T+10
+
+
+def _riga_extra(r, campi):
+    """Riga CFTC -> lista di testi nel formato del file, None se incompleta o impossibile.
+    Le posizioni possono mancare (un mercato non ha tutte le categorie) ma non essere negative."""
+    try:
+        v = [str(r.get(c)).strip() if r.get(c) not in (None, "") else "" for c in campi]
+        v[1] = v[1][:10]
+        if not v[0] or len(v[1]) != 10 or v[1][4] != "-" or float(v[2]) <= 0:
+            return None
+        pos = v[3:]
+        if all(x == "" for x in pos) or any(x != "" and float(x) < 0 for x in pos):
+            return None
+        return v
+    except (ValueError, TypeError, AttributeError):
+        return None
+
+
+def _scrivi_csv(cartella, nome_file, campi, righe):
+    """Scrittura "sicura": prima un file .tmp, poi lo scambio. Se il programma si interrompe a meta',
+    il file vecchio resta intatto."""
+    os.makedirs(cartella, exist_ok=True)
+    f = os.path.join(cartella, nome_file)
+    with open(f + ".tmp", "w", encoding="utf-8", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(campi)
+        w.writerows(righe)
+    os.replace(f + ".tmp", f)
+
+
+def leggi_extra(nome, cartella=CARTELLA):
+    """Righe dell'archivio 'nome' (COMB, TFF, DIS) come dizionari CFTC; [] se il file non c'e'."""
+    a = ARCHIVI_COT[nome]
+    f = os.path.join(cartella, a["file"])
+    if not os.path.exists(f):
+        return []
+    with open(f, encoding="utf-8") as fh:
+        rd = csv.reader(fh)
+        intest = next(rd, None)
+        if intest != a["campi"]:
+            raise ValueError(f"intestazione di {a['file']} diversa da quella attesa")
+        return [{c: (x if x != "" else None) for c, x in zip(a["campi"], r)} for r in rd if r]
+
+
+def _ordina(righe):
+    """Senza doppioni (stesso mercato e stessa data: vince l'ultima) e in ordine mercato/data."""
+    return sorted({(r[0], r[1]): r for r in righe}.values(), key=lambda r: (r[0], r[1]))
+
+
+def aggiorna_extra(nome, scarica, cartella=CARTELLA, oggi=None):
+    """Crea o aggiorna l'archivio 'nome'. scarica(inizio) = righe CFTC dalla data 'inizio' (vedi fonti.scarica_archivio).
+    Restituisce (righe come dizionari, riepilogo). Un problema qui non tocca il sito: al massimo manca il confronto."""
+    a, oggi = ARCHIVI_COT[nome], oggi or date.today()
+    campi, meta = a["campi"], _meta(cartella)
+    dizionari = lambda rr: [{c: (x if x != "" else None) for c, x in zip(campi, r)} for r in rr]
+    try:
+        vecchie = [r for r in (_riga_extra(x, campi) for x in leggi_extra(nome, cartella)) if r]
+    except Exception as e:
+        log.critical("archivio %s illeggibile (%s): non lo tocco", nome, e)
+        return [], {"stato": "illeggibile"}
+
+    # 1) prima volta: tutta la storia del report
+    if not vecchie or nome not in meta:
+        try:
+            tutte = scarica(a["dal"])
+        except Exception as e:
+            log.warning("archivio %s: download completo non riuscito (%s), riprovo al prossimo aggiornamento", nome, e)
+            return [], {"stato": "assente"}
+        nuove = _ordina([r for r in (_riga_extra(x, campi) for x in tutte) if r])
+        if len(nuove) < a["min"]:
+            log.critical("archivio %s: download completo sospetto (%d righe): NON salvato", nome, len(nuove))
+            return [], {"stato": "assente"}
+        _scrivi_csv(cartella, a["file"], campi, nuove)
+        meta[nome] = oggi.isoformat()
+        _salva_meta(cartella, meta)
+        log.info("archivio %s creato: %d righe dal %s", nome, len(nuove), min(r[1] for r in nuove))
+        return dizionari(nuove), {"stato": "creato", "righe": len(nuove), "nuove": len(nuove)}
+
+    # 2) volte successive: solo se puo' essere uscito un report nuovo
+    ultima_tot = max(r[1] for r in vecchie)
+    if (oggi - date.fromisoformat(ultima_tot)).days < ATTESA_NUOVO:
+        return dizionari(vecchie), {"stato": "ok", "righe": len(vecchie), "nuove": 0}
+    try:
+        recenti = scarica((date.fromisoformat(ultima_tot) + timedelta(days=1)).isoformat())
+    except Exception as e:
+        log.warning("archivio %s: settimane nuove non scaricate (%s), riprovo al prossimo aggiornamento", nome, e)
+        return dizionari(vecchie), {"stato": "ok", "righe": len(vecchie), "nuove": 0}
+    ultima = {}
+    for r in vecchie:
+        ultima[r[0]] = max(ultima.get(r[0], ""), r[1])
+    agg = _ordina([r for r in (_riga_extra(x, campi) for x in recenti or []) if r and r[1] > ultima.get(r[0], "")])
+    if agg:
+        vecchie = _ordina(vecchie + agg)
+        _scrivi_csv(cartella, a["file"], campi, vecchie)
+        log.info("archivio %s: %d settimane nuove aggiunte", nome, len(agg))
+    return dizionari(vecchie), {"stato": "ok", "righe": len(vecchie), "nuove": len(agg)}
