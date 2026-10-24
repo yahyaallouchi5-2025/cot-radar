@@ -29,4 +29,4 @@ Mappa dei moduli (in ordine di "viaggio" dei dati):
   confronto.py   backtest delle letture COT alternative (opzioni, TFF, Disaggregated): NON entra nel sito
   eventi.py      calendario storico degli annunci macro USA (NFP, CPI, Fed) per lo studio del drawdown
 """
-__version__ = "6.8"
+__version__ = "6.9"

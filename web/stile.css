@@ -392,3 +392,14 @@ h3.vft+p.sub.infotesto.aperta{text-transform:none;letter-spacing:0;font-size:14p
 .vfbar{height:12px;border-radius:99px;background:var(--soft);overflow:hidden}.vfbar i{display:block;height:100%;border-radius:99px}
 .vfann{margin-bottom:24px}.vfann .vfrighe{margin:10px 0 6px}
 @media (max-width:600px){.vfcomandi .vfetich{min-width:0}.vffascia{grid-template-columns:1fr 46px;gap:6px 10px}.vffascia span{grid-column:1/-1}.vfgd{font-size:17px!important}}
+/* --- schede numeriche allineate (v6.9): con subgrid le righe (titolo, numero, riga breve, spiegazione) sono
+   comuni a tutte le schede della griglia: se un titolo va a capo, i numeri restano comunque sulla stessa linea --- */
+.vfkpi>.kpi{display:grid;grid-template-rows:subgrid;grid-row:span 4;row-gap:0;align-content:start}
+.vfkpi>.kpi h3{display:flex;align-items:flex-start;gap:4px;line-height:1.3}
+.vfkpi>.kpi h3 .info{width:18px;height:18px;font-size:11.5px;margin:0 0 0 auto;flex:none}
+.vfkpi>.kpi .big{margin:10px 0 4px;white-space:nowrap}
+.vfkpi>.kpi .big.vfgd{font-size:clamp(16px,1.6vw,22px)!important;margin-top:12px!important}
+/* niente overflow:hidden qui: dentro una subgrid azzererebbe l'altezza della riga (la riga breve sparirebbe) */
+.vfkpi>.kpi .note{line-height:1.4}
+.vfkpi>.kpi p.sub.infotesto.aperta{margin:10px 0 0;padding:10px 12px;font-size:13px}
+@media (max-width:600px){.vfkpi>.kpi .big.vfgd{white-space:normal;font-size:17px!important}}
