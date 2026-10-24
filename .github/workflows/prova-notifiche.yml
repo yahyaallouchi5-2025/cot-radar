@@ -1,0 +1,22 @@
+# prova-notifiche.yml - manda UN messaggio di prova al canale Telegram (e all'e-mail dell'admin se configurata).
+# Da usare dopo aver inserito i Secrets: Actions -> Prova notifiche -> Run workflow. Non tocca sito ne' registro.
+name: Prova notifiche
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  prova:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+        run: python -m cot_radar.notifiche prova "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
