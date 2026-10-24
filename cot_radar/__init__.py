@@ -29,5 +29,6 @@ Mappa dei moduli (in ordine di "viaggio" dei dati):
   confronto.py   backtest delle letture COT alternative (opzioni, TFF, Disaggregated): NON entra nel sito
   eventi.py      calendario storico degli annunci macro USA (NFP, CPI, Fed) per lo studio del drawdown
   notifiche.py   avvisi dei segnali: canale Telegram per gli iscritti + copia e-mail all'admin (cursore anti-doppioni)
+  riepilogo.py   riepilogo settimanale dei segnali per categoria di asset (Telegram), dai dati della pagina online
 """
-__version__ = "6.13"
+__version__ = "6.14"

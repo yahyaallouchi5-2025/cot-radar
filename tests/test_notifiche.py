@@ -44,10 +44,10 @@ class Avvisi(unittest.TestCase):
 
     def test_primo_avvio_nessun_arretrato_poi_solo_il_nuovo(self):
         self.scrivi([apertura("GBPUSD", "2026-10-23T22:59Z", base="GBP", quote="USD")])
-        r = notifiche.esegui(self.dir, "https://x.github.io/cot-radar/", ENV, ADESSO)
+        r = notifiche.esegui(self.dir, "https://x.github.io/cot-radar/", ENV, ADESSO, dati_sito={})
         self.assertEqual((r["esito"], self.inviati), ("primo_avvio", []))
         self.aggiungi([apertura("WTI", "2026-10-24T22:15Z", "STRONG SELL")])
-        r = notifiche.esegui(self.dir, "https://x.github.io/cot-radar/", ENV, ADESSO)
+        r = notifiche.esegui(self.dir, "https://x.github.io/cot-radar/", ENV, ADESSO, dati_sito={})
         self.assertEqual(r["esito"], "inviato")
         self.assertEqual(len(self.inviati), 1)
         self.assertIn("Petrolio WTI", self.inviati[0])
@@ -55,25 +55,25 @@ class Avvisi(unittest.TestCase):
         self.assertNotIn("GBP/USD", self.inviati[0])
         self.assertIn("/cot-radar/#registro", self.inviati[0])
         # stesso giro ripetuto (tentativo 2 della sera): niente doppioni
-        r = notifiche.esegui(self.dir, "", ENV, ADESSO)
+        r = notifiche.esegui(self.dir, "", ENV, ADESSO, dati_sito={})
         self.assertEqual((r["esito"], len(self.inviati)), ("niente_di_nuovo", 1))
 
     def test_telegram_giu_il_cursore_non_avanza(self):
         self.scrivi([apertura("GBPUSD", "2026-10-23T22:59Z")])
-        notifiche.esegui(self.dir, "", ENV, ADESSO)
+        notifiche.esegui(self.dir, "", ENV, ADESSO, dati_sito={})
         self.aggiungi([apertura("SP500", "2026-10-24T22:15Z", "SELL")])
         self.ok = False
-        self.assertEqual(notifiche.esegui(self.dir, "", ENV, ADESSO)["esito"], "telegram_errore")
+        self.assertEqual(notifiche.esegui(self.dir, "", ENV, ADESSO, dati_sito={})["esito"], "telegram_errore")
         self.ok = True
-        r = notifiche.esegui(self.dir, "", ENV, ADESSO)
+        r = notifiche.esegui(self.dir, "", ENV, ADESSO, dati_sito={})
         self.assertEqual(r["esito"], "inviato")
         self.assertIn("S&amp;P 500", self.inviati[-1])
 
     def test_eventi_troppo_vecchi_non_inviati(self):
         self.scrivi([apertura("GBPUSD", "2026-10-01T22:59Z")])
-        notifiche.esegui(self.dir, "", ENV, ADESSO)
+        notifiche.esegui(self.dir, "", ENV, ADESSO, dati_sito={})
         self.aggiungi([apertura("DOW", "2026-10-20T22:15Z")])
-        r = notifiche.esegui(self.dir, "", ENV, ADESSO)
+        r = notifiche.esegui(self.dir, "", ENV, ADESSO, dati_sito={})
         self.assertEqual((r["esito"], self.inviati), ("niente_di_nuovo", []))
         self.assertEqual(notifiche.leggi_cursore(self.dir)["ultimo_n"], 1)
 
@@ -106,11 +106,72 @@ class Avvisi(unittest.TestCase):
 
     def test_senza_telegram_configurato_il_cursore_avanza(self):
         self.scrivi([apertura("GBPUSD", "2026-10-23T22:59Z")])
-        notifiche.esegui(self.dir, "", {}, ADESSO)
+        notifiche.esegui(self.dir, "", {}, ADESSO, dati_sito={})
         self.aggiungi([apertura("DOW", "2026-10-24T22:15Z")])
-        r = notifiche.esegui(self.dir, "", {}, ADESSO)
+        r = notifiche.esegui(self.dir, "", {}, ADESSO, dati_sito={})
         self.assertEqual((r["esito"], self.inviati), ("non_configurato", []))
         self.assertEqual(notifiche.leggi_cursore(self.dir)["ultimo_n"], 1)
+
+
+def dashboard(cot, **segnali):
+    """Dati finti della pagina: coppie EUR/USD e GBP/USD + gli strumenti indicati {chiave: (etichetta, prima)}."""
+    assets = {"EUR": {"group": "Valute", "label": "NEUTRO", "date": cot},
+              "GBP": {"group": "Valute", "label": "SELL", "date": cot},
+              "GOLD": {"group": "Metalli", "label": "NEUTRO", "date": cot, "it": "Oro"}}
+    for k, (lab, prima) in segnali.items():
+        assets[k] = {"group": "Energia", "label": lab, "prev_label": prima, "score": -40.0 if "SELL" in lab else 40.0,
+                     "new": lab != prima, "date": cot, "it": k.title()}
+    pairs = [{"base": "EUR", "quote": "USD", "label": "BUY", "score": 31.0, "new": True, "prev": "NEUTRO"},
+             {"base": "GBP", "quote": "USD", "label": "NEUTRO", "score": 3.0, "new": True, "prev": "SELL"},
+             {"base": "GOLD", "quote": "USD", "label": "SELL", "score": -30.0, "prev": "SELL"}]
+    return {"assets": assets, "pairs": pairs}
+
+
+class Settimanale(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.inviati = []
+        self._orig = notifiche.invia_telegram
+        notifiche.invia_telegram = lambda token, chat, testo: (self.inviati.append(testo), True)[1]
+        registro._scrivi(self.dir, registro.concatena([apertura("WTI", "2026-10-16T21:05Z", "SELL")], registro.ZERO, 0))
+
+    def tearDown(self):
+        notifiche.invia_telegram = self._orig
+        shutil.rmtree(self.dir)
+
+    def test_riepilogo_solo_con_un_cot_nuovo(self):
+        d13 = dashboard("2026-10-13", WTI=("SELL", "SELL"))
+        notifiche.esegui(self.dir, "https://x/", ENV, ADESSO, dati_sito=d13)          # primo avvio
+        self.assertEqual(notifiche.leggi_cursore(self.dir)["riepilogo_cot"], "2026-10-13")
+        r = notifiche.esegui(self.dir, "https://x/", ENV, ADESSO, dati_sito=d13)      # stesso COT: niente
+        self.assertEqual((r["esito"], self.inviati), ("niente_di_nuovo", []))
+        d20 = dashboard("2026-10-20", WTI=("STRONG SELL", "SELL"), NATGAS=("NEUTRO", "SELL"))
+        r = notifiche.esegui(self.dir, "https://x/", ENV, ADESSO, dati_sito=d20)      # venerdi': COT nuovo
+        self.assertEqual((r["esito"], r["tipo"]), ("inviato", "settimanale"))
+        t = self.inviati[0]
+        self.assertIn("segnali della settimana", t)
+        self.assertIn("COT del 20/10/2026", t)
+        self.assertLess(t.index("<b>FOREX</b>"), t.index("<b>ENERGIA</b>"))           # Forex per primo
+        self.assertIn("EUR/USD: <b>BUY</b> +31.0", t)
+        self.assertIn("Wti: <b>STRONG SELL</b>", t)
+        self.assertNotIn("GOLD/USD", t)                                               # metalli fuori dal Forex
+        self.assertIn("■ GBP/USD: era SELL, ora NEUTRO", t)
+        self.assertIn("■ Natgas: era SELL, ora NEUTRO", t)
+        self.assertEqual(notifiche.leggi_cursore(self.dir)["riepilogo_cot"], "2026-10-20")
+        notifiche.esegui(self.dir, "https://x/", ENV, ADESSO, dati_sito=d20)          # giro dopo: niente doppioni
+        self.assertEqual(len(self.inviati), 1)
+
+    def test_sito_non_raggiungibile_riepilogo_rimandato(self):
+        notifiche.esegui(self.dir, "", ENV, ADESSO, dati_sito=dashboard("2026-10-13"))
+        r = notifiche.esegui(self.dir, "", ENV, ADESSO, dati_sito={})
+        self.assertEqual(r["tipo"], "eventi")
+        self.assertEqual(notifiche.leggi_cursore(self.dir)["riepilogo_cot"], "2026-10-13")
+
+    def test_prova_manda_il_riepilogo_marcato_test_senza_toccare_il_cursore(self):
+        r = notifiche.prova("https://x/", ENV, dati_sito=dashboard("2026-10-20", WTI=("SELL", "SELL")))
+        self.assertTrue(r["telegram"])
+        self.assertTrue(self.inviati[0].startswith("[TEST] <b>Edge Board · segnali della settimana"))
+        self.assertIsNone(notifiche.leggi_cursore(self.dir))
 
 
 if __name__ == "__main__":

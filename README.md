@@ -197,6 +197,10 @@ Dopo ogni pubblicazione riuscita il workflow **Notifiche** (parte da solo dopo o
 **un solo messaggio** al canale Telegram con quello che è cambiato: nuovi segnali, rafforzamenti a STRONG,
 indebolimenti, chiusure (con la durata) e conferme del nuovo COT. Una copia arriva via e-mail all'admin (facoltativa).
 
+- **Riepilogo settimanale**: ogni venerdì sera, appena la dashboard mostra il nuovo report COT, arriva un unico
+  messaggio con tutti i segnali attivi divisi per categoria (Forex, indici, tassi, energia, metalli, cereali, soft,
+  bestiame, crypto), con punteggio, affidabilità, ★ per i segnali nuovi e l'elenco dei segnali chiusi
+  (`cot_radar/riepilogo.py`). Se la CFTC slitta per una festività, il riepilogo parte quando esce il report.
 - **Niente doppioni**: un cursore (`storico/segnali/notificati.json`) ricorda l'ultimo evento avvisato.
 - **Niente avvisi persi**: se Telegram non risponde il cursore resta fermo e il messaggio parte al giro dopo
   (il job fallisce e GitHub manda la mail all'admin).
@@ -211,7 +215,7 @@ Configurazione (una volta, le credenziali le inserisce solo il proprietario):
    - `TELEGRAM_CHAT_ID` = `@nomecanale` (canale pubblico) oppure l'id numerico `-100…` (canale privato)
    - facoltativi per l'e-mail all'admin: `SMTP_USER` (es. indirizzo Gmail), `SMTP_PASSWORD`
      (**password per le app** di Google, non la password dell'account), `ADMIN_EMAIL` (destinatario)
-4. *Actions* → **Prova notifiche** → *Run workflow*: arriva un messaggio di prova sul canale.
+4. *Actions* → **Prova notifiche** → *Run workflow*: arriva subito il riepilogo della settimana marcato [TEST].
 
 Anteprima senza inviare nulla: `python -m cot_radar.notifiche anteprima storico`.
 Più avanti: e-mail a tutti gli iscritti tramite Supabase (login e lista iscritti).

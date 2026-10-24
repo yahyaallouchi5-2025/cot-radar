@@ -13,7 +13,11 @@ CURSORE (storico/segnali/notificati.json): numero dell'ultimo evento gia' avvisa
 Eventi piu' vecchi di MAX_ETA_ORE (es. dopo giorni di sito fermo) non si mandano: un avviso in ritardo e'
 peggio di nessun avviso. Il cursore li supera comunque.
 
-Cosa si avvisa (un solo messaggio per giro, diviso solo se supera il limite di Telegram):
+RIEPILOGO SETTIMANALE (riepilogo.py): quando la dashboard online mostra un report COT NUOVO (il venerdi' sera,
+dopo l'uscita del COT) parte il riepilogo di tutti i segnali attivi divisi per categoria di asset, al posto del
+messaggio sugli eventi. Il cursore ricorda la data COT dell'ultimo riepilogo ("riepilogo_cot"): uno a settimana.
+
+Negli altri giri (un solo messaggio per giro, diviso solo se supera il limite di Telegram) si avvisa di:
   - NUOVO SEGNALE (apertura): direzione, punteggio, affidabilita' e motivi;
   - RAFFORZAMENTO a STRONG (apertura "figlio") e INDEBOLIMENTO da STRONG;
   - CHIUSURA (torna neutro / si inverte) con la durata del segnale;
@@ -26,7 +30,7 @@ Credenziali: SOLO nei GitHub Secrets, mai nel codice o nei log (vedi README, sez
 Senza Telegram configurato il cursore avanza comunque (nessun arretrato quando lo si attiva).
 
 USO:  python -m cot_radar.notifiche storico https://utente.github.io/cot-radar/   (giro normale)
-      python -m cot_radar.notifiche prova   https://utente.github.io/cot-radar/   (messaggio di prova)
+      python -m cot_radar.notifiche prova   https://utente.github.io/cot-radar/   (TEST: riepilogo subito)
       python -m cot_radar.notifiche anteprima storico                              (stampa senza inviare)
 """
 import json
@@ -147,6 +151,12 @@ def componi(blocchi, nuovi, sito):
             (f" · COT del {cot[8:10]}/{cot[5:7]}/{cot[:4]}" if cot else "") + "</i>\n\n"
     piede = "\n\n" + (f'<a href="{_escape(sito.rstrip("/"))}/#registro">Registro completo e statistiche</a>\n'
                       if sito else "") + f"<i>{AVVERTENZA}</i>"
+    return impagina(testa, blocchi, piede)
+
+
+def impagina(testa, blocchi, piede):
+    """Unisce intestazione, blocchi e piede; se si supera il limite di Telegram divide tra un blocco e l'altro
+    (mai a meta' di un blocco) e ripete intestazione e piede in ogni messaggio."""
     out, corpo = [], ""
     for b in blocchi:
         if corpo and len(testa) + len(corpo) + len(b) + len(piede) > LIMITE_TG:
@@ -167,12 +177,13 @@ def leggi_cursore(cartella):
         return json.load(fh)
 
 
-def scrivi_cursore(cartella, ultimo_n, ultimo_hash, adesso):
+def scrivi_cursore(cartella, ultimo_n, ultimo_hash, adesso, riepilogo_cot=None):
+    """ultimo_n = ultimo evento avvisato; riepilogo_cot = data COT dell'ultimo riepilogo settimanale inviato."""
     f = os.path.join(cartella, CURSORE)
     tmp = f + ".tmp"
     with open(tmp, "w", encoding="utf-8", newline="\n") as fh:
-        json.dump({"ultimo_n": ultimo_n, "hash": ultimo_hash, "aggiornato": adesso.strftime("%Y-%m-%dT%H:%MZ")},
-                  fh, ensure_ascii=False, indent=1)
+        json.dump({"ultimo_n": ultimo_n, "hash": ultimo_hash, "riepilogo_cot": riepilogo_cot,
+                   "aggiornato": adesso.strftime("%Y-%m-%dT%H:%MZ")}, fh, ensure_ascii=False, indent=1)
         fh.write("\n")
     os.replace(tmp, f)
 
@@ -232,9 +243,14 @@ def invia_email(testi, env):
 
 # ---------- giro completo ----------
 
-def esegui(cartella, sito, env=None, adesso=None, invia=True):
+def esegui(cartella, sito, env=None, adesso=None, invia=True, dati_sito=None):
     """Un giro: legge registro e cursore, invia gli avvisi nuovi, avanza il cursore.
+    SETTIMANALE: se la dashboard online mostra un report COT nuovo, parte il riepilogo per categoria
+    (riepilogo.py) AL POSTO del messaggio sugli eventi: le novita' della settimana sono gia' dentro
+    (segnali "nuovi" e chiusi), cosi' gli iscritti ricevono un solo messaggio.
+    dati_sito = dati della pagina gia' letti (per i test); None = si scaricano dal sito.
     Restituisce un dizionario con l'esito (per il log del workflow e per i test)."""
+    from . import riepilogo
     env = os.environ if env is None else env
     adesso = adesso or datetime.now(timezone.utc)
     eventi = leggi(cartella)
@@ -242,21 +258,31 @@ def esegui(cartella, sito, env=None, adesso=None, invia=True):
     if not integra:
         log.error("registro NON integro dall'evento %s: nessun avviso finche' l'admin non controlla", rotto)
         return {"esito": "registro_non_integro", "inviati": 0}
-    if not eventi:
-        return {"esito": "registro_vuoto", "inviati": 0}
-    ultimo_n = eventi[-1]["n"]
+    ultimo_n = eventi[-1]["n"] if eventi else -1
+    dati = dati_sito if dati_sito is not None else riepilogo.scarica(sito)
+    cot_sito = riepilogo.data_cot(dati)
     cursore = leggi_cursore(cartella)
     if cursore is None:
         if invia:
-            scrivi_cursore(cartella, ultimo_n, ultimo_hash, adesso)
-        log.info("notifiche: primo avvio, cursore all'evento %d (nessun arretrato inviato)", ultimo_n)
+            scrivi_cursore(cartella, ultimo_n, ultimo_hash, adesso, cot_sito)
+        log.info("notifiche: primo avvio, cursore all'evento %d e al COT %s (nessun arretrato inviato)",
+                 ultimo_n, cot_sito)
         return {"esito": "primo_avvio", "inviati": 0, "ultimo_n": ultimo_n}
-    nuovi, vecchi = da_avvisare(eventi, cursore, adesso)
-    if vecchi:
-        log.warning("notifiche: %d eventi troppo vecchi (> %d ore) non inviati", len(vecchi), MAX_ETA_ORE)
-    aperture = {e["id"]: e for e in eventi if e["tipo"] == "apertura"}
-    testi = componi(righe_eventi(nuovi, aperture), nuovi, sito)
-    esito = {"esito": "niente_di_nuovo", "inviati": 0, "ultimo_n": ultimo_n, "testi": testi}
+    gia_cot = cursore.get("riepilogo_cot")
+    settimanale = bool(cot_sito and gia_cot and cot_sito > gia_cot)
+    if cot_sito and not gia_cot:
+        gia_cot = cot_sito             # cursore di una versione precedente: il primo riepilogo sara' il prossimo
+    if settimanale:
+        testi = riepilogo.testi(dati, sito)
+        log.info("notifiche: nuovo report COT online (%s): riepilogo settimanale", cot_sito)
+    else:
+        nuovi, vecchi = da_avvisare(eventi, cursore, adesso)
+        if vecchi:
+            log.warning("notifiche: %d eventi troppo vecchi (> %d ore) non inviati", len(vecchi), MAX_ETA_ORE)
+        aperture = {e["id"]: e for e in eventi if e["tipo"] == "apertura"}
+        testi = componi(righe_eventi(nuovi, aperture), nuovi, sito)
+    esito = {"esito": "niente_di_nuovo", "inviati": 0, "ultimo_n": ultimo_n, "testi": testi,
+             "tipo": "settimanale" if settimanale else "eventi"}
     if not invia:
         return dict(esito, esito="anteprima")
     token, chat = env.get("TELEGRAM_BOT_TOKEN"), env.get("TELEGRAM_CHAT_ID")
@@ -271,22 +297,31 @@ def esegui(cartella, sito, env=None, adesso=None, invia=True):
     elif testi:
         log.info("notifiche: Telegram non configurato (Secrets TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID)")
         esito["esito"] = "non_configurato"
-    if ultimo_n != cursore.get("ultimo_n"):
-        scrivi_cursore(cartella, ultimo_n, ultimo_hash, adesso)
+    nuovo_cot = cot_sito if settimanale else gia_cot
+    if ultimo_n != cursore.get("ultimo_n") or nuovo_cot != cursore.get("riepilogo_cot"):
+        scrivi_cursore(cartella, ultimo_n, ultimo_hash, adesso, nuovo_cot)
     return esito
 
 
-def prova(sito, env=None):
-    """Messaggio di prova (dal workflow 'Prova notifiche'): verifica bot, canale ed e-mail."""
+def prova(sito, env=None, dati_sito=None):
+    """TEST dal workflow 'Prova notifiche': manda SUBITO il riepilogo settimanale della dashboard attuale,
+    marcato [TEST] (non tocca il cursore: il riepilogo vero partira' comunque col prossimo COT).
+    Se i dati del sito non si leggono, manda un semplice messaggio di prova del collegamento."""
+    from . import riepilogo
     env = os.environ if env is None else env
     token, chat = env.get("TELEGRAM_BOT_TOKEN"), env.get("TELEGRAM_CHAT_ID")
-    testo = ("<b>Edge Board · messaggio di prova</b>\n\nIl canale è collegato: qui arriveranno i nuovi segnali, "
-             "i rafforzamenti, le chiusure e le conferme del COT." +
-             (f'\n\n<a href="{_escape(sito.rstrip("/"))}/">Apri la dashboard</a>' if sito else ""))
+    dati = dati_sito if dati_sito is not None else riepilogo.scarica(sito)
+    if dati and dati.get("assets"):
+        testi = riepilogo.testi(dati, sito, test=True)
+    else:
+        testi = ["<b>Edge Board · messaggio di prova</b>\n\nIl canale è collegato: qui arriveranno il riepilogo "
+                 "settimanale dei segnali e gli aggiornamenti." +
+                 (f'\n\n<a href="{_escape(sito.rstrip("/"))}/">Apri la dashboard</a>' if sito else "")]
     if not (token and chat):
         log.error("mancano i Secrets TELEGRAM_BOT_TOKEN e/o TELEGRAM_CHAT_ID")
-        return {"telegram": None, "email": invia_email([testo], env)}
-    return {"telegram": invia_telegram(token, chat, testo), "email": invia_email([testo], env)}
+        return {"telegram": None, "email": invia_email(testi, env), "messaggi": len(testi)}
+    ok = all(invia_telegram(token, chat, t) for t in testi)
+    return {"telegram": ok, "email": invia_email(testi, env), "messaggi": len(testi)}
 
 
 def main(argv):
