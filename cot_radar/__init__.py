@@ -28,4 +28,4 @@ Mappa dei moduli (in ordine di "viaggio" dei dati):
   volatilita.py  natura di ogni mercato: volatilita' per giorno, settimana, mese, anno e regime attuale
   confronto.py   backtest delle letture COT alternative (opzioni, TFF, Disaggregated): NON entra nel sito
 """
-__version__ = "6.5"
+__version__ = "6.6"

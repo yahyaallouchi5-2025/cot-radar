@@ -243,7 +243,7 @@ $("acards").innerHTML=oth.length?oth.map(acard).join(""):`<div class="card">Ness
  // requestAnimationFrame: la misura si applica al fotogramma dopo, cosi' il browser non entra in un ciclo di ridimensionamenti
  const ro=window.ResizeObserver?new ResizeObserver(v=>requestAnimationFrame(()=>v.forEach(x=>allinea(x.target)))):null;
  document.querySelectorAll(".pairhead").forEach(h=>{const sx=h.firstElementChild;if(!sx||!h.querySelector(".anello"))return;allinea(sx);if(ro)ro.observe(sx);});})();
-}catch(e){fail('Segnali','sig',e);}
+}catch(e){fail('Dashboard','sig',e);}
 
 /* ---------- coppie ----------
    Tabella completa con filtri; drawTable() la ridisegna a ogni clic su un filtro. */
@@ -390,13 +390,16 @@ try{(function(){const S=D.stag||{},el=$("stag"),M12=["Gen","Feb","Mar","Apr","Ma
  let sel=attive[0]||tutte[0];
  // colore di una cella della mappa: verde = mese in rialzo, rosso = in ribasso, piu' intenso = movimento piu' grande
  const cella=v=>v==null?"transparent":`rgba(${v>0?"79,214,163":"242,113,107"},${Math.min(.85,.12+Math.abs(v)/6)})`;
- function percorso(pp){if(!pp||!pp.some(x=>x!=null))return "";const W=600,H=150,P=24,v=pp.map(x=>x??0);
-  const lo=Math.min(0,...v),hi=Math.max(0,...v),sc=y=>H-P-(y-lo)/((hi-lo)||1)*(H-2*P),xs=i=>P+i*(W-2*P)/(v.length-1);
-  const col=v[v.length-1]>=0?"var(--b)":"var(--s)";
-  return `<svg class="chart" viewBox="0 0 ${W} ${H}"><line x1="${P}" x2="${W-P}" y1="${sc(0)}" y2="${sc(0)}" stroke="var(--line)"/>
+ // R = margine a destra riservato al valore finale: l'etichetta sta ACCANTO all'ultimo punto, in una "pillola"
+ // scura, cosi' la linea non ci passa mai sopra (prima era sopra il punto e la linea la attraversava).
+ function percorso(pp){if(!pp||!pp.some(x=>x!=null))return "";const W=600,H=150,P=24,R=78,v=pp.map(x=>x??0);
+  const lo=Math.min(0,...v),hi=Math.max(0,...v),sc=y=>H-P-(y-lo)/((hi-lo)||1)*(H-2*P),xs=i=>P+i*(W-P-R)/(v.length-1);
+  const col=v[v.length-1]>=0?"var(--b)":"var(--s)",xf=xs(v.length-1),yf=sc(v[v.length-1]),txt=pc(v[v.length-1]);
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}"><line x1="${P}" x2="${xf}" y1="${sc(0)}" y2="${sc(0)}" stroke="var(--line)"/>
   <polyline fill="none" stroke="${col}" stroke-width="3" points="${v.map((y,i)=>xs(i)+","+sc(y)).join(" ")}"/>
   ${v.map((y,i)=>`<circle cx="${xs(i)}" cy="${sc(y)}" r="3.5" fill="${col}"/><text x="${xs(i)}" y="${H-4}" text-anchor="middle" font-size="11" fill="var(--mute)">${i?"+"+i+"s":"oggi"}</text>`).join("")}
-  <text x="${W-P}" y="${sc(v[v.length-1])-8}" text-anchor="end" font-size="12" fill="${col}">${pc(v[v.length-1])}</text></svg>`;}
+  <rect x="${xf+9}" y="${yf-11}" width="${txt.length*7.4+12}" height="22" rx="11" fill="var(--card2)" stroke="${col}" stroke-opacity=".55"/>
+  <text x="${xf+15}" y="${yf+4.5}" font-size="12.5" font-weight="700" fill="${col}">${txt}</text></svg>`;}
  function disegna(){const X=S[sel],f=X.finestra,mm=X.mesi||[],gg=X.giorni,ora=new Date().getMonth();
   const verd=!f?"n/d":f.robusto?(f.score>0?"RIALZO":"RIBASSO"):"NEUTRA";
   const fcard=`<div class="card"><h3>Prossime 4 settimane</h3><div class="kpi"><div class="big" style="color:${!f||!f.robusto?"var(--ink)":f.score>0?"var(--b)":"var(--s)"}">${verd}</div>
@@ -782,7 +785,7 @@ try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!el)return;
   return `<h3 class="vft">Percorso medio dal segnale <span class="small">(ingresso alla prima chiusura dopo l'uscita dei dati)</span></h3>
   <div class="card vfgraf"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Percorso medio dei segnali seduta per seduta">
    ${tick.map(v=>`<line x1="${L}" x2="${W-Rr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" ${Math.abs(v)<1e-9?'stroke-width="1.5"':'stroke-dasharray="3 4"'}/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end" class="vfax">${v>0?"+":""}${String(Math.round(v*10)/10).replace(".",",")}%</text>`).join("")}
-   ${(mob?[5,10,15,20]:[1,5,10,15,20]).map(d=>`<text x="${X(d)}" y="${H-8}" text-anchor="${d==20&&mob?"end":"middle"}" class="vfax">${d==1?"1 seduta":d%5==0?d/5+" sett.":d}</text>`).join("")}
+   ${(mob?[5,10,15,20]:[1,5,10,15,20]).map(d=>`<text x="${X(d)}" y="${H-8}" text-anchor="${d==20?"end":d==1?"start":"middle"}" class="vfax">${d==1?"1 seduta":d%5==0?d/5+" sett.":d}</text>`).join("")}
    ${area}${linea("mx","var(--b)",2)}${linea("mn","var(--s)",2)}${linea("r","var(--ink)",2.6)}
    ${sel?`<line x1="${X(sel.d)}" x2="${X(sel.d)}" y1="${T}" y2="${H-Bm}" stroke="var(--acc)" stroke-width="1.5"/>
     <circle cx="${X(sel.d)}" cy="${Y(sel.r)}" r="4.5" fill="var(--ink)"/><circle cx="${X(sel.d)}" cy="${Y(sel.mx)}" r="4" fill="var(--b)"/><circle cx="${X(sel.d)}" cy="${Y(sel.mn)}" r="4" fill="var(--s)"/>`:""}
