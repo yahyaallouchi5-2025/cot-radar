@@ -26,7 +26,7 @@ from .fonti import get_cftc_tutto, get_fred, load_all, scarica_archivio
 from .log import log, raccoglitore
 from .mercato import fed_liquidity
 from .mutui import mortgages
-from . import agenda, backtest, notizie, registro, stagionalita, storico, volatilita
+from . import agenda, backtest, notizie, portafogli, registro, stagionalita, storico, volatilita
 from .admin import pubblico
 
 
@@ -46,7 +46,7 @@ def template():
     def read(name):
         with open(os.path.join(WEB_DIR, name), encoding="utf-8") as f:
             return f.read()
-    return read("index.html").replace("{{CSS}}", read("stile.css")).replace("{{JS}}", read("app.js")) \
+    return read("index.html").replace("{{CSS}}", read("stile.css")).replace("{{JS}}", read("app.js") + read("portafogli.js")) \
         .replace("{{TELEGRAM}}", TELEGRAM_CANALE).replace("{{STATISTICHE}}", statistiche())
 
 
@@ -124,6 +124,7 @@ def build(data_source=load_all, demo=False, sito=False):
     # Isolati come il resto: se falliscono manca solo la scheda "Backtest storico", la dashboard non cambia.
     prezzi = storico.prezzi_usd(archivio) if archivio else {}
     reg = bt = rie_cot = None
+    righe_cot = None
     try:
         cot_data = max((a.get("date") or "" for a in assets.values()), default="") or None
         reg = registro.aggiorna(pairs, assets, prezzi, status, t0_utc, cot_data,
@@ -159,6 +160,17 @@ def build(data_source=load_all, demo=False, sito=False):
         vol = volatilita.calcola(pairs, prezzi) if prezzi else {}
     except Exception:
         log.warning("volatilita' non calcolata:\n%s", traceback.format_exc())
+    # PORTAFOGLI MODELLO a rotazione mensile (portafogli.py): conservativo, moderato, aggressivo.
+    # Isolati come il resto: se Yahoo o il calcolo falliscono manca solo la scheda "Portafogli".
+    port = None
+    try:
+        righe = righe_cot or cache["cot"]["data"]
+        px = portafogli.prezzi_demo() if demo else portafogli.prezzi()
+        port = portafogli.calcola(righe, px, scrivi=sito and not demo)
+        if port:
+            log.info("portafogli: rotazione del %s, prossima il %s", port["rotazione"], port["prossima"])
+    except Exception:
+        log.warning("portafogli non calcolati:\n%s", traceback.format_exc())
     # punteggio corretto = COT/mercato + notizie + stagionalita' (il punteggio originale resta quello mostrato nell'anello)
     for p in pairs:
         extra = ((p.get("news") or {}).get("adj") or 0) + ((p.get("stag") or {}).get("adj") or 0)
@@ -188,7 +200,7 @@ def build(data_source=load_all, demo=False, sito=False):
     data = {"meta": meta, "sources": sources,
             "assets": assets, "pairs": pairs, "corr": corr, "market": market, "fed": fed, "mortgage": mort,
             "order": [a[0] for a in ASSETS] + ["USD"], "sectors": SECTORS, "stato": pubblico(stato), "admin": "__ADMIN__", "eventi": news["prossimi"], "agenda": agenda_out,
-            "stag": stag, "stag_meta": stag_meta, "reg": reg, "bt": bt, "vol": vol,
+            "stag": stag, "stag_meta": stag_meta, "reg": reg, "bt": bt, "vol": vol, "port": port,
             "tv": {k: {"s": v[0], "inv": v[1]} for k, v in TV_SYMBOLS.items()}, "tvp": TV_PAIRS}
     # "stato" pubblico = solo esito e fonti; "admin" = segnaposto che main.py sostituisce con il registro
     # completo (cifrato sul sito, in chiaro sul PC). Vedi cot_radar/admin.py

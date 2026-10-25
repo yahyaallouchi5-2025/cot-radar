@@ -191,6 +191,17 @@ Limite: si può misurare solo dove c'è un prezzo storico gratuito (cambi, indic
 
 Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il risultato completo finisce anche in `storico/confronto.json`. Test: `python -m unittest tests.test_archivi_cot -v`.
 
+## Portafogli modello (v6.26: `portafogli.py` + `web/portafogli.js`, scheda "Portafogli")
+- Tre profili: **conservativo** (indici principali, Treasury, oro), **moderato** (+ Nasdaq, Russell, emergenti,
+  argento, rame, petrolio), **aggressivo** (tutto l'universo, crypto comprese con tetto).
+- **Rotazione** il primo giorno di borsa di ogni mese, **solo acquisti**: entra un mercato con COT da BUY e prezzo
+  sopra la media a 200 giorni; pesi inversi alla volatilità con tetto per mercato, poi riduzione alla volatilità
+  obiettivo del profilo (5%, 9%, 15%); il resto in liquidità (Treasury 1-3 anni). Costi 0,10% a rotazione.
+- **Verifica**: storico fino al 2015, fuori campione dal 2016, **live** dalla prima rotazione pubblicata
+  (`storico/portafogli/rotazioni.json`, mai riscritto). Confronto con il 60/40.
+- **Prezzi**: Yahoo Finance (rettificati), copia in `storico/yahoo/`, al massimo un download al giorno. Per un servizio
+  commerciale conviene un fornitore con licenza: basta sostituire `scarica_yahoo()`.
+
 ## Landing e note legali (v6.23)
 - Landing: sezione **Il metodo** (COT + politica monetaria + notizie macro + stagionalità), orizzonte swing e
   medio-lungo periodo, **domande frequenti**, piè di pagina con link legali.
