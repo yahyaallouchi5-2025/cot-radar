@@ -469,6 +469,19 @@ h3.vft+p.sub.infotesto.aperta{text-transform:none;letter-spacing:0;font-size:14p
 .pdd b{font-size:40px;letter-spacing:-1px;color:var(--s);line-height:1.1}.pdd em{font-style:normal;font-size:12.5px;font-weight:700}
 .pok{color:var(--sb)}.pko{color:var(--warn)}
 .pesempio{padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--s) 8%,var(--card2));border:1px solid color-mix(in srgb,var(--s) 25%,transparent);font-size:14px;color:var(--ink2);line-height:1.5}
+/* rischio del mese: barre anno per anno (rendimento) + puntino (caduta dentro il mese) */
+.pmesi{width:100%;height:120px;display:block;border-radius:10px;background:var(--soft)}
+.pmesi .pm0{stroke:var(--line);stroke-width:1}
+.pmesi rect.su{fill:var(--sb);opacity:.85}.pmesi rect.giu{fill:var(--s);opacity:.85}
+.pmesi circle{fill:var(--ink);opacity:.75}.pmesi .pmh{fill:transparent;cursor:default}
+.pmesi .pmb:hover rect.su,.pmesi .pmb:hover rect.giu{opacity:1}.pmesi .pmb:hover .pmh{fill:color-mix(in srgb,var(--ink) 7%,transparent)}
+.pmasse{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:11.5px;color:var(--mute);margin-top:-8px}
+.pmasse i{display:inline-block;width:9px;height:9px;border-radius:2px;margin:0 4px 0 8px;vertical-align:-1px}
+.pmasse i.su{background:var(--sb)}.pmasse i.pt{width:6px;height:6px;border-radius:50%;background:var(--ink);opacity:.75}
+.pmasse span{white-space:nowrap}
+@media (max-width:520px){.pmasse{flex-wrap:wrap}.pmasse span:nth-child(2){order:3;flex-basis:100%;text-align:center}}
+.pstag{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.pstag>.small{flex-basis:100%}
+.pstag .pchip b{font-weight:750}.pstag .pchip.pos b{color:#9df0cb}.pstag .pchip.neg b{color:#ffb3ae}
 .pmini{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .pmini>div{padding:10px 12px;border-radius:12px;background:var(--soft);display:flex;flex-direction:column}
 .pmini span{font-size:11.5px;color:var(--mute);text-transform:uppercase;letter-spacing:.3px;font-weight:650}

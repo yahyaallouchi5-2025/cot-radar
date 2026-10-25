@@ -191,7 +191,7 @@ Limite: si può misurare solo dove c'è un prezzo storico gratuito (cambi, indic
 
 Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il risultato completo finisce anche in `storico/confronto.json`. Test: `python -m unittest tests.test_archivi_cot -v`.
 
-## Portafogli modello (v6.27: `portafogli.py` + `web/portafogli.js`, scheda "Portafogli")
+## Portafogli modello (v6.28: `portafogli.py` + `web/portafogli.js`, scheda "Portafogli")
 - Tre profili con una **base fissa** di mercati e pesi: **conservativo** (S&P 500 20%, Europa/Asia 10%, Treasury
   10 anni 45%, oro 10%, liquidità 15%), **moderato** (S&P 35%, Europa/Asia 10%, emergenti 5%, Treasury 30%, oro 10%,
   liquidità 10%), **aggressivo** (S&P 40%, Nasdaq 15%, Europa/Asia 10%, emergenti 10%, Treasury 10%, oro 10%,
@@ -204,6 +204,14 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
   dimezzava le cadute. Scelta fatta solo su quel periodo, poi **una sola verifica fuori campione** (2016-oggi):
   conservativo 3,5%/anno (caduta max -13%), moderato 4,6% (-16%), aggressivo 10,5% (-20%); 60/40: 8,3% (-23%).
   Il COT resta mostrato accanto a ogni mercato come informazione.
+- **Rischio del mese** (v6.28): a ogni rotazione la composizione del mese viene tenuta nello stesso mese di calendario
+  di tutti gli anni dello storico (es. ogni ottobre dal 1993): rendimento e caduta massima dentro il mese anno per
+  anno, mese peggiore, medio, anni positivi e stagionalità del mese per ogni mercato. Niente statistiche per anno
+  solare: il portafoglio ruota ogni mese.
+- **Provati sullo storico 2006-2015 e scartati** (v6.28): stagionalità mensile come filtro di uscita (rendimento
+  -0,5/-1,6 punti l'anno, cadute quasi uguali), ETF settoriali al posto dello S&P 500 (con o senza scelta per
+  stagionalità: rendimento più basso, cadute uguali), rotazione per forza relativa tra azioni, oro, argento,
+  petrolio e rame (storico 10%/-25%, ma fuori campione 5%/-31%). La stagionalità resta mostrata come informazione.
 - **Live** dalla prima rotazione pubblicata (`storico/portafogli/rotazioni_v2.json`, mai riscritto).
 - **Prezzi**: Yahoo Finance (rettificati), copia in `storico/yahoo/`, al massimo un download al giorno. Per un servizio
   commerciale conviene un fornitore con licenza: basta sostituire `scarica_yahoo()`.

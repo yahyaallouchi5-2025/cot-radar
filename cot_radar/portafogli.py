@@ -335,7 +335,8 @@ def simula(g, pianificati, dal_i, al_i=None):
 
 
 def statistiche(curva):
-    """CAGR, volatilita', drawdown massimo, peggior mese e anno, % di mesi positivi."""
+    """CAGR, volatilita', drawdown massimo, peggior mese, % di mesi positivi (niente statistiche per anno solare:
+    il portafoglio ruota ogni mese, il rischio si legge mese per mese)."""
     if len(curva) < 40:
         return None
     v = [x[1] for x in curva]
@@ -351,13 +352,7 @@ def statistiche(curva):
         fine_mese[d[:7]] = x
     mesi = list(fine_mese.items())
     rm = [(mesi[i][0], mesi[i][1] / mesi[i - 1][1] - 1) for i in range(1, len(mesi))]
-    fine_anno = {}
-    for d, x in curva:
-        fine_anno[d[:4]] = x
-    an = list(fine_anno.items())
-    ra = [(an[i][0], an[i][1] / an[i - 1][1] - 1) for i in range(1, len(an))]
     pm = min(rm, key=lambda x: x[1]) if rm else None
-    pa = min(ra, key=lambda x: x[1]) if ra else None
     return {
         "dal": curva[0][0], "al": curva[-1][0],
         "cagr": round(((v[-1] / v[0]) ** (1 / anni) - 1) * 100, 1) if anni > 0.5 else None,
@@ -365,7 +360,6 @@ def statistiche(curva):
         "vol": round((_std(r) or 0) * math.sqrt(252) * 100, 1),
         "maxdd": round(dd * 100, 1), "maxdd_data": dd_data,
         "peggior_mese": [pm[0], round(pm[1] * 100, 1)] if pm else None,
-        "peggior_anno": [pa[0], round(pa[1] * 100, 1)] if pa else None,
         "mesi_pos": round(100 * sum(1 for _, x in rm if x > 0) / len(rm)) if rm else None,
     }
 
@@ -387,6 +381,57 @@ def _tagli(curva, dal=None, al=None):
     """Parte della curva tra due date, ribasata a 100."""
     c = [(d, x) for d, x in curva if (dal is None or d >= dal) and (al is None or d <= al)]
     return [(d, x * 100 / c[0][1]) for d, x in c] if c else []
+
+
+MESI = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre",
+        "ottobre", "novembre", "dicembre"]
+
+
+def rischio_mese(g, pesi, mese, fino_a):
+    """IL MESE DI CALENDARIO della rotazione (es. ottobre) in TUTTI gli anni dello storico, tenendo la composizione
+    di oggi: per ogni anno rendimento del mese (dal primo giorno di borsa al primo del mese dopo) e caduta massima
+    DENTRO il mese (dal punto piu' alto al piu' basso). Un mercato non ancora quotato quell'anno conta come
+    liquidita' (o 0 se manca anche quella). fino_a = 'AAAA-MM' della rotazione attuale (esclusa: non e' finita).
+    Restituisce {mese, anni: [{a, r, dd}], peggiore, media, positivi, n, dd_max, mercati: [{k, media, pos, n}]}."""
+    inizi = {}
+    for i, d in enumerate(g.date):
+        inizi.setdefault(d[:7], i)
+    chiavi = sorted(inizi)
+    anni = []
+    for j, ym in enumerate(chiavi[:-1]):
+        if ym[5:] != mese or ym >= fino_a:
+            continue
+        i0, i1 = inizi[ym], inizi[chiavi[j + 1]]
+        quote = []                                           # (peso, colonna prezzi) con prezzo noto al via
+        for k, w in pesi.items():
+            col = g.p.get(_ticker(k))
+            if not col or col[i0] is None:
+                col = g.p.get(LIQUIDITA[1])
+            quote.append((w, col if col and col[i0] is not None else None))
+        picco, dd, v = 1.0, 0.0, 1.0
+        for i in range(i0, i1 + 1):
+            v = sum(w * (c[i] / c[i0] if c else 1.0) for w, c in quote) / (sum(pesi.values()) or 1)
+            picco = max(picco, v)
+            dd = min(dd, v / picco - 1)
+        anni.append({"a": int(ym[:4]), "r": round((v - 1) * 100, 1), "dd": round(dd * 100, 1)})
+    if not anni:
+        return None
+    # stagionalita' di ogni mercato tenuto nello stesso mese (informativa)
+    mercati = []
+    for k in pesi:
+        if k == "CASH":
+            continue
+        col = g.p.get(_ticker(k))
+        rr = [col[inizi[chiavi[j + 1]]] / col[inizi[ym]] - 1 for j, ym in enumerate(chiavi[:-1])
+              if ym[5:] == mese and ym < fino_a and col and col[inizi[ym]] is not None and g.n[_ticker(k)][inizi[ym]] > 20]
+        if len(rr) >= 3:
+            mercati.append({"k": k, "media": round(sum(rr) / len(rr) * 100, 1),
+                            "pos": round(100 * sum(x > 0 for x in rr) / len(rr)), "n": len(rr)})
+    r = [x["r"] for x in anni]
+    peg = min(anni, key=lambda x: x["r"])
+    return {"mese": MESI[int(mese) - 1], "anni": anni, "n": len(anni),
+            "peggiore": [peg["a"], peg["r"]], "media": round(sum(r) / len(r), 1),
+            "positivi": sum(x > 0 for x in r), "dd_max": min(x["dd"] for x in anni), "mercati": mercati}
 
 
 # --------------------------------------------------------------------------- registro delle rotazioni live
@@ -466,6 +511,7 @@ def calcola(righe_cot, px, cartella=CARTELLA, scrivi=True, oggi=None):
             "base": [{"k": k, "nome": TUTTI[k][2], "peso": round(w * 100)} for k, w in prof["base"].items()],
             "ammessi": [{"k": k, "nome": TUTTI[k][2]} for k in prof["ammessi"]],
             "composizione": comp, "esclusi": esclusi,
+            "mese": rischio_mese(g, pesi, g.date[ultimo_rib][5:7], g.date[ultimo_rib][:7]),
             "stat": {"storico": statistiche(_tagli(curva, al=OOS_DAL)),
                      "oos": statistiche(_tagli(curva, dal=OOS_DAL)),
                      "totale": statistiche(curva),

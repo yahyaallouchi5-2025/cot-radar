@@ -80,6 +80,26 @@ class Portafogli(unittest.TestCase):
         r2 = P.calcola(righe, self.px, cartella=self.dir, scrivi=True, oggi=date(2026, 10, 25))
         self.assertEqual(r2["profili"][0]["live_dal"], rot[0]["data"])
 
+    def test_rischio_del_mese(self):
+        # due mercati sintetici: SPY scende del 10% ogni ottobre e risale a novembre, SHY piatto
+        giorni, d = [], date(2015, 1, 1)
+        while d < date(2020, 12, 31):
+            if d.weekday() < 5:
+                giorni.append(d.isoformat())
+            d += timedelta(days=1)
+        spy, v = [], 100.0
+        for gg in giorni:
+            if gg[5:7] == "10":
+                v *= 0.995
+            spy.append((gg, v))
+        g = P.Griglia({"SPY": spy, "SHY": [(x, 100.0) for x in giorni]})
+        m = P.rischio_mese(g, {"SP500": 0.5, "CASH": 0.5}, "10", "2020-10")
+        self.assertEqual(m["mese"], "ottobre")
+        self.assertEqual([x["a"] for x in m["anni"]], [2015, 2016, 2017, 2018, 2019])   # ottobre 2020 escluso
+        self.assertTrue(all(x["r"] < 0 and x["dd"] <= x["r"] for x in m["anni"]))
+        self.assertEqual(m["positivi"], 0)
+        self.assertEqual(m["mercati"][0]["k"], "SP500")
+
     def test_statistiche(self):
         curva = [((date(2020, 1, 1) + timedelta(days=i)).isoformat(), 100 + i * 0.1 - (20 if 100 < i < 150 else 0))
                  for i in range(400)]
