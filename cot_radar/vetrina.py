@@ -15,7 +15,7 @@ from datetime import datetime
 from html import escape
 
 from . import pagina, riepilogo
-from .config import TELEGRAM_CANALE, WEB_DIR
+from .config import CONTATTO_EMAIL, TELEGRAM_CANALE, TITOLARE, WEB_DIR
 from .log import log
 
 MAX_CATEGORIE = 8                      # categorie nell'anteprima (il terminale di prova le fa scorrere)
@@ -62,11 +62,32 @@ def html(ultimi):
         "{{BT_DAL}}": dal or "n.d.",
         "{{ANNI_BT}}": str(datetime.now().year - int(dal)) if dal.isdigit() else "0",
         "{{AGGIORNATO}}": datetime.now().strftime("%d/%m/%Y"),
+        "{{ANNO}}": str(datetime.now().year),
         "{{NASTRO}}": nastro(dati),
         # "</" spezzato: dentro <script> chiuderebbe il tag
         "{{ANTEPRIMA_JSON}}": json.dumps(anteprima(attivi), ensure_ascii=False).replace("</", "<\\/"),
     }
     with open(os.path.join(WEB_DIR, "landing.html"), encoding="utf-8") as f:
+        pagina_html = f.read()
+    for k, v in valori.items():
+        pagina_html = pagina_html.replace(k, v)
+    return pagina_html
+
+
+def legale():
+    """Pagina delle NOTE LEGALI (web/legale.html -> /legale/): titolare e contatti da config, statistiche anonime."""
+    titolare = (f"un servizio gestito da {escape(TITOLARE)}" if TITOLARE else
+                "un servizio indipendente di analisi quantitativa dei mercati finanziari")
+    if CONTATTO_EMAIL:
+        contatti = (f'Per segnalazioni, richieste di autorizzazione e comunicazioni: '
+                    f'<a href="mailto:{escape(CONTATTO_EMAIL)}">{escape(CONTATTO_EMAIL)}</a>.')
+    else:
+        contatti = (f'Per segnalazioni, richieste di autorizzazione e comunicazioni scrivi tramite il canale Telegram '
+                    f'<a href="{escape(TELEGRAM_CANALE)}" target="_blank" rel="noopener">BoardEdge</a>.')
+    valori = {"{{FAVICON}}": FAVICON, "{{TELEGRAM}}": TELEGRAM_CANALE, "{{STATISTICHE}}": pagina.statistiche(),
+              "{{DATA}}": datetime.now().strftime("%d/%m/%Y"), "{{ANNO}}": str(datetime.now().year),
+              "{{TITOLARE}}": titolare, "{{CONTATTI}}": contatti}
+    with open(os.path.join(WEB_DIR, "legale.html"), encoding="utf-8") as f:
         pagina_html = f.read()
     for k, v in valori.items():
         pagina_html = pagina_html.replace(k, v)
@@ -81,5 +102,9 @@ def crea(cartella):
     f = os.path.join(cartella, "index.html")
     with open(f, "w", encoding="utf-8") as fh:
         fh.write(html(pagina.ULTIMI))
+    # note legali in /legale/ (pagina fissa, indipendente dai dati)
+    os.makedirs(os.path.join(cartella, "legale"), exist_ok=True)
+    with open(os.path.join(cartella, "legale", "index.html"), "w", encoding="utf-8") as fh:
+        fh.write(legale())
     log.info("Landing page creata: %s", f)
     return f

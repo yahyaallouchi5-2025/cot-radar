@@ -184,6 +184,10 @@ TERMINALE = "terminale"
 # Qui va il "Website ID" del sito su Umami (pubblico: compare comunque nel codice della pagina, NON e' una chiave
 # segreta). Vuoto = statistiche spente.
 STATISTICHE_ID = "dbfc644a-1987-4769-9339-f231a41ecc8c"
+# NOTE LEGALI (pagina /legale/, vedi web/legale.html e vetrina.py). TITOLARE vuoto = descrizione generica del
+# servizio; prima di vendere abbonamenti va indicato chi gestisce il servizio (nome o ditta, P.IVA, sede).
+TITOLARE = ""
+CONTATTO_EMAIL = ""      # e-mail pubblica per segnalazioni e richieste; vuota = contatto tramite il canale Telegram
 OUT = os.path.join(ROOT, "cot_radar.html")                             # dashboard creata in locale
 REGISTRO = os.path.join(ROOT, "dati", "registro.log")                  # file di registro (a rotazione)
 STATO = os.path.join(ROOT, "dati", "stato.json")                       # riepilogo dell'ultima esecuzione

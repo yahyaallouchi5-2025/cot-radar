@@ -1,0 +1,113 @@
+<!doctype html>
+<!--
+  legale.html - NOTE LEGALI di BoardEdge (pubblicata in /legale/): termini di utilizzo, diritto d'autore,
+  avvertenze sui rischi, privacy e statistiche, fonti dei dati, contatti.
+  cot_radar/vetrina.py sostituisce i segnaposto tra doppie graffe (titolare, contatti, data, statistiche).
+  ATTENZIONE: testo redatto come base di partenza. Prima di attivare servizi a pagamento va fatto rivedere
+  da un professionista (avvocato) insieme alla verifica CONSOB.
+-->
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Note legali · BoardEdge</title>
+<meta name="description" content="Termini di utilizzo, diritto d'autore, avvertenze sui rischi e privacy di BoardEdge.">
+<meta name="theme-color" content="#050c1d">
+<link rel="icon" href="{{FAVICON}}">
+<style>
+/* stessi colori della landing page */
+:root{--bg:#040b1a;--line:#1b3260;--ink:#f1f5fb;--ink2:#c3d1e6;--mute:#8ea3c4;--acc:#2ec4b6;--acc2:#5b9bff}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:linear-gradient(180deg,#040b1a,#061331 50%,#040b1a);color:var(--ink);font:16px/1.75 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#9ff3e9}
+.box{max-width:900px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+header{position:sticky;top:0;z-index:5;background:rgba(4,11,26,.85);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid rgba(27,50,96,.7)}
+header .box{display:flex;align-items:center;height:66px;gap:20px;max-width:1200px}
+.blogo{display:flex;align-items:stretch;gap:10px;text-decoration:none;color:var(--ink)}
+.blogo i{width:5px;border-radius:3px;background:linear-gradient(180deg,#3ee0cf,#5b9bff)}
+.blogo b{font:900 18px/.9 system-ui,sans-serif;letter-spacing:-.6px}
+.g{background:linear-gradient(100deg,#3ee0cf,#5b9bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+header nav{margin-left:auto;display:flex;gap:20px;font-size:14px}header nav a{color:var(--ink2);text-decoration:none}
+h1{font:800 clamp(32px,4vw,46px)/1.1 system-ui,sans-serif;letter-spacing:-1.2px;margin:56px 0 10px}
+.agg{color:var(--mute);font-size:14px;margin:0 0 30px}
+.indice{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 20px}
+.indice a{text-decoration:none;color:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:14px}
+.indice a:hover{border-color:var(--acc);color:var(--ink)}
+section{padding:34px 0;border-top:1px solid rgba(27,50,96,.6);scroll-margin-top:80px}
+h2{font:750 24px/1.25 system-ui,sans-serif;margin:0 0 14px;letter-spacing:-.3px}
+h2 small{display:block;font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--acc);margin-bottom:6px}
+p,li{color:var(--ink2)}ul{padding-left:20px}li{margin-bottom:6px}
+.nota{border:1px solid rgba(46,196,182,.4);background:rgba(46,196,182,.07);border-radius:14px;padding:16px 20px;color:var(--ink2);font-size:15px}
+footer{padding:36px 0 56px;color:var(--mute);font-size:13px;border-top:1px solid rgba(27,50,96,.7);margin-top:30px}
+@media (max-width:640px){header nav{display:none}}
+</style></head>
+<body>
+<header><div class="box"><a class="blogo" href="../" aria-label="BoardEdge"><i></i><b>BOARD<br><span class="g">EDGE</span></b></a>
+ <nav><a href="../">Home</a><a href="../terminale/">Terminale</a><a href="{{TELEGRAM}}" target="_blank" rel="noopener">Telegram</a></nav></div></header>
+
+<main class="box">
+ <h1>Note legali</h1>
+ <p class="agg">Ultimo aggiornamento: {{DATA}}</p>
+ <nav class="indice"><a href="#termini">Termini di utilizzo</a><a href="#diritti">Diritto d'autore</a><a href="#rischi">Avvertenze sui rischi</a><a href="#privacy">Privacy e statistiche</a><a href="#fonti">Fonti dei dati</a><a href="#contatti">Contatti</a></nav>
+
+ <section id="termini"><h2><small>1</small>Termini di utilizzo</h2>
+  <p>BoardEdge (di seguito «il Servizio») è {{TITOLARE}}. Accedendo al sito, al terminale o al canale Telegram, l'utente accetta i presenti termini. Se non li accetta, è invitato a non utilizzare il Servizio.</p>
+  <p><b>Licenza d'uso.</b> All'utente è concessa una licenza personale, non esclusiva, non trasferibile e revocabile per consultare i contenuti a scopo esclusivamente personale, informativo e di studio.</p>
+  <p><b>È vietato</b>, senza autorizzazione scritta:</p>
+  <ul>
+   <li>copiare, riprodurre, ripubblicare o redistribuire, in tutto o in parte, segnali, punteggi, analisi, testi, grafici e codice del Servizio, anche rielaborati;</li>
+   <li>rivendere o mettere a disposizione i contenuti in gruppi, canali, siti, newsletter o servizi a pagamento o gratuiti di terzi;</li>
+   <li>estrarre dati in modo automatizzato (scraping, bot, crawler) o reimpiegare in modo sistematico parti della banca dati;</li>
+   <li>decompilare, copiare o imitare il software, i modelli e l'interfaccia del terminale, o usarli per creare un servizio concorrente;</li>
+   <li>rimuovere o alterare i marchi, i riferimenti a BoardEdge e le indicazioni sui diritti.</li>
+  </ul>
+  <p>È consentito condividere il link al sito o ai messaggi del canale Telegram, citando BoardEdge come fonte.</p>
+  <p><b>Violazioni.</b> In caso di violazione BoardEdge può sospendere o revocare l'accesso senza preavviso, chiedere la rimozione dei contenuti copiati alle piattaforme che li ospitano e agire nelle sedi competenti per la tutela dei propri diritti e il risarcimento dei danni.</p>
+  <p><b>Modifiche.</b> Il Servizio e i presenti termini possono essere modificati in qualsiasi momento; la versione in vigore è quella pubblicata su questa pagina. I termini sono regolati dalla legge italiana.</p>
+ </section>
+
+ <section id="diritti"><h2><small>2</small>Diritto d'autore e proprietà intellettuale</h2>
+  <p>Il nome e il logo BoardEdge, i testi, la grafica, l'interfaccia, il software, i modelli di calcolo e la banca dati dei segnali sono opera originale e sono protetti dalla Legge 22 aprile 1941 n. 633 sul diritto d'autore, compreso il diritto del costitutore di una banca dati (artt. 102-bis e seguenti), e dalle norme sulla concorrenza sleale (art. 2598 del Codice civile).</p>
+  <p>© {{ANNO}} BoardEdge. Tutti i diritti riservati. Ogni utilizzo non espressamente autorizzato è vietato.</p>
+  <p>I dati grezzi provengono da fonti pubbliche (vedi <a href="#fonti">Fonti dei dati</a>) e restano di proprietà dei rispettivi titolari; sono protette l'elaborazione, la selezione e la presentazione realizzate da BoardEdge.</p>
+  <p>Per segnalare un uso non autorizzato dei contenuti: vedi <a href="#contatti">Contatti</a>.</p>
+ </section>
+
+ <section id="rischi"><h2><small>3</small>Avvertenze sui rischi</h2>
+  <p>BoardEdge ha finalità esclusivamente informative, didattiche e di studio. I contenuti (segnali, punteggi, statistiche, stagionalità, analisi, notizie e ogni altra informazione) <b>non costituiscono consulenza finanziaria</b>, consulenza in materia di investimenti, raccomandazione personalizzata, sollecitazione o offerta all'acquisto o alla vendita di strumenti finanziari, ai sensi della normativa vigente (tra cui il D.Lgs. 58/1998 – TUF e la direttiva MiFID II).</p>
+  <ul>
+   <li>Le analisi sono generiche: non tengono conto della situazione finanziaria, degli obiettivi o della tolleranza al rischio del singolo utente.</li>
+   <li>I modelli sono stime statistiche basate su dati storici; i risultati passati, compresi quelli del backtest, non sono indicativi di quelli futuri.</li>
+   <li>I dati possono contenere ritardi, errori o interruzioni dovuti alle fonti o al Servizio.</li>
+   <li>Il trading su futures, forex, CFD e criptovalute comporta un rischio elevato di perdita, che con la leva finanziaria può superare il capitale investito.</li>
+  </ul>
+  <p>Ogni decisione di investimento è presa dall'utente in autonomia e sotto la propria esclusiva responsabilità. BoardEdge non risponde di perdite o danni derivanti dall'uso delle informazioni pubblicate.</p>
+ </section>
+
+ <section id="privacy"><h2><small>4</small>Privacy e statistiche</h2>
+  <ul>
+   <li><b>Nessun cookie di profilazione.</b> Il sito non usa cookie pubblicitari né di tracciamento.</li>
+   <li><b>Statistiche di visita anonime</b> tramite Umami: numero di visite, pagine viste, provenienza, tipo di dispositivo, paese e click sui pulsanti, raccolti in forma aggregata, senza cookie e senza identificare la persona. Servono solo a migliorare il Servizio.</li>
+   <li><b>Pass gratuito.</b> Il browser conserva un'indicazione tecnica (archiviazione locale «eb_pass») per ricordare l'accesso al terminale; non contiene dati personali e si può cancellare dalle impostazioni del browser.</li>
+   <li><b>Hosting.</b> Il sito è ospitato su GitHub Pages: come ogni server web, il fornitore può registrare dati tecnici di connessione (ad esempio l'indirizzo IP) per sicurezza e funzionamento.</li>
+   <li><b>Telegram.</b> L'iscrizione al canale avviene su Telegram ed è regolata dalla privacy di Telegram; BoardEdge non vede i dati personali degli iscritti.</li>
+  </ul>
+ </section>
+
+ <section id="fonti"><h2><small>5</small>Fonti dei dati</h2>
+  <ul>
+   <li>U.S. Commodity Futures Trading Commission (CFTC), Commitments of Traders.</li>
+   <li>FRED, Federal Reserve Bank of St. Louis.</li>
+   <li>Banca Centrale Europea, ECB Data Portal.</li>
+   <li>Calendario delle notizie: <a href="https://www.financecalendar.com" target="_blank" rel="noopener">financecalendar.com</a>.</li>
+  </ul>
+  <p>Le fonti non sono affiliate a BoardEdge e non approvano il Servizio.</p>
+ </section>
+
+ <section id="contatti"><h2><small>6</small>Contatti</h2>
+  <p>{{CONTATTI}}</p>
+  <div class="nota">Questa pagina descrive le regole del Servizio in forma chiara. In caso di dubbi su un utilizzo dei contenuti, chiedi prima un'autorizzazione.</div>
+ </section>
+</main>
+<footer><div class="box">© {{ANNO}} BoardEdge · Tutti i diritti riservati · <a href="../">Torna alla home</a></div></footer>
+<script>
+{{STATISTICHE}}
+</script>
+</body></html>

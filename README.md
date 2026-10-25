@@ -191,6 +191,14 @@ Limite: si può misurare solo dove c'è un prezzo storico gratuito (cambi, indic
 
 Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il risultato completo finisce anche in `storico/confronto.json`. Test: `python -m unittest tests.test_archivi_cot -v`.
 
+## Landing e note legali (v6.23)
+- Landing: sezione **Il metodo** (COT + politica monetaria + notizie macro + stagionalità), orizzonte swing e
+  medio-lungo periodo, **domande frequenti**, piè di pagina con link legali.
+- **Note legali** in `/legale/` (`web/legale.html`, scritta da `vetrina.legale()`): termini di utilizzo, diritto
+  d'autore, avvertenze sui rischi, privacy e statistiche, fonti, contatti. Titolare e e-mail pubblica in
+  `config.TITOLARE` e `config.CONTATTO_EMAIL` (vuoti = testo generico e contatto via Telegram). Testo di base:
+  da far rivedere a un avvocato prima di vendere abbonamenti.
+
 ## Statistiche di visita anonime (v6.21: `web/statistiche.js`)
 - **Cosa**: visitatori, pagine viste, provenienza, telefono/PC e i click che contano (pass gratuito, Telegram, schede
   del terminale, grafici aperti, filtri, backtest, stagionalità, guida), più fin dove si scorre la landing ("sezione")

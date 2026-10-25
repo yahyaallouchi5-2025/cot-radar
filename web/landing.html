@@ -16,7 +16,7 @@
 -->
 <html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>BoardEdge · Il posizionamento istituzionale, settimana per settimana</title>
-<meta name="description" content="Segnali swing di giorni e settimane dal posizionamento di hedger istituzionali e grandi speculatori (report CFTC) su {{N_MERCATI}} mercati, con macro e stagionalità accanto a ogni segnale.">
+<meta name="description" content="Analisi quantitativa per lo swing e il medio-lungo periodo: segnali dal posizionamento di hedger istituzionali e grandi speculatori (report CFTC) su {{N_MERCATI}} mercati, con politica monetaria, notizie macro e stagionalità accanto a ogni segnale.">
 <meta name="theme-color" content="#050c1d">
 <meta property="og:title" content="BoardEdge · Il posizionamento istituzionale, settimana per settimana">
 <meta property="og:description" content="Pochi guardano chi muove il prezzo. {{N_SEGNALI}} segnali attivi questa settimana.">
@@ -146,8 +146,44 @@ section{padding:110px 0}
 .finale h2{font:800 clamp(30px,4vw,52px)/1.08 "Inter Display","Inter",system-ui;letter-spacing:-1.5px;margin:0 0 16px}
 .finale p{color:var(--ink2);max-width:620px;margin:0 auto 32px;font-size:18px}
 .finale .cta{justify-content:center}
-footer{padding:44px 0 64px;color:var(--mute);font-size:13px;border-top:1px solid rgba(27,50,96,.7);margin-top:60px}
-footer .box{display:grid;gap:10px}
+/* il metodo: quattro fonti -> una direzione */
+.pilastri{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+@media (max-width:1000px){.pilastri{grid-template-columns:1fr 1fr}}@media (max-width:600px){.pilastri{grid-template-columns:1fr}}
+.pilastro{padding:28px 26px;border-radius:22px;background:linear-gradient(180deg,rgba(11,29,66,.75),rgba(7,20,49,.5));border:1px solid var(--line);position:relative}
+.pilastro .dom{font:800 12px "Inter",system-ui;letter-spacing:1.2px;text-transform:uppercase;color:var(--acc2)}
+.pilastro h3{font:750 20px/1.25 "Inter Display","Inter",system-ui;margin:8px 0 10px;letter-spacing:-.3px}
+.pilastro p{margin:0;color:var(--ink2);font-size:15px}
+.pilastro .ic{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;margin-bottom:16px;background:rgba(46,196,182,.12);border:1px solid rgba(46,196,182,.35)}
+.pilastro .ic svg{width:22px;height:22px;fill:none;stroke:#3ee0cf;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.unione{margin-top:26px;display:grid;grid-template-columns:1.1fr .9fr;gap:22px}
+@media (max-width:900px){.unione{grid-template-columns:1fr}}
+.unione>div{padding:32px 34px;border-radius:24px;border:1px solid var(--line);background:rgba(10,22,48,.7)}
+.unione h3{margin:0 0 12px;font:750 22px/1.25 "Inter Display","Inter",system-ui;letter-spacing:-.3px}
+.unione p{margin:0 0 12px;color:var(--ink2)}.unione p:last-child{margin:0}
+.unione ul{margin:0;padding:0;list-style:none;display:grid;gap:14px}
+.unione li{display:grid;grid-template-columns:28px 1fr;gap:12px;color:var(--ink2)}
+.unione li b{color:var(--ink);display:block}
+.unione li i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:800 13px "Inter",system-ui;font-style:normal;color:#03141a;background:linear-gradient(135deg,#46e6d5,#5b9bff)}
+.unione .evid{border-color:rgba(46,196,182,.45);background:radial-gradient(500px 220px at 0 0,rgba(46,196,182,.14),transparent 70%),rgba(10,22,48,.75)}
+/* domande frequenti */
+.faq{display:grid;gap:12px;max-width:900px}
+.faq details{border:1px solid var(--line);border-radius:18px;background:rgba(10,22,48,.7);padding:0 26px;transition:border-color .2s}
+.faq details[open]{border-color:rgba(46,196,182,.5)}
+.faq summary{cursor:pointer;list-style:none;padding:22px 0;font:700 17px "Inter",system-ui;display:flex;justify-content:space-between;gap:16px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";color:var(--acc);font-size:22px;line-height:1;transition:transform .2s}
+.faq details[open] summary::after{transform:rotate(45deg)}
+.faq details p{margin:0 0 22px;color:var(--ink2)}
+/* pie' di pagina */
+footer{padding:64px 0 40px;color:var(--mute);font-size:14px;border-top:1px solid rgba(27,50,96,.7);margin-top:60px;background:rgba(4,11,26,.6)}
+.piede{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px}
+@media (max-width:800px){.piede{grid-template-columns:1fr 1fr}.piede>div:first-child{grid-column:1/-1}}
+.piede p{margin:14px 0 0;max-width:360px;line-height:1.6}
+.piede h4{margin:0 0 14px;font:800 12px "Inter",system-ui;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink2)}
+.piede a{display:block;text-decoration:none;color:var(--mute);margin-bottom:10px;transition:color .2s}.piede a:hover{color:var(--ink)}
+.piede a.blogo{display:flex;margin:0;color:var(--ink)}
+.firma{margin-top:44px;padding-top:24px;border-top:1px solid rgba(27,50,96,.6);display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;font-size:12.5px}
+.avviso{margin-top:16px;font-size:12px;line-height:1.6;color:#6f84a6;max-width:980px}
 /* comparsa durante lo scroll: dal basso, una card dopo l'altra (ritardo in --d) */
 .appare{opacity:0;transform:translateY(34px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1);transition-delay:var(--d,0s)}
 .appare.vista{opacity:1;transform:none}
@@ -157,17 +193,17 @@ footer .box{display:grid;gap:10px}
 
 <header id="testata" data-pos="testata"><div class="box">
  <a class="blogo" href="#" aria-label="BoardEdge"><i></i><b>BOARD<br><span class="g">EDGE</span></b></a>
- <nav class="voci"><a href="#vantaggio">Il vantaggio</a><a href="#settimana">La settimana</a><a href="#swing">Per lo swing</a><a href="{{TELEGRAM}}" target="_blank" rel="noopener">Telegram</a></nav>
+ <nav class="voci"><a href="#vantaggio">Il vantaggio</a><a href="#metodo">Il metodo</a><a href="#settimana">La settimana</a><a href="#faq">Domande</a><a href="{{TELEGRAM}}" target="_blank" rel="noopener">Telegram</a></nav>
  <button class="btn pri pic" data-entra><span data-etichetta>Entra gratis</span></button>
 </div></header>
 
 <main>
  <div class="box hero">
   <div>
-   <span class="eyebrow">Segnali swing · giorni e settimane</span>
+   <span class="eyebrow">Swing e medio-lungo periodo</span>
    <!-- titolo scritto a macchina: il testo completo resta nell'aria-label per lettori di schermo e motori di ricerca -->
    <h1 id="titolo" aria-label="Guarda dove si posizionano i grandi speculatori. Prima di entrare a mercato."><span id="tt"></span><span class="cursore"></span></h1>
-   <p class="sub">La maggior parte dei trader guarda il prezzo. Pochi guardano <b>chi lo muove</b>. BoardEdge legge ogni settimana il posizionamento di <b>hedger istituzionali e grandi speculatori</b> su {{N_MERCATI}} mercati futures e lo trasforma in segnali pensati per lo <b>swing di giorni e settimane</b>.</p>
+   <p class="sub">La maggior parte dei trader guarda il prezzo. Pochi guardano <b>chi lo muove</b>. BoardEdge legge ogni settimana il posizionamento di <b>hedger istituzionali e grandi speculatori</b> su {{N_MERCATI}} mercati futures e lo trasforma in segnali per lo <b>swing e l'investimento di medio-lungo periodo</b>.</p>
    <div class="cta" data-pos="hero">
     <button class="btn pri" data-entra><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span data-etichetta>Ottieni il pass gratuito</span></button>
     <a class="btn sec" href="{{TELEGRAM}}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M21.5 3.5L2.8 10.7c-.9.4-.9 1.6.1 1.9l4.6 1.5 1.8 5.6c.3.8 1.3 1 1.9.4l2.6-2.5 4.7 3.5c.7.5 1.7.1 1.9-.7l3.1-15c.2-1.1-.9-1.9-2-1.4z"/></svg>Canale Telegram</a>
@@ -200,12 +236,42 @@ footer .box{display:grid;gap:10px}
   <div class="titsez appare"><small>Il vantaggio</small><h2>Tre letture che di solito richiedono ore. In una schermata.</h2>
    <p>Ogni segnale nasce dal posizionamento, viene filtrato dal contesto macro e misurato contro la stagionalità. Tu vedi solo la sintesi.</p></div>
   <div class="livelli">
-   <div class="livello appare"><div class="n">01</div><div><span class="tag">Posizionamento COT</span><h3>Dove stanno i soldi grandi, prima che si veda sul grafico.</h3></div>
+   <div class="livello appare"><div class="n">01</div><div><span class="tag">Posizionamento COT</span><h3>Dove si posiziona il capitale istituzionale, prima che lo mostri il grafico.</h3></div>
     <p>Hedger istituzionali e grandi speculatori dichiarano ogni settimana le loro posizioni sui futures. Sapere da che parte stanno, e da quante settimane, significa leggere la direzione su cui si sta costruendo il trend.</p></div>
    <div class="livello appare" style="--d:.08s"><div class="n">02</div><div><span class="tag">Macro semplificata</span><h3>Il rumore che allarga il drawdown, ridotto a un colore.</h3></div>
     <p>Tassi, spread, volatilità, dati USA: nel breve termine sono noiosi da interpretare e pesano soprattutto sul drawdown. BoardEdge li riassume in un verdetto: a favore, contro o neutro rispetto al segnale.</p></div>
    <div class="livello appare" style="--d:.16s"><div class="n">03</div><div><span class="tag">Stagionalità accanto al segnale</span><h3>Come si è comportata questa stessa settimana negli anni passati.</h3></div>
     <p>Dal venerdì in cui esce il report, per ogni mercato: quante volte è salito o sceso nella stessa settimana dell'anno. Favorevole, non favorevole o neutra, accanto a ogni segnale, aggiornata al ritmo del COT.</p></div>
+  </div>
+ </div></section>
+
+ <!-- IL METODO: perche' serve la combinazione quantitativa per lo swing (quattro fonti indipendenti) -->
+ <section id="metodo" data-ev-vista="metodo"><div class="box">
+  <div class="titsez appare"><small>Il metodo</small><h2>Quattro fonti indipendenti. Una sola direzione.</h2>
+   <p>Nessun indicatore, da solo, basta a reggere un'operazione di settimane. Il vantaggio statistico nasce quando fonti che non dipendono l'una dall'altra raccontano la stessa storia: è questo che BoardEdge misura, ogni giorno, su ogni mercato.</p></div>
+  <div class="pilastri">
+   <div class="pilastro appare"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c.8-3.5 3.2-5.5 6-5.5s5.2 2 6 5.5"/><path d="M16 4.5a3 3 0 0 1 0 6M18 14.8c1.7.8 2.7 2.6 3 5.2"/></svg></div>
+    <span class="dom">Chi compra e chi vende</span><h3>Report COT</h3>
+    <p>Il posizionamento dichiarato da hedger istituzionali e grandi speculatori sui futures, settimana dopo settimana. È il motore del segnale: mostra dove si sta accumulando il capitale.</p></div>
+   <div class="pilastro appare" style="--d:.08s"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10M9.5 21V10M14.5 21V10M19 21V10"/><path d="M2.5 10 12 3.5 21.5 10z"/></svg></div>
+    <span class="dom">Perché si muove il denaro</span><h3>Politica monetaria</h3>
+    <p>Tassi a 2 anni, differenziali tra valute, rendimenti reali e liquidità della Fed: le condizioni che rendono una valuta o un asset più o meno attraente nel tempo.</p></div>
+   <div class="pilastro appare" style="--d:.16s"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h3"/></svg></div>
+    <span class="dom">Quando arriva la volatilità</span><h3>Notizie macro</h3>
+    <p>Fed, BCE, inflazione, occupazione, PIL: il calendario dei dati che possono accelerare o mettere alla prova una posizione, con la reazione del mercato misurata dopo l'uscita.</p></div>
+   <div class="pilastro appare" style="--d:.24s"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 19c3-9 5-9 8-4s5 5 8-6"/><path d="M4 4v15h16"/></svg></div>
+    <span class="dom">Come è andata in passato</span><h3>Stagionalità</h3>
+    <p>Quante volte, negli anni, lo stesso mercato è salito o sceso nella stessa finestra di calendario: un vento a favore o contro che si somma al segnale.</p></div>
+  </div>
+  <div class="unione">
+   <div class="evid appare"><h3>Perché la combinazione conta, nello swing</h3>
+    <p>Su un orizzonte di giorni e settimane il prezzo attraversa inevitabilmente fasi contrarie. A fare la differenza non è indovinare il punto d'ingresso perfetto, ma sapere <b>da che parte sta la corrente</b> e <b>dove può nascere il rischio</b>.</p>
+    <p>Il segnale parte dal posizionamento COT; politica monetaria e notizie ne correggono la forza; la stagionalità dice se il calendario gioca a favore. Quando tutto concorda hai il vento alle spalle; quando qualcosa va contro, lo sai prima di aprire la posizione.</p></div>
+   <div class="appare" style="--d:.1s"><ul>
+    <li><i>1</i><span><b>Entrare con il flusso istituzionale</b>non contro chi ha la forza di muovere il mercato.</span></li>
+    <li><i>2</i><span><b>Conoscere in anticipo le giornate a rischio</b>gli annunci che possono allargare il drawdown.</span></li>
+    <li><i>3</i><span><b>Dimensionare lo stop sui dati</b>quanto va contro, storicamente, un segnale prima di andare a favore.</span></li>
+   </ul></div>
   </div>
  </div></section>
 
@@ -223,19 +289,33 @@ footer .box{display:grid;gap:10px}
 
  <!-- PER LO SWING -->
  <section id="swing" data-ev-vista="swing"><div class="box">
-  <div class="titsez appare"><small>Per lo swing</small><h2>Non segnali da scalping. Direzione per giorni e settimane.</h2></div>
+  <div class="titsez appare"><small>Orizzonte d'investimento</small><h2>Il rumore dura ore.<br>Le tendenze durano mesi.</h2>
+   <p>BoardEdge è costruito per lo swing trading e per l'investimento di medio-lungo periodo: posizioni che si costruiscono in settimane e si mantengono finché il posizionamento istituzionale le sostiene.</p></div>
   <div class="per">
-   <div class="dato appare"><b>Giorni → settimane</b><p>L'orizzonte naturale del COT: il posizionamento istituzionale cambia lentamente e guida i movimenti di fondo.</p></div>
+   <div class="dato appare"><b>Settimane → mesi</b><p>L'orizzonte naturale del COT: il posizionamento istituzionale cambia lentamente e guida i movimenti di fondo, non le oscillazioni di giornata.</p></div>
    <div class="dato appare" style="--d:.08s"><b>dal {{BT_DAL}}</b><p>Ogni regola è provata sullo storico, compreso quanto un trade va contro prima di andare a favore, in punti e in volatilità.</p></div>
    <div class="dato appare" style="--d:.16s"><b>{{N_MERCATI}} + {{N_COPPIE}}</b><p>Mercati futures e coppie Forex: valute, indici, tassi, energia, metalli, agricoli e crypto nello stesso terminale.</p></div>
+  </div>
+ </div></section>
+
+ <!-- DOMANDE FREQUENTI -->
+ <section id="faq" data-ev-vista="faq"><div class="box">
+  <div class="titsez appare"><small>Domande frequenti</small><h2>Tutto quello che serve sapere, prima di entrare.</h2></div>
+  <div class="faq appare">
+   <details><summary>Che cos'è il report COT?</summary><p>Il Commitments of Traders è il report pubblicato ogni venerdì dalla CFTC, l'autorità statunitense dei mercati futures. Riporta le posizioni aperte da hedger commerciali, grandi speculatori e piccoli operatori su ogni mercato regolamentato: è una delle poche finestre pubbliche sul comportamento del capitale istituzionale.</p></details>
+   <details><summary>Ogni quanto si aggiornano i segnali?</summary><p>Il posizionamento si aggiorna ogni venerdì sera, all'uscita del report. Il contesto (politica monetaria, notizie, mercato) si aggiorna ogni giorno, per seguire l'evoluzione della settimana.</p></details>
+   <details><summary>A chi è rivolto BoardEdge?</summary><p>A chi opera su orizzonti di giorni, settimane o mesi: swing trader e investitori di medio-lungo periodo che vogliono decisioni basate su dati, non su opinioni. Non è pensato per lo scalping o l'operatività intraday.</p></details>
+   <details><summary>I segnali sono una consulenza finanziaria?</summary><p>No. BoardEdge pubblica analisi statistiche di dati pubblici con finalità informative e di studio. Non fornisce raccomandazioni personalizzate: ogni decisione di investimento resta tua. Trovi i dettagli nelle <a href="legale/#rischi">avvertenze sui rischi</a>.</p></details>
+   <details><summary>Quanto costa?</summary><p>L'accesso al terminale con il pass gratuito e il canale Telegram sono gratuiti. Eventuali servizi a pagamento saranno annunciati in modo chiaro e non cambieranno ciò che è già gratuito senza preavviso.</p></details>
+   <details><summary>Da dove provengono i dati?</summary><p>CFTC per il posizionamento, Federal Reserve Bank of St. Louis (FRED) e Banca Centrale Europea per tassi e mercati, financecalendar.com per il calendario delle notizie. Il backtest usa lo storico pubblico dal {{BT_DAL}}.</p></details>
   </div>
  </div></section>
 
  <!-- CHIAMATA FINALE -->
  <section data-ev-vista="finale" data-pos="finale"><div class="box">
   <div class="finale appare">
-   <h2>Venerdì esce il prossimo report.<br><span class="g">Sarai già posizionato a guardarlo?</span></h2>
-   <p>Entra nel terminale con il pass gratuito oppure ricevi ogni venerdì il riepilogo dei segnali sul canale Telegram.</p>
+   <h2>Ogni venerdì il nuovo report.<br><span class="g">L'analisi BoardEdge arriva su Telegram.</span></h2>
+   <p>Entra gratis nel terminale e iscriviti al canale: ogni venerdì il riepilogo dei segnali, l'analisi del report COT e le notizie macro della settimana. Investi con metodo, a partire da oggi.</p>
    <div class="cta">
     <button class="btn pri" data-entra><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span data-etichetta>Ottieni il pass gratuito</span></button>
     <a class="btn sec" href="{{TELEGRAM}}" target="_blank" rel="noopener">Iscriviti al canale</a>
@@ -245,8 +325,14 @@ footer .box{display:grid;gap:10px}
 </main>
 
 <footer><div class="box">
- <div><b style="color:var(--ink2)">BoardEdge</b> · dati CFTC, Federal Reserve (FRED), BCE · aggiornato il {{AGGIORNATO}} · statistiche di visita anonime, senza cookie</div>
- <div>Le informazioni pubblicate sono analisi statistiche di dati pubblici e non costituiscono consulenza finanziaria né raccomandazioni personalizzate di investimento. I risultati passati non garantiscono quelli futuri. Il trading comporta il rischio di perdere il capitale.</div>
+ <div class="piede">
+  <div><a class="blogo" href="#" aria-label="BoardEdge"><i></i><b>BOARD<br><span class="g">EDGE</span></b></a>
+   <p>Analisi quantitativa del posizionamento istituzionale per lo swing e l'investimento di medio-lungo periodo.</p></div>
+  <div><h4>Prodotto</h4><a href="terminale/" data-ev="footer_terminale">Terminale</a><a href="{{TELEGRAM}}" target="_blank" rel="noopener">Canale Telegram</a><a href="#metodo">Il metodo</a><a href="#faq">Domande frequenti</a></div>
+  <div><h4>Note legali</h4><a href="legale/#termini">Termini di utilizzo</a><a href="legale/#diritti">Diritto d'autore</a><a href="legale/#rischi">Avvertenze sui rischi</a><a href="legale/#privacy">Privacy e statistiche</a></div>
+ </div>
+ <div class="firma"><span>© {{ANNO}} BoardEdge · Tutti i diritti riservati.</span><span>Fonti: CFTC, FRED, BCE · <a href="legale/#fonti" style="display:inline;margin:0">dettagli</a></span></div>
+ <div class="avviso">Le informazioni pubblicate sono analisi statistiche di dati pubblici con finalità informative e di studio: non costituiscono consulenza finanziaria né raccomandazioni personalizzate di investimento. I risultati passati non garantiscono quelli futuri. Il trading comporta il rischio di perdita del capitale.</div>
 </div></footer>
 
 <!-- statistiche anonime senza cookie: prima degli script della pagina (vedi web/statistiche.js) -->

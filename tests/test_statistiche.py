@@ -29,6 +29,16 @@ class Statistiche(unittest.TestCase):
         self.assertIn("window.ebStat", html)
         self.assertNotIn("{{", html)                       # nessun segnaposto rimasto
         self.assertIn('data-ev-vista="vantaggio"', html)
+        self.assertIn('id="metodo"', html)
+        self.assertIn('href="legale/#termini"', html)
+
+    def test_pagina_legale(self):
+        html = vetrina.legale()
+        self.assertNotIn("{{", html)
+        for sez in ("termini", "diritti", "rischi", "privacy", "fonti", "contatti"):
+            self.assertIn(f'id="{sez}"', html)
+        self.assertIn("window.ebStat", html)
+        self.assertIn("Legge 22 aprile 1941 n. 633", html)
 
 
 if __name__ == "__main__":

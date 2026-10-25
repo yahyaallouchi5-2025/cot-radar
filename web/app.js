@@ -454,7 +454,8 @@ $("guide").innerHTML=`
 <h3>11. Limiti</h3><ul><li>Sono stime statistiche, non certezze: le relazioni cambiano nel tempo.</li><li>Il COT ha 3 giorni di ritardo; i mutui circa 5 settimane.</li><li>Oro, materie agricole e altri strumenti senza prezzo gratuito su FRED usano solo il COT.</li><li>Non e' una consulenza finanziaria.</li></ul>`;
 /* AVVERTENZA LEGALE: testo fisso in fondo a ogni pagina (tutela: il sito e' informativo, non consulenza) */
 $("foot").innerHTML=`<div class="legale">BoardEdge ha finalit&agrave; esclusivamente informative, didattiche e di studio. I contenuti (segnali, punteggi, statistiche, stagionalit&agrave;, analisi e qualsiasi altra informazione) non costituiscono consulenza finanziaria, consulenza in materia di investimenti, raccomandazione personalizzata, sollecitazione o offerta all'acquisto o alla vendita di strumenti finanziari, ai sensi della normativa vigente (tra cui D.Lgs. 58/1998 - TUF e direttiva MiFID II). I modelli sono stime statistiche e i risultati passati non sono indicativi di quelli futuri. Il trading su futures, forex, CFD e criptovalute comporta un rischio elevato di perdita, anche superiore al capitale investito. Ogni decisione di investimento &egrave; presa in autonomia e sotto la propria esclusiva responsabilit&agrave;.</div>
- <div>Fonti: CFTC Commitments of Traders (Legacy, Futures Only) &middot; FRED, Federal Reserve Bank of St. Louis &middot; Banca Centrale Europea, ECB Data Portal. Generato il ${M.now}.</div>`;
+ <div>Fonti: CFTC Commitments of Traders (Legacy, Futures Only) &middot; FRED, Federal Reserve Bank of St. Louis &middot; Banca Centrale Europea, ECB Data Portal. Generato il ${M.now}.</div>
+ <div><a href="../legale/">Termini di utilizzo, diritto d'autore e privacy</a> &middot; &copy; ${new Date().getFullYear()} BoardEdge, tutti i diritti riservati.</div>`;
 }catch(e){fail('Metodo','guide',e);}
 
 /* ---------- sidebar ----------
