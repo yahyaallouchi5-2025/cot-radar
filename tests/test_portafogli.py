@@ -6,6 +6,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from datetime import date, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -99,6 +100,37 @@ class Portafogli(unittest.TestCase):
         self.assertTrue(all(x["r"] < 0 and x["dd"] <= x["r"] for x in m["anni"]))
         self.assertEqual(m["positivi"], 0)
         self.assertEqual(m["mercati"][0]["k"], "SP500")
+
+    def test_download_ritentato_e_validato(self):
+        chiamate = []
+        def finto(req, timeout=0):
+            chiamate.append(1)
+            raise OSError("503")
+        with mock.patch.object(P.urllib.request, "urlopen", finto):
+            self.assertIsNone(P.scarica_yahoo("SPY", attesa=0))
+        self.assertEqual(len(chiamate), P.TENTATIVI)                             # riprova prima di arrendersi
+        rotta = [((date(2020, 1, 1) + timedelta(days=i)).isoformat(), 10.0) for i in range(40)]
+        rotta[20] = (rotta[20][0], 100.0)                                        # salto assurdo: serie scartata
+        self.assertIsNone(P._valida(rotta))
+
+    def test_yahoo_giu_si_smette_e_si_usa_la_copia(self):
+        lunga = [((date(2020, 1, 1) + timedelta(days=i)).isoformat(), 10.0 + i) for i in range(100)]
+        P._scrivi(self.dir, "SPY", lunga)
+        chiesti = []
+        out = P.prezzi(scarica=lambda t: chiesti.append(t), cartella=self.dir, oggi=date(2026, 1, 2), pausa=0)
+        self.assertEqual(len(chiesti), 3)                                         # dopo 3 fallimenti di fila basta
+        self.assertEqual(len(out["SPY"]), 100)                                    # la copia resta
+        self.assertIn("SPY", P.ESITO["copia"])
+
+    def test_avviso_prezzi_vecchi_e_scheda_di_riserva(self):
+        px = {t: [("2026-10-20", 1.0)] for t in P.usati()}
+        self.assertIsNone(P.controlla_prezzi(px, date(2026, 10, 23)))
+        av = P.controlla_prezzi(px, date(2026, 10, 30))
+        self.assertEqual(av["codice"], P.CODICE_ERRORE)
+        self.assertEqual(av["dal"], "2026-10-20")
+        self.assertIsNone(P.di_riserva(self.dir))                                 # nessuna copia: niente scheda
+        P.salva_ultimo({"aggiornato": "2026-10-20", "profili": []}, self.dir)
+        self.assertEqual(P.di_riserva(self.dir)["avviso"]["dal"], "2026-10-20")
 
     def test_statistiche(self):
         curva = [((date(2020, 1, 1) + timedelta(days=i)).isoformat(), 100 + i * 0.1 - (20 if 100 < i < 150 else 0))

@@ -170,7 +170,12 @@ def build(data_source=load_all, demo=False, sito=False):
         if port:
             log.info("portafogli: rotazione del %s, prossima il %s", port["rotazione"], port["prossima"])
     except Exception:
-        log.warning("portafogli non calcolati:\n%s", traceback.format_exc())
+        log.error("portafogli non calcolati:\n%s", traceback.format_exc())
+    if port is None and not demo:
+        # calcolo fallito o prezzi assenti: resta online l'ultima scheda buona, con l'avviso di manutenzione
+        port = portafogli.di_riserva()
+        if port:
+            log.error("portafogli: mostrata l'ultima scheda salvata (%s) con avviso di manutenzione", port.get("aggiornato"))
     # punteggio corretto = COT/mercato + notizie + stagionalita' (il punteggio originale resta quello mostrato nell'anello)
     for p in pairs:
         extra = ((p.get("news") or {}).get("adj") or 0) + ((p.get("stag") or {}).get("adj") or 0)

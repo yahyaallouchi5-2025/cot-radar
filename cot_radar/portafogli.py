@@ -103,26 +103,51 @@ MIN_STORIA = 260               # giorni di prezzo minimi perche' un mercato sia 
 
 
 # --------------------------------------------------------------------------- dati Yahoo (con copia locale)
-def scarica_yahoo(ticker, timeout=30):
-    """Prezzi giornalieri RETTIFICATI (dividendi e frazionamenti inclusi): [(data, prezzo)], None se fallisce."""
+TENTATIVI = 3                  # tentativi di download per ogni ticker, con pausa crescente (2 s, 6 s)
+VECCHI_GIORNI = 4              # oltre questi giorni di calendario senza prezzi nuovi la scheda avvisa l'utente
+CODICE_ERRORE = "503"          # codice generico mostrato all'utente (i dettagli restano nel registro admin)
+ESITO = {}                     # ultimo giro di prezzi(): {"falliti": [ticker], "copia": [ticker]} (per l'avviso)
+
+
+def _valida(pts):
+    """Controllo di qualita' di una serie scaricata: almeno 30 prezzi, date crescenti e senza buchi assurdi
+    (salto giornaliero oltre +/-70%: dato rotto). Restituisce la serie o None."""
+    if not pts or len(pts) < 30:
+        return None
+    for (d0, v0), (d1, v1) in zip(pts, pts[1:]):
+        if d1 <= d0 or not (0.3 < v1 / v0 < 1.7):
+            return None
+    return pts
+
+
+def scarica_yahoo(ticker, timeout=20, tentativi=TENTATIVI, attesa=2):
+    """Prezzi giornalieri RETTIFICATI (dividendi e frazionamenti inclusi): [(data, prezzo)], None se fallisce.
+    Riprova fino a `tentativi` volte (pausa 2 s, poi 6 s): Yahoo a volte risponde 429/5xx per pochi secondi.
+    Una risposta incompleta o con prezzi assurdi conta come fallita: in quel caso resta la copia salvata."""
     q = urllib.parse.urlencode({"period1": 0, "period2": int(time.time()), "interval": "1d",
                                 "events": "div,split", "includeAdjustedClose": "true"})
-    try:
-        req = urllib.request.Request(YAHOO.format(t=urllib.parse.quote(ticker), q=q),
-                                     headers={"User-Agent": "cot-radar/portafogli"})
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            js = json.load(r)
-        res = js["chart"]["result"][0]
-        off = res["meta"].get("gmtoffset", 0)
-        adj = res["indicators"]["adjclose"][0]["adjclose"]
-        out = {}
-        for ts, v in zip(res["timestamp"], adj):
-            if v is not None and v > 0:
-                out[datetime.fromtimestamp(ts + off, tz=timezone.utc).date().isoformat()] = round(float(v), 6)
-        return sorted(out.items()) or None
-    except Exception as e:                       # rete, formato cambiato, limite di richieste...
-        log.warning("Yahoo %s non disponibile (%s)", ticker, type(e).__name__)
-        return None
+    for n in range(tentativi):
+        try:
+            req = urllib.request.Request(YAHOO.format(t=urllib.parse.quote(ticker), q=q),
+                                         headers={"User-Agent": "cot-radar/portafogli"})
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                js = json.load(r)
+            res = js["chart"]["result"][0]
+            off = res["meta"].get("gmtoffset", 0)
+            adj = res["indicators"]["adjclose"][0]["adjclose"]
+            out = {}
+            for ts, v in zip(res["timestamp"], adj):
+                if v is not None and v > 0:
+                    out[datetime.fromtimestamp(ts + off, tz=timezone.utc).date().isoformat()] = round(float(v), 6)
+            pts = _valida(sorted(out.items()))
+            if pts:
+                return pts
+            log.warning("Yahoo %s: risposta incompleta o anomala (tentativo %d/%d)", ticker, n + 1, tentativi)
+        except Exception as e:                   # rete, limite di richieste, formato cambiato...
+            log.warning("Yahoo %s non disponibile: %s (tentativo %d/%d)", ticker, type(e).__name__, n + 1, tentativi)
+        if n + 1 < tentativi and attesa:
+            time.sleep(attesa * (3 ** n))
+    return None
 
 
 def _file(cartella, ticker):
@@ -162,15 +187,25 @@ def prezzi(scarica=scarica_yahoo, cartella=CARTELLA, oggi=None, pausa=0.8):
     except (OSError, ValueError):
         meta = {}
     out, cambiato = {}, False
+    ESITO.clear()
+    ESITO.update({"falliti": [], "copia": []})
+    di_fila = 0                                        # fallimenti consecutivi: a 3 Yahoo e' giu', si smette
     for t in [u[1] for u in UNIVERSO] + [LIQUIDITA[1]]:
         vecchi = _leggi(cartella, t)
         if meta.get(t) != oggi and scarica:
-            nuovi = scarica(t)
+            # Yahoo fermo: niente altri tentativi in questo giro (il workflow non resta appeso per mezz'ora),
+            # si usano le copie e si riprova al giro successivo
+            nuovi = scarica(t) if di_fila < 3 else None
+            di_fila = 0 if nuovi else di_fila + 1
             if pausa:
                 time.sleep(pausa)
             if nuovi and len(nuovi) >= 0.95 * len(vecchi) and (not vecchi or nuovi[-1][0] >= vecchi[-1][0]):
                 _scrivi(cartella, t, nuovi)
                 vecchi, meta[t], cambiato = nuovi, oggi, True
+            else:                                      # download fallito o peggiore della copia: si tiene la copia
+                ESITO["falliti"].append(t)
+                if vecchi:
+                    ESITO["copia"].append(t)
         if vecchi:
             out[t] = vecchi
     if cambiato:
@@ -461,6 +496,54 @@ def registra(rotazioni, data, composizioni, cartella=CARTELLA, scrivi=True):
     return rot
 
 
+# --------------------------------------------------------------------------- controllo di freschezza + ultima copia buona
+def usati():
+    """Ticker che servono davvero alla scheda: mercati delle basi, liquidita' e benchmark."""
+    return sorted({TUTTI[k][1] for p in PROFILI for k in p["base"]} | {t for t, _ in BENCH})
+
+
+def controlla_prezzi(px, oggi=None):
+    """Avviso per l'utente se i prezzi non sono aggiornati: None se tutto ok, altrimenti
+    {"codice", "dal": ultimo giorno aggiornato, "mercati": ticker in ritardo o mancanti}.
+    In ritardo = ultimo prezzo piu' vecchio di VECCHI_GIORNI giorni di calendario (copre weekend e festivi USA)."""
+    oggi = oggi or date.today()
+    limite = (oggi - timedelta(days=VECCHI_GIORNI)).isoformat()
+    vecchi = [t for t in usati() if not px.get(t) or px[t][-1][0] < limite]
+    if not vecchi:
+        return None
+    ultimi = [px[t][-1][0] for t in vecchi if px.get(t)]
+    return {"codice": CODICE_ERRORE, "dal": min(ultimi) if ultimi else None, "mercati": vecchi}
+
+
+def _ultimo_file(cartella):
+    return os.path.join(cartella, "portafogli", "ultimo.json")
+
+
+def salva_ultimo(dati, cartella=CARTELLA):
+    """Copia dell'ultima scheda calcolata: se un giro successivo fallisce si mostra questa (con l'avviso)."""
+    f = _ultimo_file(cartella)
+    os.makedirs(os.path.dirname(f), exist_ok=True)
+    with open(f + ".tmp", "w", encoding="utf-8") as fh:
+        json.dump(dati, fh, separators=(",", ":"))
+    os.replace(f + ".tmp", f)
+
+
+def leggi_ultimo(cartella=CARTELLA):
+    try:
+        with open(_ultimo_file(cartella), encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return None
+
+
+def di_riserva(cartella=CARTELLA, oggi=None):
+    """Se il calcolo di oggi non e' riuscito: l'ultima scheda buona con l'avviso di manutenzione (o None)."""
+    d = leggi_ultimo(cartella)
+    if d:
+        d["avviso"] = {"codice": CODICE_ERRORE, "dal": d.get("aggiornato"), "mercati": []}
+    return d
+
+
 # --------------------------------------------------------------------------- calcolo completo per la pagina
 def calcola(righe_cot, px, cartella=CARTELLA, scrivi=True, oggi=None):
     """righe_cot = archivio COT; px = prezzi() (ticker -> punti). Restituisce i dati della scheda "Portafogli"
@@ -520,11 +603,19 @@ def calcola(righe_cot, px, cartella=CARTELLA, scrivi=True, oggi=None):
             "rotazioni": list(reversed(cambi)),
         })
     registra(rotazioni, g.date[ultimo_rib], composizioni, cartella, scrivi=scrivi)
-    return {
+    avviso = controlla_prezzi(px, oggi)
+    if avviso:          # ERRORE nel registro: l'admin riceve la mail (job "avviso-admin"), l'utente vede l'avviso
+        log.error("portafogli: prezzi Yahoo non aggiornati dal %s (%s); falliti in questo giro: %s",
+                  avviso["dal"], ", ".join(avviso["mercati"]), ", ".join(ESITO.get("falliti", [])) or "nessuno")
+    out = {
         "aggiornato": g.date[-1], "rotazione": g.date[ultimo_rib], "prossima": prossima,
         "dal": g.date[giorni[0]], "oos_dal": OOS_DAL, "fonte": "Yahoo Finance (prezzi rettificati)",
         "profili": out_prof,
         "bench": {"nome": "60/40 (S&P 500 + Treasury 10 anni)", "curva": _settimanale(bench),
                   "stat": {"storico": statistiche(_tagli(bench, al=OOS_DAL)),
                            "oos": statistiche(_tagli(bench, dal=OOS_DAL)), "totale": statistiche(bench)}} if bench else None,
+        "avviso": avviso,
     }
+    if scrivi:
+        salva_ultimo(out, cartella)
+    return out

@@ -213,6 +213,12 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
   stagionalità: rendimento più basso, cadute uguali), rotazione per forza relativa tra azioni, oro, argento,
   petrolio e rame (storico 10%/-25%, ma fuori campione 5%/-31%). La stagionalità resta mostrata come informazione.
 - **Live** dalla prima rotazione pubblicata (`storico/portafogli/rotazioni_v2.json`, mai riscritto).
+- **Robustezza dei prezzi** (v6.29): 3 tentativi per ticker (pausa 2 s e 6 s); serie incomplete o con salti assurdi
+  scartate; dopo 3 ticker falliti di fila Yahoo è considerato fermo e si usano le copie (il workflow non resta
+  appeso). Se i prezzi delle basi sono più vecchi di 4 giorni, o il calcolo fallisce e resta online l'ultima scheda
+  buona (`storico/portafogli/ultimo.json`), la scheda mostra un banner e un popup (una volta per sessione) con il
+  messaggio generico "Errore server 503 · I dati non sono stati aggiornati: manutenzione in corso". Nel registro va
+  un ERRORE con i dettagli: l'admin riceve la mail di GitHub.
 - **Prezzi**: Yahoo Finance (rettificati), copia in `storico/yahoo/`, al massimo un download al giorno. Per un servizio
   commerciale conviene un fornitore con licenza: basta sostituire `scarica_yahoo()`.
 

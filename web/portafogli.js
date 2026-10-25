@@ -96,9 +96,29 @@ try{(function(){const P=D.port,el=$("port");if(!el)return;
    <span class="small">${r.liquidita?`liquidit&agrave; ${r.liquidita}%`:""}</span></div>`).join("")}
    ${p.rotazioni.length>6?`<button class="ptutte">${tutteRot?"Mostra meno":`Mostra tutte (${p.rotazioni.length})`}</button>`:""}</div>`;}
 
+ // --- AVVISO DATI NON AGGIORNATI (P.avviso dal backend: prezzi vecchi dopo i tentativi di download o
+ //     calcolo fallito e scheda presa dall'ultima copia buona). All'utente solo un messaggio generico.
+ const AV=P.avviso,AVT=AV?`Errore server ${esc(String(AV.codice||"503"))} · I dati non sono stati aggiornati: manutenzione in corso.`:"";
+ function avvisoBox(){if(!AV)return "";
+  return `<div class="pavviso" role="status"><span class="pav-i" aria-hidden="true">!</span><div><b>${AVT}</b>
+   <span>${AV.dal?`Ultimo aggiornamento disponibile: ${gg(AV.dal)}. `:""}La scheda si aggiorna da sola appena il servizio torna regolare.</span></div></div>`;}
+ // popup una volta per sessione, quando la scheda diventa visibile
+ function popup(){let visto=false;try{visto=sessionStorage.getItem("ebAvvPort")==(AV.dal||"1");}catch(e){}if(visto)return;
+  try{sessionStorage.setItem("ebAvvPort",AV.dal||"1");}catch(e){}
+  const o=document.createElement("div");o.className="pmodal";o.innerHTML=`<div class="pmodal-box" role="alertdialog" aria-modal="true" aria-labelledby="pmt">
+   <span class="pav-i grande" aria-hidden="true">!</span><h3 id="pmt">Dati non aggiornati</h3><p>${AVT}</p>
+   ${AV.dal?`<p class="small">Ultimo aggiornamento disponibile: ${gg(AV.dal)}</p>`:""}<button class="pmodal-ok">Ho capito</button></div>`;
+  const chiudi=()=>{o.classList.remove("on");setTimeout(()=>o.remove(),220);document.removeEventListener("keydown",esc_);};
+  const esc_=e=>{if(e.key=="Escape")chiudi();};
+  o.addEventListener("click",e=>{if(e.target==o||e.target.classList.contains("pmodal-ok"))chiudi();});
+  document.addEventListener("keydown",esc_);document.body.appendChild(o);requestAnimationFrame(()=>o.classList.add("on"));
+  o.querySelector(".pmodal-ok").focus();
+  try{window.ebStat&&ebStat.ev("avviso",{scheda:"portafogli"});}catch(e){}}
+ if(AV&&"IntersectionObserver" in window){const io=new IntersectionObserver(v=>{if(v.some(x=>x.isIntersecting)){io.disconnect();popup();}});io.observe(el);}
+
  function disegna(){const p=P.profili.find(x=>x.id==sel);
   el.innerHTML=`<h2>Portafogli modello</h2><p class="sub">Tre profili di rischio, solo acquisti, controllo ogni mese. Ogni profilo ha una base fissa di mercati e pesi; un mercato resta in portafoglio finch&eacute; il prezzo &egrave; sopra la media a 200 giorni, altrimenti il suo peso va in pausa nella liquidit&agrave; fino a quando torna sopra. Nei test sullo storico questo filtro di trend ha ridotto molto le cadute, mentre il posizionamento COT non migliorava i risultati: per questo il COT &egrave; mostrato accanto a ogni mercato solo come informazione. Regole decise sullo storico fino al 2015, verificate fuori campione dal 2016; la linea live parte dalla prima rotazione pubblicata. Il rischio si legge mese per mese: a ogni rotazione la scheda mostra come si &egrave; comportata la composizione del mese nello stesso mese di tutti gli anni dello storico. Prezzi in dollari di ETF ed ETC equivalenti (il cambio euro/dollaro non &egrave; incluso), costi 0,10% a ogni rotazione.</p>
-   <div class="pdate"><span><i></i>Rotazione del <b>${gg(P.rotazione)}</b></span><span>Prossima rotazione: <b>${gg(P.prossima)}</b></span></div>
+   ${avvisoBox()}<div class="pdate"><span><i></i>Rotazione del <b>${gg(P.rotazione)}</b></span><span>Prossima rotazione: <b>${gg(P.prossima)}</b></span></div>
    <div class="pprof">${P.profili.map(x=>{const o=x.stat.oos||x.stat.totale||{};return `<button class="pcard${x.id==sel?" on":""}" data-p="${x.id}">
     <span class="plv">${[1,2,3].map(i=>`<i class="${i<=LIV[x.id]?"si":""}"></i>`).join("")}</span><b>${x.nome}</b><small>${esc(x.descr)}</small>
     <span class="pnum"><span><em>Rendimento annuo</em>${pc(o.cagr)}</span><span><em>Caduta max</em><span class="down">${pc(Math.min((x.stat.totale||{}).maxdd??0,o.maxdd??0))}</span></span></span></button>`;}).join("")}</div>
