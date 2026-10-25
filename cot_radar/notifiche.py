@@ -30,7 +30,8 @@ Credenziali: SOLO nei GitHub Secrets, mai nel codice o nei log (vedi README, sez
 Senza Telegram configurato il cursore avanza comunque (nessun arretrato quando lo si attiva).
 
 USO:  python -m cot_radar.notifiche storico https://utente.github.io/cot-radar/   (giro normale)
-      python -m cot_radar.notifiche prova   https://utente.github.io/cot-radar/   (TEST: riepilogo subito)
+      python -m cot_radar.notifiche prova   https://utente.github.io/cot-radar/   (TEST: esempi delle notizie)
+      python -m cot_radar.notifiche prova-cot https://utente.github.io/cot-radar/  (TEST: riepilogo COT subito)
       python -m cot_radar.notifiche anteprima storico                              (stampa senza inviare)
 """
 import json
@@ -290,7 +291,14 @@ def esegui(cartella, sito, env=None, adesso=None, invia=True, dati_sito=None):
     arrivo, gruppi, nuovo_ag = avvisi.da_inviare(agenda_sito, stato_ag, adesso_utc) if agenda_sito else \
         ([], [], stato_ag)
     credito = (agenda_sito or {}).get("credito") or ""
-    testi_notizie = [avvisi.testo_arrivo(arrivo[i:i + 5], credito) for i in range(0, len(arrivo), 5)] + \
+    # AGENDA DELLA SETTIMANA: venerdi' sera (dopo il riepilogo COT), una volta per settimana; prima degli altri
+    settimana = []
+    lunedi = avvisi.settimana_da_inviare(nuovo_ag, adesso_utc) if agenda_sito else None
+    if lunedi:
+        t = avvisi.testo_settimana(agenda_sito, lunedi)
+        settimana = [t] if t else []
+        nuovo_ag = dict(nuovo_ag or {}, settimana=lunedi.isoformat())    # segnata anche se vuota: niente ripetizioni
+    testi_notizie = settimana + [avvisi.testo_arrivo(arrivo[i:i + 5], credito) for i in range(0, len(arrivo), 5)] + \
                     [avvisi.testo_esito(gruppi[i:i + 4], credito) for i in range(0, len(gruppi), 4)]
     esito = {"esito": "niente_di_nuovo", "inviati": 0, "ultimo_n": ultimo_n, "testi": testi,
              "tipo": "settimanale" if settimanale else "eventi", "testi_notizie": testi_notizie}
@@ -327,6 +335,39 @@ def esegui(cartella, sito, env=None, adesso=None, invia=True, dati_sito=None):
     return esito
 
 
+def prova_notizie(sito, env=None, dati_sito=None, adesso=None):
+    """TEST dal workflow 'Prova notifiche': manda SUBITO, marcati [TEST · esempio], i tre messaggi delle notizie
+    con i dati veri del sito: 1) agenda della settimana prossima, 2) pre-avviso della prossima notizia,
+    3) esito dell'ultima notizia uscita. Non tocca il cursore: gli avvisi veri partono comunque da soli."""
+    from . import riepilogo
+    env = os.environ if env is None else env
+    token, chat = env.get("TELEGRAM_BOT_TOKEN"), env.get("TELEGRAM_CHAT_ID")
+    dati = dati_sito if dati_sito is not None else riepilogo.scarica(sito)
+    agenda = (dati or {}).get("agenda")
+    if not agenda or not agenda.get("eventi"):
+        log.error("prova notizie: il sito non ha l'agenda delle notizie")
+        return {"telegram": None, "messaggi": 0}
+    adesso = adesso or datetime.now(timezone.utc).replace(tzinfo=None)
+    g = adesso.weekday()
+    lunedi = adesso.date() + timedelta(days=(7 - g) if g else 7)        # lunedi' della settimana PROSSIMA
+    testi = []
+    t = avvisi.testo_settimana(agenda, lunedi, prova=True)
+    if t:
+        testi.append(t)
+    futuri = [e for e in agenda["eventi"] if not e.get("uscito")]
+    if futuri:                                          # stesso giorno della prima notizia in arrivo
+        testi.append(avvisi.testo_arrivo([e for e in futuri if e["data"] == futuri[0]["data"]][:5],
+                                         agenda.get("credito") or "", prova=True))
+    _, gruppi, _ = avvisi.da_inviare(agenda, {"arrivo": {}, "esito": {}}, adesso)
+    if gruppi:                                          # l'esito piu' recente gia' pronto
+        testi.append(avvisi.testo_esito(gruppi[-1:], agenda.get("credito") or "", prova=True))
+    if not (token and chat):
+        log.error("mancano i Secrets TELEGRAM_BOT_TOKEN e/o TELEGRAM_CHAT_ID")
+        return {"telegram": None, "messaggi": len(testi), "testi": testi}
+    ok = all(invia_telegram(token, chat, t) for t in testi)
+    return {"telegram": ok, "messaggi": len(testi), "testi": testi}
+
+
 def prova(sito, env=None, dati_sito=None):
     """TEST dal workflow 'Prova notifiche': manda SUBITO il riepilogo settimanale della dashboard attuale,
     marcato [TEST] (non tocca il cursore: il riepilogo vero partira' comunque col prossimo COT).
@@ -356,6 +397,12 @@ def main(argv):
             print("-" * 40 + "\n" + t)
         return 0
     if len(argv) >= 1 and argv[0] == "prova":
+        # il workflow "Prova notifiche" manda gli esempi delle NOTIZIE (agenda, pre-avviso, esito);
+        # il riepilogo COT di prova resta disponibile con: python -m cot_radar.notifiche prova-cot URL
+        r = prova_notizie(argv[1] if len(argv) > 1 else "")
+        print("esito prova notizie:", {k: v for k, v in r.items() if k != "testi"})
+        return 0 if r.get("telegram") else 1
+    if len(argv) >= 1 and argv[0] == "prova-cot":
         r = prova(argv[1] if len(argv) > 1 else "")
         print("esito prova:", r)
         return 0 if r["telegram"] else 1

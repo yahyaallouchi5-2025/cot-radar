@@ -10,7 +10,8 @@ from datetime import date, datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from cot_radar import agenda, avvisi, notizie  # noqa: E402
+from cot_radar import agenda, avvisi, notizie, notifiche, registro  # noqa: E402
+from datetime import timezone  # noqa: E402
 
 # eventi nel formato di financecalendar.com (ridotti dai dati veri del 25/10/2026)
 GREZZI = [
@@ -123,13 +124,91 @@ class Avvisi(unittest.TestCase):
         a = self.ag(adesso)
         _, gruppi, _ = avvisi.da_inviare(a, {"arrivo": {}, "esito": {"USD-2026-10-14": "2026-10-14"}}, adesso)
         self.assertEqual([g["chiave"] for g in gruppi], ["GBP-2026-10-21"])
-        self.assertIn("non misurata per GBP", avvisi.testo_esito(gruppi, a["credito"]))
+        t = avvisi.testo_esito(gruppi, a["credito"])
+        self.assertIn("Lettura del dato: sopra il precedente → GBP tendenzialmente più forte", t)
+        self.assertIn("non misurata per questa valuta", t)
+
+    def test_direzione_del_dato(self):
+        self.assertEqual(avvisi.direzione({"attuale": "3.5", "precedente": "3.1"}), (1, "sopra il precedente"))
+        self.assertEqual(avvisi.direzione({"tipo": "banca", "attuale": "4.25", "precedente": "4.5"}),
+                         (-1, "tassi tagliati"))
+        self.assertIsNone(avvisi.direzione({"attuale": None, "precedente": "3.1"}))
 
     def test_valori_leggibili(self):
         self.assertEqual(avvisi.valore("3.7", "% y/y"), "3,7% a/a")
         self.assertEqual(avvisi.valore("142000", "jobs"), "+142.000 posti")
         self.assertEqual(avvisi.valore("4.5", "% target range"), "4,5%")
         self.assertIsNone(avvisi.valore(None, "% y/y"))
+
+
+class Settimana(unittest.TestCase):
+    def ag(self, adesso):
+        return agenda.costruisci({"DGS2": dgs2()}, {}, PAIRS, adesso=adesso, scarica_fn=lambda: GREZZI,
+                                 cache=os.path.join(tempfile.mkdtemp(), "a.json"))
+
+    def test_finestra_di_invio(self):
+        ven = datetime(2026, 10, 23, 20, 30)                             # venerdi' sera
+        self.assertEqual(avvisi.settimana_da_inviare({}, ven), date(2026, 10, 26))
+        self.assertIsNone(avvisi.settimana_da_inviare({}, datetime(2026, 10, 23, 10, 0)))   # venerdi' mattina
+        self.assertEqual(avvisi.settimana_da_inviare({}, datetime(2026, 10, 26, 5, 30)), date(2026, 10, 26))
+        self.assertIsNone(avvisi.settimana_da_inviare({}, datetime(2026, 10, 27, 5, 30)))   # martedi': no
+        self.assertIsNone(avvisi.settimana_da_inviare({"settimana": "2026-10-26"}, ven))    # gia' inviata
+
+    def test_testo_per_giorno(self):
+        a = self.ag(datetime(2026, 10, 23, 20, 30))
+        t = avvisi.testo_settimana(a, date(2026, 10, 26))
+        self.assertIn("notizie della settimana 26/10 – 01/11", t)
+        self.assertIn("<b>Mercoledì 28/10</b>", t)
+        self.assertIn("19:00 · <b>Fed (FOMC)</b> — decisione sui tassi della Fed", t)
+        self.assertIn("rialzo o toni duri → USD più forte", t)
+        self.assertIn("USD più forte → a favore di: NZD/USD SELL, USD/JPY BUY", t)
+        self.assertNotIn("CPI USA", t)                                   # fuori settimana
+        self.assertIsNone(avvisi.testo_settimana(a, date(2026, 12, 7)))   # settimana vuota
+
+    def test_stato_settimana_conservato(self):
+        a = self.ag(datetime(2026, 10, 27, 22, 15))
+        _, _, st = avvisi.da_inviare(a, {"arrivo": {}, "esito": {}, "settimana": "2026-10-26"},
+                                     datetime(2026, 10, 27, 22, 15))
+        self.assertEqual(st["settimana"], "2026-10-26")
+
+
+class FlussoVenerdi(unittest.TestCase):
+    """Giro completo di notifiche.esegui: venerdi' sera riepilogo COT + agenda della settimana, una volta sola."""
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.inviati = []
+        self._orig = notifiche.invia_telegram
+        notifiche.invia_telegram = lambda token, chat, testo: (self.inviati.append(testo), True)[1]
+        registro._scrivi(self.dir, registro.concatena([], registro.ZERO, 0))
+
+    def tearDown(self):
+        notifiche.invia_telegram = self._orig
+        shutil.rmtree(self.dir)
+
+    def test_agenda_settimanale_una_volta(self):
+        env = {"TELEGRAM_BOT_TOKEN": "finto", "TELEGRAM_CHAT_ID": "@canale"}
+        gio = datetime(2026, 10, 22, 22, 15)
+        dati = {"agenda": agenda.costruisci({"DGS2": dgs2()}, {}, PAIRS, adesso=gio, scarica_fn=lambda: GREZZI,
+                                            cache=os.path.join(self.dir, "a.json"))}
+        notifiche.esegui(self.dir, "", env, gio.replace(tzinfo=timezone.utc), dati_sito=dati)     # primo avvio
+        ven = datetime(2026, 10, 23, 20, 30, tzinfo=timezone.utc)
+        notifiche.esegui(self.dir, "", env, ven, dati_sito=dati)
+        self.assertEqual(len([t for t in self.inviati if "notizie della settimana 26/10" in t]), 1)
+        self.assertEqual(notifiche.leggi_cursore(self.dir)["agenda"]["settimana"], "2026-10-26")
+        notifiche.esegui(self.dir, "", env, ven.replace(hour=21), dati_sito=dati)                  # giro dopo
+        notifiche.esegui(self.dir, "", env, datetime(2026, 10, 26, 5, 30, tzinfo=timezone.utc), dati_sito=dati)
+        self.assertEqual(len([t for t in self.inviati if "notizie della settimana" in t]), 1)
+
+    def test_prova_notizie_tre_esempi(self):
+        a = agenda.costruisci({"DGS2": dgs2()}, {}, PAIRS, adesso=datetime(2026, 10, 25, 15, 0),
+                              scarica_fn=lambda: GREZZI, cache=os.path.join(self.dir, "a.json"))
+        r = notifiche.prova_notizie("", {"TELEGRAM_BOT_TOKEN": "x", "TELEGRAM_CHAT_ID": "y"}, {"agenda": a},
+                                    adesso=datetime(2026, 10, 25, 15, 0))
+        self.assertEqual(r["messaggi"], 3)
+        self.assertTrue(all("[TEST · esempio]" in t for t in self.inviati))
+        self.assertIn("notizie della settimana 26/10", self.inviati[0])
+        self.assertIn("notizie in arrivo", self.inviati[1])
+        self.assertIn("esito delle notizie", self.inviati[2])
 
 
 if __name__ == "__main__":

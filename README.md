@@ -201,7 +201,7 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Nuovo evento**: `data-ev="nome"` (e `data-pos="dove"`) su un elemento HTML, oppure `ebStat.ev("nome", {...})` in JS.
 - **Debug**: aggiungi `?statdebug` all'indirizzo: ogni evento viene stampato nella console del browser.
 
-## Notizie macro su Telegram (v6.20: `agenda.py` + `avvisi.py`)
+## Notizie macro su Telegram (v6.20-6.22: `agenda.py` + `avvisi.py`)
 
 Flusso unico, ogni fonte un solo compito:
 1. **Calendario** = financecalendar.com (gratuito, uso commerciale con link di attribuzione, presente in ogni
@@ -213,8 +213,12 @@ Flusso unico, ogni fonte un solo compito:
    resta in attesa e si riprova al giro successivo; dopo 4 giorni parte comunque con quello che c'è.
 3. **Segnali esposti** = coppie Forex con segnale COT che contengono la valuta: conferma / contrasto / neutro.
 
-Messaggi (ognuno una sola volta, stato nel cursore `notificati.json`): **notizie in arrivo** (entro 30 ore: di solito
-la sera prima) ed **esito delle notizie** (per valuta e giorno). Il consensus non è disponibile gratis: si confronta
+Messaggi (ognuno una sola volta, stato nel cursore `notificati.json`): **notizie della settimana** (v6.22: il
+venerdì sera dopo il riepilogo COT, giorno per giorno; recupero entro lunedì mattina), **notizie in arrivo** (entro
+30 ore: di solito la sera prima) ed **esito delle notizie** (per valuta e giorno; per le valute senza tasso a 2 anni
+il dato confrontato con il precedente, dichiarato come stima).
+**Prova**: Actions → *Prova notifiche* manda subito i tre messaggi marcati [TEST · esempio] con i dati veri del sito
+(il riepilogo COT di prova: `python -m cot_radar.notifiche prova-cot URL`). Il consensus non è disponibile gratis: si confronta
 il dato con il precedente e la sorpresa vera la misura il mercato.
 
 ## Stagionalità agganciata al COT (v6.18)
