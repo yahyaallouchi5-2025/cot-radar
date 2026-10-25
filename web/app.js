@@ -51,6 +51,7 @@ function fd(s){if(!s)return"";const m=["gen","feb","mar","apr","mag","giu","lug"
 window.__errori=[];
 function fail(sezione,contenitore,e){
  window.__errori.push({sezione,errore:String(e&&e.stack||e)});
+ try{window.ebStat&&ebStat.ev("errore",{sezione:sezione});}catch(_){}   // statistiche: quali sezioni si rompono ai visitatori
  console.error("[BoardEdge] sezione '"+sezione+"' non disponibile:",e);
  const box=`<div class="alert red"><b>Sezione "${sezione}" non disponibile.</b> Errore: ${esc(e&&e.message||e)}. Le altre sezioni funzionano normalmente.</div>`;
  const el=contenitore&&document.getElementById(contenitore);

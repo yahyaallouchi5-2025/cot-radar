@@ -54,6 +54,7 @@ def html(ultimi):
     dal = (ultimi.get("bt_dal") or "")[:4]
     valori = {
         "{{TELEGRAM}}": TELEGRAM_CANALE,
+        "{{STATISTICHE}}": pagina.statistiche(),     # statistiche anonime senza cookie (web/statistiche.js)
         "{{FAVICON}}": FAVICON,
         "{{N_SEGNALI}}": str(sum(len(v) for v in attivi.values())),
         "{{N_MERCATI}}": str(len(mercati)),

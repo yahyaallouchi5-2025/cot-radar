@@ -191,6 +191,16 @@ Limite: si può misurare solo dove c'è un prezzo storico gratuito (cambi, indic
 
 Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il risultato completo finisce anche in `storico/confronto.json`. Test: `python -m unittest tests.test_archivi_cot -v`.
 
+## Statistiche di visita anonime (v6.21: `web/statistiche.js`)
+- **Cosa**: visitatori, pagine viste, provenienza, telefono/PC e i click che contano (pass gratuito, Telegram, schede
+  del terminale, grafici aperti, filtri, backtest, stagionalità, guida), più fin dove si scorre la landing ("sezione")
+  e le sezioni del terminale che vanno in errore ai visitatori ("errore").
+- **Privacy**: Umami (cloud.umami.is), **senza cookie e senza dati personali**: nessun banner, nessun visitatore escluso.
+- **Attivazione**: crea il sito su Umami e copia il *Website ID* in `config.STATISTICHE_ID` (è pubblico, non è una
+  chiave segreta). Vuoto = statistiche spente. Si conta solo sul dominio del sito, mai le prove in locale.
+- **Nuovo evento**: `data-ev="nome"` (e `data-pos="dove"`) su un elemento HTML, oppure `ebStat.ev("nome", {...})` in JS.
+- **Debug**: aggiungi `?statdebug` all'indirizzo: ogni evento viene stampato nella console del browser.
+
 ## Notizie macro su Telegram (v6.20: `agenda.py` + `avvisi.py`)
 
 Flusso unico, ogni fonte un solo compito:

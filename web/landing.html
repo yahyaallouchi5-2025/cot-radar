@@ -155,7 +155,7 @@ footer .box{display:grid;gap:10px}
 </style></head>
 <body><div class="cielo"></div><div class="aurora a1"></div><div class="aurora a2"></div>
 
-<header id="testata"><div class="box">
+<header id="testata" data-pos="testata"><div class="box">
  <a class="blogo" href="#" aria-label="BoardEdge"><i></i><b>BOARD<br><span class="g">EDGE</span></b></a>
  <nav class="voci"><a href="#vantaggio">Il vantaggio</a><a href="#settimana">La settimana</a><a href="#swing">Per lo swing</a><a href="{{TELEGRAM}}" target="_blank" rel="noopener">Telegram</a></nav>
  <button class="btn pri pic" data-entra><span data-etichetta>Entra gratis</span></button>
@@ -168,7 +168,7 @@ footer .box{display:grid;gap:10px}
    <!-- titolo scritto a macchina: il testo completo resta nell'aria-label per lettori di schermo e motori di ricerca -->
    <h1 id="titolo" aria-label="Guarda dove si posizionano i grandi speculatori. Prima di entrare a mercato."><span id="tt"></span><span class="cursore"></span></h1>
    <p class="sub">La maggior parte dei trader guarda il prezzo. Pochi guardano <b>chi lo muove</b>. BoardEdge legge ogni settimana il posizionamento di <b>hedger istituzionali e grandi speculatori</b> su {{N_MERCATI}} mercati futures e lo trasforma in segnali pensati per lo <b>swing di giorni e settimane</b>.</p>
-   <div class="cta">
+   <div class="cta" data-pos="hero">
     <button class="btn pri" data-entra><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span data-etichetta>Ottieni il pass gratuito</span></button>
     <a class="btn sec" href="{{TELEGRAM}}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M21.5 3.5L2.8 10.7c-.9.4-.9 1.6.1 1.9l4.6 1.5 1.8 5.6c.3.8 1.3 1 1.9.4l2.6-2.5 4.7 3.5c.7.5 1.7.1 1.9-.7l3.1-15c.2-1.1-.9-1.9-2-1.4z"/></svg>Canale Telegram</a>
    </div>
@@ -188,15 +188,15 @@ footer .box{display:grid;gap:10px}
     <path class="linea" d="M0 92 L40 84 L80 88 L120 70 L160 74 L200 56 L240 62 L280 40 L320 46 L360 22 L400 14" fill="none" stroke="url(#lg)" stroke-width="3" stroke-linejoin="round"/>
    </svg></div>
    <div class="lista" id="lista"></div>
-   <button class="lucchetto" data-entra><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Scopri quali mercati con il pass gratuito</button>
+   <button class="lucchetto" data-entra data-pos="anteprima"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Scopri quali mercati con il pass gratuito</button>
   </div></div></div>
  </div>
 
  <!-- nastro: i mercati coperti (solo nomi, nessun segnale) -->
- <div class="nastro" aria-hidden="true"><div>{{NASTRO}}{{NASTRO}}</div></div>
+ <div class="nastro" aria-hidden="true" data-ev-vista="nastro"><div>{{NASTRO}}{{NASTRO}}</div></div>
 
  <!-- I TRE LIVELLI DEL VANTAGGIO -->
- <section id="vantaggio"><div class="box">
+ <section id="vantaggio" data-ev-vista="vantaggio"><div class="box">
   <div class="titsez appare"><small>Il vantaggio</small><h2>Tre letture che di solito richiedono ore. In una schermata.</h2>
    <p>Ogni segnale nasce dal posizionamento, viene filtrato dal contesto macro e misurato contro la stagionalità. Tu vedi solo la sintesi.</p></div>
   <div class="livelli">
@@ -210,7 +210,7 @@ footer .box{display:grid;gap:10px}
  </div></section>
 
  <!-- UNA SETTIMANA CON BOARDEDGE: linea del tempo che si riempie con lo scroll -->
- <section id="settimana"><div class="box">
+ <section id="settimana" data-ev-vista="settimana"><div class="box">
   <div class="titsez appare"><small>La settimana</small><h2>Un ciclo preciso. Ogni venerdì si riparte.</h2>
    <p>Il report CFTC fotografa il martedì e viene pubblicato il venerdì. BoardEdge lavora sullo stesso ritmo.</p></div>
   <div class="tempo" id="tempo"><div class="asse"><i></i></div>
@@ -222,7 +222,7 @@ footer .box{display:grid;gap:10px}
  </div></section>
 
  <!-- PER LO SWING -->
- <section id="swing"><div class="box">
+ <section id="swing" data-ev-vista="swing"><div class="box">
   <div class="titsez appare"><small>Per lo swing</small><h2>Non segnali da scalping. Direzione per giorni e settimane.</h2></div>
   <div class="per">
    <div class="dato appare"><b>Giorni → settimane</b><p>L'orizzonte naturale del COT: il posizionamento istituzionale cambia lentamente e guida i movimenti di fondo.</p></div>
@@ -232,7 +232,7 @@ footer .box{display:grid;gap:10px}
  </div></section>
 
  <!-- CHIAMATA FINALE -->
- <section><div class="box">
+ <section data-ev-vista="finale" data-pos="finale"><div class="box">
   <div class="finale appare">
    <h2>Venerdì esce il prossimo report.<br><span class="g">Sarai già posizionato a guardarlo?</span></h2>
    <p>Entra nel terminale con il pass gratuito oppure ricevi ogni venerdì il riepilogo dei segnali sul canale Telegram.</p>
@@ -245,10 +245,14 @@ footer .box{display:grid;gap:10px}
 </main>
 
 <footer><div class="box">
- <div><b style="color:var(--ink2)">BoardEdge</b> · dati CFTC, Federal Reserve (FRED), BCE · aggiornato il {{AGGIORNATO}}</div>
+ <div><b style="color:var(--ink2)">BoardEdge</b> · dati CFTC, Federal Reserve (FRED), BCE · aggiornato il {{AGGIORNATO}} · statistiche di visita anonime, senza cookie</div>
  <div>Le informazioni pubblicate sono analisi statistiche di dati pubblici e non costituiscono consulenza finanziaria né raccomandazioni personalizzate di investimento. I risultati passati non garantiscono quelli futuri. Il trading comporta il rischio di perdere il capitale.</div>
 </div></footer>
 
+<!-- statistiche anonime senza cookie: prima degli script della pagina (vedi web/statistiche.js) -->
+<script>
+{{STATISTICHE}}
+</script>
 <script>
 /* ===== DATI dell'anteprima (veri, dall'ultimo aggiornamento; i nomi sono sfocati nella pagina) ===== */
 var ANTEPRIMA={{ANTEPRIMA_JSON}};
@@ -260,7 +264,9 @@ var fermo=matchMedia("(prefers-reduced-motion:reduce)").matches;
 var vai=new URLSearchParams(location.search).get("vai")||"";
 function haPass(){try{return !!localStorage.getItem("eb_pass");}catch(e){return true;}}
 function entra(){try{localStorage.setItem("eb_pass",new Date().toISOString());}catch(e){}
- location.href="terminale/"+(/^#[a-z]+$/.test(vai)?vai:"");}
+ // con le statistiche attive si aspettano 250 ms: il tempo di registrare il click "pass" (vedi statistiche.js)
+ var dest="terminale/"+(/^#[a-z]+$/.test(vai)?vai:"");
+ setTimeout(function(){location.href=dest;},window.ebStat&&ebStat.attivo?250:0);}
 document.querySelectorAll("[data-entra]").forEach(function(b){b.addEventListener("click",entra);});
 if(haPass())document.querySelectorAll("[data-etichetta]").forEach(function(s){s.textContent="Apri il terminale";});
 

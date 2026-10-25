@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 from .analisi import analyse
 from .calendario import sources_status
 from .config import (ARCHIVI_COT, ASSETS, DIVERGENCE_MIN, MACRO_WEIGHT, NORMAL, REG_WEEKS, SECTORS, STRONG,
-                     TELEGRAM_CANALE, TV_PAIRS, TV_SYMBOLS, WEB_DIR, WEIGHTS)
+                     STATISTICHE_ID, TELEGRAM_CANALE, TV_PAIRS, TV_SYMBOLS, WEB_DIR, WEIGHTS)
 from .controlli import controlla
 from .cot import cot_series
 from .fonti import get_cftc_tutto, get_fred, load_all, scarica_archivio
@@ -47,7 +47,16 @@ def template():
         with open(os.path.join(WEB_DIR, name), encoding="utf-8") as f:
             return f.read()
     return read("index.html").replace("{{CSS}}", read("stile.css")).replace("{{JS}}", read("app.js")) \
-        .replace("{{TELEGRAM}}", TELEGRAM_CANALE)
+        .replace("{{TELEGRAM}}", TELEGRAM_CANALE).replace("{{STATISTICHE}}", statistiche())
+
+
+def statistiche():
+    """Codice delle statistiche anonime (web/statistiche.js) con il Website ID di config.STATISTICHE_ID.
+    Usato dal terminale (qui sopra) e dalla landing page (vetrina.py). ID vuoto = statistiche spente."""
+    with open(os.path.join(WEB_DIR, "statistiche.js"), encoding="utf-8") as f:
+        js = f.read()
+    sid = "".join(c for c in STATISTICHE_ID if c.isalnum() or c == "-")     # solo caratteri validi di un ID
+    return js.replace("__STAT_ID__", sid)
 
 
 # Dati dell'ultima dashboard creata, per la landing page (vetrina.py): segnali e numeri VERI, mai inventati.

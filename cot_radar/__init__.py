@@ -31,7 +31,8 @@ Mappa dei moduli (in ordine di "viaggio" dei dati):
   notifiche.py   avvisi dei segnali: canale Telegram per gli iscritti + copia e-mail all'admin (cursore anti-doppioni)
   agenda.py      agenda notizie: calendario automatico (financecalendar.com) + reazione del mercato + segnali esposti
   avvisi.py      avvisi Telegram sulle notizie: "in arrivo" (sera prima) ed "esito" (appena il mercato ha reagito)
+  web/statistiche.js  statistiche di visita anonime senza cookie (Umami): visite e click, spente se manca l'ID
   vetrina.py     landing page del sito (radice) con i numeri veri; il terminale sta in /terminale/
   riepilogo.py   riepilogo settimanale dei segnali per categoria di asset (Telegram), dai dati della pagina online
 """
-__version__ = "6.20"
+__version__ = "6.21"
