@@ -50,14 +50,18 @@ class Portafogli(unittest.TestCase):
                 for k, w in pesi.items():
                     if k != "CASH":
                         self.assertIn(k, prof["ammessi"])                         # solo mercati del profilo
-                        self.assertLessEqual(w, prof.get("tetti", {}).get(k, prof["tetto"]) + 1e-6)
+                        self.assertLessEqual(w, prof["base"][k] + 1e-6)          # mai oltre il peso della base
 
-    def test_niente_segnali_tutto_in_liquidita(self):
-        g = P.Griglia(self.px)
-        sc = P.segnali_cot(cot_finto(["SP500", "GOLD"], set()))
+    def test_trend_negativo_peso_in_liquidita(self):
+        px = dict(self.px)
+        giu = [(d, 100.0 * 0.999 ** n) for n, (d, _) in enumerate(px["IEF"])]      # Treasury sempre in discesa
+        px["IEF"] = giu
+        g = P.Griglia(px)
+        sc = P.segnali_cot(cot_finto(["US10Y"], {"US10Y"}))                       # COT da acquisto: non conta
         pesi, _, esclusi = P.scegli(P.PROFILI[0], g, P.date_ribilancio(g)[-1], sc)
-        self.assertEqual(pesi, {"CASH": 1.0})
-        self.assertTrue(all("COT" in e["motivo"] or "media" in e["motivo"] for e in esclusi))
+        self.assertNotIn("US10Y", pesi)
+        self.assertGreaterEqual(pesi["CASH"], 0.45 + 0.15 - 1e-6)
+        self.assertEqual([e["k"] for e in esclusi if e["k"] == "US10Y"], ["US10Y"])
 
     def test_calcolo_completo_e_registro_mai_riscritto(self):
         righe = cot_finto([u[0] for u in P.UNIVERSO], {"SP500", "GOLD", "US10Y", "NASDAQ"})

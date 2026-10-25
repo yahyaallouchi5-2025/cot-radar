@@ -191,14 +191,20 @@ Limite: si può misurare solo dove c'è un prezzo storico gratuito (cambi, indic
 
 Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il risultato completo finisce anche in `storico/confronto.json`. Test: `python -m unittest tests.test_archivi_cot -v`.
 
-## Portafogli modello (v6.26: `portafogli.py` + `web/portafogli.js`, scheda "Portafogli")
-- Tre profili: **conservativo** (indici principali, Treasury, oro), **moderato** (+ Nasdaq, Russell, emergenti,
-  argento, rame, petrolio), **aggressivo** (tutto l'universo, crypto comprese con tetto).
-- **Rotazione** il primo giorno di borsa di ogni mese, **solo acquisti**: entra un mercato con COT da BUY e prezzo
-  sopra la media a 200 giorni; pesi inversi alla volatilità con tetto per mercato, poi riduzione alla volatilità
-  obiettivo del profilo (5%, 9%, 15%); il resto in liquidità (Treasury 1-3 anni). Costi 0,10% a rotazione.
-- **Verifica**: storico fino al 2015, fuori campione dal 2016, **live** dalla prima rotazione pubblicata
-  (`storico/portafogli/rotazioni.json`, mai riscritto). Confronto con il 60/40.
+## Portafogli modello (v6.27: `portafogli.py` + `web/portafogli.js`, scheda "Portafogli")
+- Tre profili con una **base fissa** di mercati e pesi: **conservativo** (S&P 500 20%, Europa/Asia 10%, Treasury
+  10 anni 45%, oro 10%, liquidità 15%), **moderato** (S&P 35%, Europa/Asia 10%, emergenti 5%, Treasury 30%, oro 10%,
+  liquidità 10%), **aggressivo** (S&P 40%, Nasdaq 15%, Europa/Asia 10%, emergenti 10%, Treasury 10%, oro 10%,
+  Bitcoin 5%).
+- **Filtro di trend** ogni mese, solo acquisti: un mercato sotto la media a 200 giorni va "in pausa" e il suo peso
+  passa alla liquidità (Treasury 1-3 anni) finché non torna sopra. Costi 0,10% a rotazione.
+- **Perché così (onestà del metodo)**: la versione 1 (ingresso con COT da BUY + trend, pesi a volatilità obiettivo)
+  fuori campione rendeva 1-2% l'anno contro l'8% del 60/40. Sullo **storico 2006-2015** sono state confrontate
+  varianti: il filtro COT (conferma o veto) peggiorava il rendimento a parità di rischio, il filtro di trend
+  dimezzava le cadute. Scelta fatta solo su quel periodo, poi **una sola verifica fuori campione** (2016-oggi):
+  conservativo 3,5%/anno (caduta max -13%), moderato 4,6% (-16%), aggressivo 10,5% (-20%); 60/40: 8,3% (-23%).
+  Il COT resta mostrato accanto a ogni mercato come informazione.
+- **Live** dalla prima rotazione pubblicata (`storico/portafogli/rotazioni_v2.json`, mai riscritto).
 - **Prezzi**: Yahoo Finance (rettificati), copia in `storico/yahoo/`, al massimo un download al giorno. Per un servizio
   commerciale conviene un fornitore con licenza: basta sostituire `scarica_yahoo()`.
 

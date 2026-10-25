@@ -8,23 +8,24 @@ IDEA
   (volatilita' obiettivo -> drawdown storico atteso). Ogni ~30 giorni (primo giorno di borsa del mese) il
   portafoglio ruota: restano i mercati ancora favorevoli, escono gli altri, entrano i nuovi.
 
-REGOLE (fissate PRIMA di guardare i risultati, uguali per tutti i periodi: niente ottimizzazione sul passato)
-  1. Universo = mercati del report COT che si possono comprare a pronti con un ETF/ETC (indici, Treasury,
-     metalli, energia, cereali, crypto). Prezzi giornalieri rettificati (dividendi inclusi) da Yahoo Finance.
-  2. Un mercato entra solo se, alla data del ribilanciamento:
-       - il punteggio COT (stesso calcolo del sito, solo report gia' pubblicati) e' da BUY (>= NORMAL), e
-       - il prezzo e' sopra la sua media a 200 giorni (trend a favore).
-     Solo acquisti: un segnale SELL significa "fuori", il peso va in liquidita' (Treasury 1-3 anni).
-  3. Pesi: inversamente proporzionali alla volatilita' degli ultimi 3 mesi (chi oscilla meno pesa di piu'),
-     con un tetto per singolo mercato; poi tutto il portafoglio viene ridotto fino alla volatilita'
-     obiettivo del profilo. Il resto resta in liquidita'. Nessuna leva.
+REGOLE, VERSIONE 2 (scelte guardando SOLO lo storico 2006-2015, poi verificate una volta fuori campione)
+  1. Ogni profilo ha una BASE fissa di mercati e pesi (indici azionari, Treasury, oro; Nasdaq, emergenti e
+     Bitcoin nell'aggressivo), comprabili a pronti con ETF/ETC. Prezzi rettificati (dividendi inclusi) Yahoo.
+  2. FILTRO DI TREND a ogni rotazione mensile: se il prezzo di un mercato e' sotto la sua media a 200 giorni,
+     il suo peso va "in pausa" in liquidita' (Treasury 1-3 anni) fino a quando torna sopra. Solo acquisti.
+  3. Il punteggio COT di ogni mercato e' mostrato accanto come informazione, ma NON decide i pesi: nello
+     storico 2006-2015 il filtro COT (da solo, come conferma o come veto) peggiorava il rendimento a parita'
+     di rischio, mentre il filtro di trend dimezzava le cadute (vedi README, "Portafogli modello").
   4. Costi: 0,10% sul capitale che cambia a ogni ribilanciamento.
+  VERSIONE 1 (ritirata): ingresso solo con COT da BUY + trend e pesi a volatilita' obiettivo. Fuori campione
+  rendeva 1-2% l'anno contro l'8% del 60/40, quasi sempre in liquidita'. Le sue rotazioni restano in
+  storico/portafogli/rotazioni.json; la versione 2 registra in rotazioni_v2.json.
 
 VERIFICA ONESTA
   - STORICO: dal primo anno con dati sufficienti fino al 31/12/2015;
   - FUORI CAMPIONE (OOS): dal 2016 a oggi, con le STESSE regole (mai ritoccate guardando questo periodo);
   - LIVE: dalla prima rotazione pubblicata sul sito. Ogni rotazione viene salvata nell'archivio
-    (storico/portafogli/rotazioni.json) e non viene mai riscritta: la linea live non si puo' "aggiustare".
+    (storico/portafogli/rotazioni_v2.json) e non viene mai riscritta: la linea live non si puo' "aggiustare".
 
 DATI: storico/yahoo/<TICKER>.csv (copia dei prezzi Yahoo, aggiornata al massimo una volta al giorno).
   Se Yahoo non risponde si usa la copia salvata; senza copia il portafoglio non viene mostrato.
@@ -77,21 +78,22 @@ LIQUIDITA = ("CASH", "SHY", "Liquidità", "ETF Treasury USA 1-3 anni (parcheggio
 BENCH = (("SPY", 0.6), ("IEF", 0.4))          # confronto: classico 60% azioni USA + 40% Treasury, ribilanciato
 TUTTI = {u[0]: u for u in UNIVERSO + [LIQUIDITA]}
 
-# I tre profili: mercati ammessi, volatilita' obiettivo (annua), tetto per mercato, drawdown di riferimento
-_BASE = ["SP500", "DOW", "EAFE", "US10Y", "USBOND", "GOLD"]
-_MEDIO = _BASE + ["NASDAQ", "RUSSELL", "EM", "SILVER", "COPPER", "WTI"]
+# I tre profili: BASE fissa (chiave -> peso) e drawdown di riferimento. La parte "CASH" e' liquidita' fissa.
 PROFILI = [
-    {"id": "conservativo", "nome": "Conservativo", "vol": 0.05, "tetto": 0.30, "dd": 10, "ammessi": _BASE,
-     "descr": "Azioni dei grandi indici, Treasury e oro. Oscillazioni contenute: si accetta di guadagnare meno "
-              "in cambio di cadute più piccole."},
-    {"id": "moderato", "nome": "Moderato", "vol": 0.09, "tetto": 0.25, "dd": 18, "ammessi": _MEDIO,
-     "descr": "Aggiunge tecnologia, piccole aziende, mercati emergenti, argento, rame e petrolio. Equilibrio tra "
-              "crescita e cadute."},
-    {"id": "aggressivo", "nome": "Aggressivo", "vol": 0.15, "tetto": 0.25, "dd": 25,
-     "ammessi": [u[0] for u in UNIVERSO], "tetti": {"BTC": 0.10, "ETH": 0.07, "NATGAS": 0.10},
-     "descr": "Tutto l'universo, crypto comprese. Punta alla crescita accettando cadute ampie e mesi negativi "
-              "più frequenti."},
+    {"id": "conservativo", "nome": "Conservativo", "dd": 10,
+     "base": {"SP500": .20, "EAFE": .10, "US10Y": .45, "GOLD": .10, "CASH": .15},
+     "descr": "Soprattutto Treasury, poi azioni USA ed europee/asiatiche, oro e liquidità. Oscillazioni contenute: "
+              "si accetta di guadagnare meno in cambio di cadute piccole."},
+    {"id": "moderato", "nome": "Moderato", "dd": 18,
+     "base": {"SP500": .35, "EAFE": .10, "EM": .05, "US10Y": .30, "GOLD": .10, "CASH": .10},
+     "descr": "Azioni e Treasury in equilibrio, con mercati emergenti e oro. Crescita e cadute nella media."},
+    {"id": "aggressivo", "nome": "Aggressivo", "dd": 25,
+     "base": {"SP500": .40, "NASDAQ": .15, "EAFE": .10, "EM": .10, "US10Y": .10, "GOLD": .10, "BTC": .05},
+     "descr": "Quasi tutto in azioni, tecnologia compresa, con una quota di Bitcoin. Punta alla crescita accettando "
+              "cadute ampie e mesi negativi più frequenti."},
 ]
+for _p in PROFILI:                                   # mercati ammessi = quelli della base (per la pagina)
+    _p["ammessi"] = [k for k in _p["base"] if k != "CASH"]
 INIZIO = "2006-01-01"          # primo ribilanciamento (prima i dati degli ETF sono troppo pochi)
 OOS_DAL = "2016-01-01"         # da qui in poi: fuori campione
 COSTO = 0.001                  # 0,10% del capitale scambiato
@@ -269,66 +271,41 @@ def date_ribilancio(g, dal=INIZIO):
     return out
 
 
-def scegli(profilo, g, i, sc):
-    """Composizione del profilo al giorno i: [(chiave, peso)] (liquidita' compresa) + dettagli per la pagina."""
+def regola_base(score, trend_ok):
+    """Regola della versione 2: conta solo il trend (prezzo sopra la media a 200 giorni). score e' ignorato."""
+    return trend_ok
+
+
+def scegli(profilo, g, i, sc, regola=None):
+    """Composizione del profilo al giorno i: ({chiave: peso}, dettagli dei mercati tenuti, mercati in pausa).
+    Ogni mercato della base tiene il suo peso se regola(score COT, trend) e' vera, altrimenti il peso va in
+    liquidita'. I mercati non ancora quotati abbastanza a lungo (es. Bitcoin prima del 2015) sono liquidita'."""
+    regola = regola or regola_base
     giorno = g.date[i]
-    scelti, esclusi = [], []
-    for k in profilo["ammessi"]:
+    pesi, info, esclusi = {}, {}, []
+    for k, w in profilo["base"].items():
+        if k == "CASH":
+            pesi["CASH"] = pesi.get("CASH", 0) + w
+            continue
         t = TUTTI[k][1]
         if t not in g.p or g.n[t][i - 1 if i else 0] < MIN_STORIA:
-            continue                                       # mercato non ancora quotato abbastanza a lungo
+            pesi["CASH"] = pesi.get("CASH", 0) + w            # mercato non ancora disponibile
+            continue
         col = g.p[t]
-        x = cot_al(sc.get(k), giorno)
         finestra = [v for v in col[max(0, i - SMA):i] if v is not None]
         sma = sum(finestra) / len(finestra) if len(finestra) >= SMA * 0.9 else None
-        ultimo = col[i - 1]
-        trend = round((ultimo / sma - 1) * 100, 1) if sma else None
-        if x is None or sma is None:
-            continue
-        if x[1] >= NORMAL and ultimo > sma:
+        x = cot_al(sc.get(k), giorno)
+        score = x[1] if x else None
+        trend = round((col[i - 1] / sma - 1) * 100, 1) if sma else None
+        if sma and regola(score if score is not None else 0, col[i - 1] > sma):
             vol = _std([g.rend(t, j) for j in range(max(1, i - VOL_GIORNI), i)])
-            if vol:
-                scelti.append({"k": k, "vol": vol * math.sqrt(252), "score": x[1], "trend": trend, "cot_data": x[0]})
+            pesi[k] = pesi.get(k, 0) + w
+            info[k] = {"k": k, "vol": (vol or 0) * math.sqrt(252), "score": score, "trend": trend, "base": w}
         else:
-            motivo = ("posizionamento COT non da acquisto" if x[1] < NORMAL else "prezzo sotto la media a 200 giorni")
-            esclusi.append({"k": k, "score": x[1], "trend": trend, "motivo": motivo})
-    pesi = {}
-    if scelti:
-        inv = {s["k"]: 1 / s["vol"] for s in scelti}
-        tot = sum(inv.values())
-        tetti = profilo.get("tetti", {})
-        pesi = {k: v / tot for k, v in inv.items()}
-        for _ in range(10):                              # tetti per mercato: l'eccesso va agli altri sotto il tetto
-            sopra = {k: w for k, w in pesi.items() if w > tetti.get(k, profilo["tetto"]) + 1e-9}
-            if not sopra:
-                break
-            liberi = {k: w for k, w in pesi.items() if k not in sopra}
-            eccesso = sum(w - tetti.get(k, profilo["tetto"]) for k, w in sopra.items())
-            for k in sopra:
-                pesi[k] = tetti.get(k, profilo["tetto"])
-            if not liberi:
-                break                                     # tutti al tetto: l'eccesso andra' in liquidita'
-            tl = sum(liberi.values())
-            for k, w in liberi.items():
-                pesi[k] = w + eccesso * w / tl
-        # volatilita' del portafoglio (covarianze degli ultimi 3 mesi) -> riduzione alla volatilita' obiettivo
-        ks = list(pesi)
-        R = {k: [g.rend(TUTTI[k][1], j) for j in range(max(1, i - VOL_GIORNI), i)] for k in ks}
-        m = {k: sum(v) / len(v) for k, v in R.items()}
-        n = min(len(v) for v in R.values())
-        var = 0.0
-        for a in ks:
-            for b in ks:
-                cov = sum((R[a][j] - m[a]) * (R[b][j] - m[b]) for j in range(n)) / max(1, n - 1)
-                var += pesi[a] * pesi[b] * cov
-        vol_p = math.sqrt(max(var, 0) * 252)
-        scala = min(1.0, profilo["vol"] / vol_p) if vol_p > 0 else 1.0
-        pesi = {k: w * scala for k, w in pesi.items()}
-    pesi = {k: round(w, 4) for k, w in pesi.items() if w >= 0.005}
-    resto = round(max(0.0, 1 - sum(pesi.values())), 4)
-    if resto >= 0.005:
-        pesi["CASH"] = resto                              # liquidita' solo se c'e' davvero
-    info = {s["k"]: s for s in scelti}
+            pesi["CASH"] = pesi.get("CASH", 0) + w
+            esclusi.append({"k": k, "score": score, "trend": trend, "base": round(w * 100, 1),
+                            "motivo": "prezzo sotto la media a 200 giorni: peso in pausa nella liquidità"})
+    pesi = {k: round(v, 4) for k, v in pesi.items() if v >= 0.005}
     return pesi, info, esclusi
 
 
@@ -414,7 +391,7 @@ def _tagli(curva, dal=None, al=None):
 
 # --------------------------------------------------------------------------- registro delle rotazioni live
 def _registro(cartella):
-    return os.path.join(cartella, "portafogli", "rotazioni.json")
+    return os.path.join(cartella, "portafogli", "rotazioni_v2.json")
 
 
 def leggi_rotazioni(cartella=CARTELLA):
@@ -486,7 +463,8 @@ def calcola(righe_cot, px, cartella=CARTELLA, scrivi=True, oggi=None):
                           "liquidita": round(p1.get("CASH", 0) * 100)})
         out_prof.append({
             "id": prof["id"], "nome": prof["nome"], "descr": prof["descr"], "dd_rif": prof["dd"],
-            "vol_obiettivo": round(prof["vol"] * 100), "ammessi": [{"k": k, "nome": TUTTI[k][2]} for k in prof["ammessi"]],
+            "base": [{"k": k, "nome": TUTTI[k][2], "peso": round(w * 100)} for k, w in prof["base"].items()],
+            "ammessi": [{"k": k, "nome": TUTTI[k][2]} for k in prof["ammessi"]],
             "composizione": comp, "esclusi": esclusi,
             "stat": {"storico": statistiche(_tagli(curva, al=OOS_DAL)),
                      "oos": statistiche(_tagli(curva, dal=OOS_DAL)),
