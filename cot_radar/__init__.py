@@ -35,4 +35,4 @@ Mappa dei moduli (in ordine di "viaggio" dei dati):
   vetrina.py     landing page del sito (radice) con i numeri veri; il terminale sta in /terminale/
   riepilogo.py   riepilogo settimanale dei segnali per categoria di asset (Telegram), dai dati della pagina online
 """
-__version__ = "6.23"
+__version__ = "6.24"

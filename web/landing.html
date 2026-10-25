@@ -147,15 +147,37 @@ section{padding:110px 0}
 .finale p{color:var(--ink2);max-width:620px;margin:0 auto 32px;font-size:18px}
 .finale .cta{justify-content:center}
 /* il metodo: quattro fonti -> una direzione */
-.pilastri{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
-@media (max-width:1000px){.pilastri{grid-template-columns:1fr 1fr}}@media (max-width:600px){.pilastri{grid-template-columns:1fr}}
-.pilastro{padding:28px 26px;border-radius:22px;background:linear-gradient(180deg,rgba(11,29,66,.75),rgba(7,20,49,.5));border:1px solid var(--line);position:relative}
-.pilastro .dom{font:800 12px "Inter",system-ui;letter-spacing:1.2px;text-transform:uppercase;color:var(--acc2)}
-.pilastro h3{font:750 20px/1.25 "Inter Display","Inter",system-ui;margin:8px 0 10px;letter-spacing:-.3px}
-.pilastro p{margin:0;color:var(--ink2);font-size:15px}
-.pilastro .ic{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;margin-bottom:16px;background:rgba(46,196,182,.12);border:1px solid rgba(46,196,182,.35)}
-.pilastro .ic svg{width:22px;height:22px;fill:none;stroke:#3ee0cf;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.unione{margin-top:26px;display:grid;grid-template-columns:1.1fr .9fr;gap:22px}
+.pilastri{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
+@media (max-width:1180px){.pilastri{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:600px){.pilastri{grid-template-columns:1fr}}
+/* CARD CHE SI GIRA: davanti icona, domanda e titolo; dietro la spiegazione. Gira al passaggio del mouse (PC)
+   o al tocco (telefono, vedi script "carte"). Le due facce stanno nella stessa cella: altezza = la piu' alta. */
+.flip{perspective:1300px;cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent}
+.flip .interno{display:grid;height:100%;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.2,.75,.2,1)}
+@media (hover:hover){.flip:hover .interno{transform:rotateY(180deg)}}
+.flip.girata .interno,.flip:focus-visible .interno{transform:rotateY(180deg)}
+.faccia{grid-area:1/1;-webkit-backface-visibility:hidden;backface-visibility:hidden;display:flex;flex-direction:column;
+ padding:32px 28px 26px;border-radius:24px;border:1px solid var(--line);min-height:280px;
+ background:linear-gradient(180deg,rgba(11,29,66,.8),rgba(7,20,49,.55));box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.retro{transform:rotateY(180deg);border-color:rgba(46,196,182,.55);
+ background:radial-gradient(420px 220px at 0 0,rgba(46,196,182,.2),transparent 70%),linear-gradient(180deg,#0c2149,#081633)}
+.faccia .ic{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;margin-bottom:26px;background:rgba(46,196,182,.12);border:1px solid rgba(46,196,182,.35);box-shadow:0 0 24px rgba(46,196,182,.12)}
+.faccia .ic svg{width:25px;height:25px;fill:none;stroke:#3ee0cf;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+/* etichetta su UNA riga (testi brevi) e titolo sempre alla stessa altezza in tutte le card */
+.faccia .dom{display:block;font:800 11.5px/1.4 "Inter",system-ui;letter-spacing:1.1px;text-transform:uppercase;color:var(--acc2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.faccia h3{font:780 24px/1.2 "Inter Display","Inter",system-ui;margin:10px 0 0;letter-spacing:-.5px}
+.faccia .breve{margin:14px 0 0;color:var(--ink2);font-size:15px}
+.faccia .gira{margin-top:auto;padding-top:22px;display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--mute)}
+.faccia .gira svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.retro h3{font-size:19px;margin:0 0 12px}.retro p{margin:0;color:var(--ink);font-size:15px;line-height:1.65}
+.retro .term{margin-top:auto;padding-top:18px;font-size:13px;color:#9ff3e9;font-weight:650}
+/* EVIDENZA AL PASSAGGIO del mouse per tutte le altre card: si alzano, bordo turchese, inclinazione 3D (script "inclina") */
+.livello,.dato,.tappa,.unione>div{transition:transform .45s cubic-bezier(.2,.7,.2,1),border-color .35s,box-shadow .35s}
+@media (hover:hover){
+ .livello:hover,.dato:hover,.tappa:hover,.unione>div:hover{border-color:rgba(46,196,182,.6);box-shadow:0 24px 60px rgba(0,0,0,.45),0 0 40px rgba(46,196,182,.12)}
+ .dato:hover b{background:linear-gradient(100deg,#3ee0cf,#5b9bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+ .faq details:hover{border-color:rgba(46,196,182,.45)}}
+@media (prefers-reduced-motion:reduce){.flip .interno{transform:none!important}.flip .retro{display:none}}
+.unione{margin-top:34px;display:grid;grid-template-columns:1.1fr .9fr;gap:22px}
 @media (max-width:900px){.unione{grid-template-columns:1fr}}
 .unione>div{padding:32px 34px;border-radius:24px;border:1px solid var(--line);background:rgba(10,22,48,.7)}
 .unione h3{margin:0 0 12px;font:750 22px/1.25 "Inter Display","Inter",system-ui;letter-spacing:-.3px}
@@ -250,18 +272,22 @@ footer{padding:64px 0 40px;color:var(--mute);font-size:14px;border-top:1px solid
   <div class="titsez appare"><small>Il metodo</small><h2>Quattro fonti indipendenti. Una sola direzione.</h2>
    <p>Nessun indicatore, da solo, basta a reggere un'operazione di settimane. Il vantaggio statistico nasce quando fonti che non dipendono l'una dall'altra raccontano la stessa storia: è questo che BoardEdge misura, ogni giorno, su ogni mercato.</p></div>
   <div class="pilastri">
-   <div class="pilastro appare"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c.8-3.5 3.2-5.5 6-5.5s5.2 2 6 5.5"/><path d="M16 4.5a3 3 0 0 1 0 6M18 14.8c1.7.8 2.7 2.6 3 5.2"/></svg></div>
-    <span class="dom">Chi compra e chi vende</span><h3>Report COT</h3>
-    <p>Il posizionamento dichiarato da hedger istituzionali e grandi speculatori sui futures, settimana dopo settimana. È il motore del segnale: mostra dove si sta accumulando il capitale.</p></div>
-   <div class="pilastro appare" style="--d:.08s"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10M9.5 21V10M14.5 21V10M19 21V10"/><path d="M2.5 10 12 3.5 21.5 10z"/></svg></div>
-    <span class="dom">Perché si muove il denaro</span><h3>Politica monetaria</h3>
-    <p>Tassi a 2 anni, differenziali tra valute, rendimenti reali e liquidità della Fed: le condizioni che rendono una valuta o un asset più o meno attraente nel tempo.</p></div>
-   <div class="pilastro appare" style="--d:.16s"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h3"/></svg></div>
-    <span class="dom">Quando arriva la volatilità</span><h3>Notizie macro</h3>
-    <p>Fed, BCE, inflazione, occupazione, PIL: il calendario dei dati che possono accelerare o mettere alla prova una posizione, con la reazione del mercato misurata dopo l'uscita.</p></div>
-   <div class="pilastro appare" style="--d:.24s"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 19c3-9 5-9 8-4s5 5 8-6"/><path d="M4 4v15h16"/></svg></div>
-    <span class="dom">Come è andata in passato</span><h3>Stagionalità</h3>
-    <p>Quante volte, negli anni, lo stesso mercato è salito o sceso nella stessa finestra di calendario: un vento a favore o contro che si somma al segnale.</p></div>
+   <div class="flip appare" tabindex="0" role="button" aria-label="Report COT: mostra i dettagli"><div class="interno">
+    <div class="faccia fronte"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c.8-3.5 3.2-5.5 6-5.5s5.2 2 6 5.5"/><path d="M16 4.5a3 3 0 0 1 0 6M18 14.8c1.7.8 2.7 2.6 3 5.2"/></svg></div><span class="dom">Chi compra e chi vende</span><h3>Report COT</h3><p class="breve">Il motore del segnale: dove si accumula il capitale istituzionale.</p><span class="gira"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>Scopri di più</span></div>
+    <div class="faccia retro"><h3>Report COT</h3><p>Il posizionamento dichiarato da hedger istituzionali e grandi speculatori sui futures, settimana dopo settimana: mostra dove si sta accumulando il capitale e da quanto tempo.</p><span class="term">Nel terminale: punteggio COT, settimane di accumulo, Commercials agli estremi.</span></div>
+   </div></div>
+   <div class="flip appare" tabindex="0" role="button" aria-label="Politica monetaria: mostra i dettagli" style="--d:.08s"><div class="interno">
+    <div class="faccia fronte"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10M9.5 21V10M14.5 21V10M19 21V10"/><path d="M2.5 10 12 3.5 21.5 10z"/></svg></div><span class="dom">Perché si muove il denaro</span><h3>Politica monetaria</h3><p class="breve">Tassi, differenziali e liquidità: le condizioni di fondo del mercato.</p><span class="gira"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>Scopri di più</span></div>
+    <div class="faccia retro"><h3>Politica monetaria</h3><p>Tassi a 2 anni, differenziali tra valute, rendimenti reali e liquidità della Fed: le condizioni che rendono una valuta o un asset più o meno attraente nel tempo.</p><span class="term">Nel terminale: verdetto macro a favore, contro o neutro.</span></div>
+   </div></div>
+   <div class="flip appare" tabindex="0" role="button" aria-label="Notizie macro: mostra i dettagli" style="--d:.16s"><div class="interno">
+    <div class="faccia fronte"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h3"/></svg></div><span class="dom">Quando sale la volatilità</span><h3>Notizie macro</h3><p class="breve">Il calendario delle giornate che possono muovere il prezzo.</p><span class="gira"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>Scopri di più</span></div>
+    <div class="faccia retro"><h3>Notizie macro</h3><p>Fed, BCE, inflazione, occupazione, PIL: i dati che possono accelerare o mettere alla prova una posizione, con la reazione del mercato misurata dopo l'uscita.</p><span class="term">Su Telegram: agenda della settimana, pre-avviso ed esito.</span></div>
+   </div></div>
+   <div class="flip appare" tabindex="0" role="button" aria-label="Stagionalità: mostra i dettagli" style="--d:.24s"><div class="interno">
+    <div class="faccia fronte"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 19c3-9 5-9 8-4s5 5 8-6"/><path d="M4 4v15h16"/></svg></div><span class="dom">Come è andata in passato</span><h3>Stagionalità</h3><p class="breve">Il comportamento storico dello stesso periodo dell'anno.</p><span class="gira"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>Scopri di più</span></div>
+    <div class="faccia retro"><h3>Stagionalità</h3><p>Quante volte, negli anni, lo stesso mercato è salito o sceso nella stessa finestra di calendario: un vento a favore o contro che si somma al segnale.</p><span class="term">Nel terminale: favorevole, non favorevole o neutra accanto a ogni segnale.</span></div>
+   </div></div>
   </div>
   <div class="unione">
    <div class="evid appare"><h3>Perché la combinazione conta, nello swing</h3>
@@ -394,5 +420,20 @@ function suScroll(){var y=window.scrollY,h=innerHeight;testata.classList.toggle(
 addEventListener("scroll",suScroll,{passive:true});suScroll();
 /* luce che segue il mouse sulle card dei tre livelli */
 document.querySelectorAll(".livello").forEach(function(c){c.addEventListener("mousemove",function(e){var r=c.getBoundingClientRect();c.style.setProperty("--mx",((e.clientX-r.left)/r.width*100)+"%");});});
+
+/* ===== CARTE DEL METODO: al tocco (telefono) o con Invio/Spazio (tastiera) si girano; sul PC girano al passaggio ===== */
+document.querySelectorAll(".flip").forEach(function(c){
+ function gira(){c.classList.toggle("girata");}
+ c.addEventListener("click",function(){if(!matchMedia("(hover:hover)").matches)gira();});
+ c.addEventListener("keydown",function(e){if(e.key=="Enter"||e.key==" "){e.preventDefault();gira();}});});
+
+/* ===== INCLINAZIONE 3D: le card seguono il mouse (max 5 gradi) e si alzano; solo con mouse e senza "riduci movimento" ===== */
+if(!fermo&&matchMedia("(hover:hover)").matches){
+ document.querySelectorAll(".livello,.dato,.tappa,.unione>div").forEach(function(c){
+  c.addEventListener("mousemove",function(e){if(c.classList.contains("appare")&&!c.classList.contains("vista"))return;
+   var r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+   c.style.transitionDelay="0s";
+   c.style.transform="perspective(1000px) rotateX("+(-y*5).toFixed(2)+"deg) rotateY("+(x*5).toFixed(2)+"deg) translateY(-6px)";});
+  c.addEventListener("mouseleave",function(){c.style.transform="";});});}
 </script>
 </body></html>
