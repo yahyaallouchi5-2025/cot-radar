@@ -191,6 +191,22 @@ Limite: si può misurare solo dove c'è un prezzo storico gratuito (cambi, indic
 
 Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il risultato completo finisce anche in `storico/confronto.json`. Test: `python -m unittest tests.test_archivi_cot -v`.
 
+## Notizie macro su Telegram (v6.20: `agenda.py` + `avvisi.py`)
+
+Flusso unico, ogni fonte un solo compito:
+1. **Calendario** = financecalendar.com (gratuito, uso commerciale con link di attribuzione, presente in ogni
+   messaggio e nel terminale): Fed, BCE, BoE, BoJ, BoC, RBA, RBNZ, SNB, CPI/NFP/PCE/PPI/PIL/ISM/vendite USA,
+   CPI di Eurozona, UK, Canada, Australia. Se non risponde: ultima copia salvata (`dati/agenda.json`), poi il
+   calendario interno di `notizie.py` (NFP, CPI, Fed, BCE).
+2. **Esito** = reazione del mercato da FRED/BCE: movimento del tasso a 2 anni nel giorno dell'annuncio in deviazioni
+   standard (USD, EUR). Arriva quando FRED/BCE pubblicano il dato (di solito il giorno dopo): finché manca, l'esito
+   resta in attesa e si riprova al giro successivo; dopo 4 giorni parte comunque con quello che c'è.
+3. **Segnali esposti** = coppie Forex con segnale COT che contengono la valuta: conferma / contrasto / neutro.
+
+Messaggi (ognuno una sola volta, stato nel cursore `notificati.json`): **notizie in arrivo** (entro 30 ore: di solito
+la sera prima) ed **esito delle notizie** (per valuta e giorno). Il consensus non è disponibile gratis: si confronta
+il dato con il precedente e la sorpresa vera la misura il mercato.
+
 ## Stagionalità agganciata al COT (v6.18)
 
 La stagionalità (settimana e 4 settimane) parte dal **venerdì di uscita del report COT in uso** (`stagionalita.ancora_cot`),

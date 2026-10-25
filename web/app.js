@@ -175,7 +175,8 @@ try{const ev=D.eventi||[],MAX=6;
  $("eventi").innerHTML=ev.length?`<div class="card eventi"><div class="evhead"><h3>Prossimi eventi ad alto impatto</h3>
   <details class="info"><summary title="Come usarli" aria-label="Informazioni">i</summary><div>Il giorno del dato la volatilit&agrave; sale: per lo swing conviene valutare l'ingresso <b>dopo</b> l'uscita. Dopo il dato la riga "Notizie" delle card mostra se la sorpresa rafforza o penalizza il segnale.</div></details></div>
   <div class="evgrid">${ev.map((e,k)=>k<MAX?evc(e):evc(e).replace('class="evc','class="evc extra')).join("")}</div>
-  ${ev.length>MAX?`<button class="tvbtn evtutti" id="evtutti">Mostra tutti (${ev.length})</button>`:""}</div>`:"";
+  ${ev.length>MAX?`<button class="tvbtn evtutti" id="evtutti">Mostra tutti (${ev.length})</button>`:""}
+  ${D.agenda&&String(D.agenda.fonte||"").startsWith("financecalendar")?`<div class="small" style="margin-top:10px">Calendario: <a href="https://www.financecalendar.com" target="_blank" rel="noopener">financecalendar.com</a></div>`:""}</div>`:"";
  const bt=$("evtutti");if(bt)bt.onclick=()=>{const c=$("eventi").querySelector(".card").classList.toggle("aperto");bt.textContent=c?"Mostra meno":`Mostra tutti (${ev.length})`;};
 }catch(e){fail("Prossimi eventi","eventi",e);}
 $("sectors").innerHTML=SEC.filter(g=>byS[g]).map(g=>{const l=byS[g],avg=l.reduce((x,a)=>x+a.score,0)/l.length;

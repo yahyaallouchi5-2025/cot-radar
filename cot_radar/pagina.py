@@ -26,7 +26,7 @@ from .fonti import get_cftc_tutto, get_fred, load_all, scarica_archivio
 from .log import log, raccoglitore
 from .mercato import fed_liquidity
 from .mutui import mortgages
-from . import backtest, notizie, registro, stagionalita, storico, volatilita
+from . import agenda, backtest, notizie, registro, stagionalita, storico, volatilita
 from .admin import pubblico
 
 
@@ -78,8 +78,17 @@ def build(data_source=load_all, demo=False, sito=False):
     except Exception:
         log.warning("liquidita' Fed non calcolata:\n%s", traceback.format_exc())
         fed = None
+    # AGENDA delle notizie (agenda.py): calendario automatico + reazione del mercato + segnali esposti.
+    # Isolata: se fallisce il motore notizie usa il suo calendario di riserva e mancano solo gli avvisi Telegram.
+    agenda_out = None
+    if not demo:
+        try:
+            agenda_out = agenda.costruisci(fred, ecb, pairs)
+            log.info("agenda notizie: %d eventi (fonte %s)", len(agenda_out["eventi"]), agenda_out["fonte"])
+        except Exception:
+            log.warning("agenda notizie non costruita:\n%s", traceback.format_exc())
     try:                              # motore notizie (vedi notizie.py): se fallisce mancano solo le righe "Notizie"
-        news = notizie.motore(fred, ecb)
+        news = notizie.motore(fred, ecb, calendario=agenda.calendario_motore(agenda_out))
         notizie.applica(pairs, assets, news)
     except Exception:
         log.warning("motore notizie non calcolato:\n%s", traceback.format_exc())
@@ -169,7 +178,7 @@ def build(data_source=load_all, demo=False, sito=False):
             "divmin": DIVERGENCE_MIN, "mw": MACRO_WEIGHT, "regw": REG_WEEKS, "demo": demo}
     data = {"meta": meta, "sources": sources,
             "assets": assets, "pairs": pairs, "corr": corr, "market": market, "fed": fed, "mortgage": mort,
-            "order": [a[0] for a in ASSETS] + ["USD"], "sectors": SECTORS, "stato": pubblico(stato), "admin": "__ADMIN__", "eventi": news["prossimi"],
+            "order": [a[0] for a in ASSETS] + ["USD"], "sectors": SECTORS, "stato": pubblico(stato), "admin": "__ADMIN__", "eventi": news["prossimi"], "agenda": agenda_out,
             "stag": stag, "stag_meta": stag_meta, "reg": reg, "bt": bt, "vol": vol,
             "tv": {k: {"s": v[0], "inv": v[1]} for k, v in TV_SYMBOLS.items()}, "tvp": TV_PAIRS}
     # "stato" pubblico = solo esito e fonti; "admin" = segnaposto che main.py sostituisce con il registro

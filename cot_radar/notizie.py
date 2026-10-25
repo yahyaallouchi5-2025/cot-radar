@@ -13,8 +13,8 @@ Idea (vedi anche la scheda "Metodo"):
   * il correttivo ha un TETTO (una notizia da sola non ribalta un segnale forte) e DECADE:
     si dimezza ogni ~1 giorno per i dati, ~3 giorni per le banche centrali.
 
-Il calendario e' qui sotto (date ufficiali: BLS per CPI/NFP, Federal Reserve per il FOMC, BCE).
-Aggiornarlo una volta l'anno quando escono i nuovi calendari. Gli orari sono quelli locali dell'ente.
+Calendario: dalla v6.20 arriva dall'agenda automatica (agenda.py, financecalendar.com). Quello scritto qui
+sotto e' la RISERVA, usata solo se l'agenda non e' disponibile (orari locali dell'ente).
 """
 import math
 from datetime import date, datetime, timedelta
@@ -64,6 +64,8 @@ DURATA = 7                                    # dopo 7 giorni l'evento non conta
 def _utc(ev):
     """Evento -> data/ora UTC."""
     d = date.fromisoformat(ev[0])
+    if ev[3] == "UTC":                                   # eventi dall'agenda (agenda.py): orario gia' in UTC
+        return datetime(d.year, d.month, d.day, ev[1], ev[2])
     if ev[3] == "ET":
         return et_to_utc(d, ev[1], ev[2])
     estate = _last_sunday(d.year, 3) <= d < _last_sunday(d.year, 10)          # Francoforte: CET/CEST
@@ -97,12 +99,13 @@ def sorpresa_mercato(giorno, serie):
     return round(oggi / sd, 2), round(oggi * 100, 1)                   # (z, variazione in punti base)
 
 
-def motore(fred, ecb, adesso=None):
+def motore(fred, ecb, adesso=None, calendario=None):
     """Restituisce {"prossimi": [...eventi entro 7 giorni...], "valute": {valuta: {adj, oggi, eventi}}}.
-    adj = correttivo in punti per la VALUTA (positivo = valuta piu' forte), gia' decaduto nel tempo."""
+    adj = correttivo in punti per la VALUTA (positivo = valuta piu' forte), gia' decaduto nel tempo.
+    calendario = eventi principali dall'agenda (agenda.calendario_motore); None o vuoto = CALENDARIO qui sopra."""
     adesso = adesso or utcnow()
     prossimi, valute = [], {}
-    for ev in CALENDARIO:
+    for ev in (calendario or CALENDARIO):
         t = _utc(ev)
         giorni = (adesso - t).total_seconds() / 86400            # >0 = gia' uscito
         v = valute.setdefault(ev[5], {"adj": 0.0, "oggi": [], "eventi": []})

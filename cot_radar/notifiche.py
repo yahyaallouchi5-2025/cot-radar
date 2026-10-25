@@ -47,6 +47,7 @@ from html import escape as _escape
 
 from .config import ASSETS
 from .log import log
+from . import avvisi
 from .registro import leggi, verifica
 
 CURSORE = "notificati.json"
@@ -174,12 +175,13 @@ def leggi_cursore(cartella):
         return json.load(fh)
 
 
-def scrivi_cursore(cartella, ultimo_n, ultimo_hash, adesso, riepilogo_cot=None):
-    """ultimo_n = ultimo evento avvisato; riepilogo_cot = data COT dell'ultimo riepilogo settimanale inviato."""
+def scrivi_cursore(cartella, ultimo_n, ultimo_hash, adesso, riepilogo_cot=None, agenda=None):
+    """ultimo_n = ultimo evento avvisato; riepilogo_cot = data COT dell'ultimo riepilogo settimanale inviato;
+    agenda = stato degli avvisi sulle notizie (avvisi.py): {"arrivo": {id: data}, "esito": {valuta-data: data}}."""
     f = os.path.join(cartella, CURSORE)
     tmp = f + ".tmp"
     with open(tmp, "w", encoding="utf-8", newline="\n") as fh:
-        json.dump({"ultimo_n": ultimo_n, "hash": ultimo_hash, "riepilogo_cot": riepilogo_cot,
+        json.dump({"ultimo_n": ultimo_n, "hash": ultimo_hash, "riepilogo_cot": riepilogo_cot, "agenda": agenda,
                    "aggiornato": adesso.strftime("%Y-%m-%dT%H:%MZ")}, fh, ensure_ascii=False, indent=1)
         fh.write("\n")
     os.replace(tmp, f)
@@ -259,9 +261,12 @@ def esegui(cartella, sito, env=None, adesso=None, invia=True, dati_sito=None):
     dati = dati_sito if dati_sito is not None else riepilogo.scarica(sito)
     cot_sito = riepilogo.data_cot(dati)
     cursore = leggi_cursore(cartella)
+    agenda_sito = (dati or {}).get("agenda")
+    adesso_utc = adesso.astimezone(timezone.utc).replace(tzinfo=None) if adesso.tzinfo else adesso
     if cursore is None:
         if invia:
-            scrivi_cursore(cartella, ultimo_n, ultimo_hash, adesso, cot_sito)
+            scrivi_cursore(cartella, ultimo_n, ultimo_hash, adesso, cot_sito,
+                           avvisi.stato_iniziale(agenda_sito, adesso_utc) if agenda_sito else None)
         log.info("notifiche: primo avvio, cursore all'evento %d e al COT %s (nessun arretrato inviato)",
                  ultimo_n, cot_sito)
         return {"esito": "primo_avvio", "inviati": 0, "ultimo_n": ultimo_n}
@@ -278,12 +283,22 @@ def esegui(cartella, sito, env=None, adesso=None, invia=True, dati_sito=None):
             log.warning("notifiche: %d eventi troppo vecchi (> %d ore) non inviati", len(vecchi), MAX_ETA_ORE)
         aperture = {e["id"]: e for e in eventi if e["tipo"] == "apertura"}
         testi = componi(righe_eventi(nuovi, aperture), nuovi, sito)
+    # NOTIZIE MACRO (avvisi.py): "in arrivo" e "esito", ognuno una sola volta; stato nel cursore
+    stato_ag = cursore.get("agenda")
+    if stato_ag is None and agenda_sito:                  # cursore di una versione precedente: niente arretrati
+        stato_ag = avvisi.stato_iniziale(agenda_sito, adesso_utc)
+    arrivo, gruppi, nuovo_ag = avvisi.da_inviare(agenda_sito, stato_ag, adesso_utc) if agenda_sito else \
+        ([], [], stato_ag)
+    credito = (agenda_sito or {}).get("credito") or ""
+    testi_notizie = [avvisi.testo_arrivo(arrivo[i:i + 5], credito) for i in range(0, len(arrivo), 5)] + \
+                    [avvisi.testo_esito(gruppi[i:i + 4], credito) for i in range(0, len(gruppi), 4)]
     esito = {"esito": "niente_di_nuovo", "inviati": 0, "ultimo_n": ultimo_n, "testi": testi,
-             "tipo": "settimanale" if settimanale else "eventi"}
+             "tipo": "settimanale" if settimanale else "eventi", "testi_notizie": testi_notizie}
     if not invia:
         return dict(esito, esito="anteprima")
     token, chat = env.get("TELEGRAM_BOT_TOKEN"), env.get("TELEGRAM_CHAT_ID")
-    if testi and token and chat:
+    configurato = bool(token and chat)
+    if testi and configurato:
         for i, t in enumerate(testi):
             if not invia_telegram(token, chat, t):
                 # il cursore resta fermo: al prossimo giro si riprova (i messaggi gia' partiti si ripetono:
@@ -295,8 +310,20 @@ def esegui(cartella, sito, env=None, adesso=None, invia=True, dati_sito=None):
         log.info("notifiche: Telegram non configurato (Secrets TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID)")
         esito["esito"] = "non_configurato"
     nuovo_cot = cot_sito if settimanale else gia_cot
-    if ultimo_n != cursore.get("ultimo_n") or nuovo_cot != cursore.get("riepilogo_cot"):
-        scrivi_cursore(cartella, ultimo_n, ultimo_hash, adesso, nuovo_cot)
+    notizie_ok = True
+    if testi_notizie and configurato:
+        for t in testi_notizie:
+            if not invia_telegram(token, chat, t):
+                notizie_ok = False                       # stato delle notizie fermo: si riprova al prossimo giro
+                esito["esito"] = "telegram_errore"
+                break
+        if notizie_ok:
+            esito["inviati"] += len(testi_notizie)
+            esito["esito"] = "inviato"
+    stato_finale = nuovo_ag if notizie_ok else stato_ag
+    if (ultimo_n != cursore.get("ultimo_n") or nuovo_cot != cursore.get("riepilogo_cot")
+            or stato_finale != cursore.get("agenda")):
+        scrivi_cursore(cartella, ultimo_n, ultimo_hash, adesso, nuovo_cot, stato_finale)
     return esito
 
 
