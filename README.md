@@ -222,6 +222,16 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Prezzi**: Yahoo Finance (rettificati), copia in `storico/yahoo/`, al massimo un download al giorno. Per un servizio
   commerciale conviene un fornitore con licenza: basta sostituire `scarica_yahoo()`.
 
+## Pattern Detector (v6.32: `pattern.py` + `web/pattern.js`, workflow `pattern.yml`)
+- **Pattern**: BUY = candela 1 ribassista, candele 2 e 3 rialziste, chiusura della 3 sopra l'apertura della 1
+  (assorbimento in due candele); SELL simmetrico. Ingresso indicativo = chiusura della candela 3.
+- **Strumenti**: 28 coppie forex, oro, argento (spot Yahoo se c'è, altrimenti future), WTI, Brent, gas, rame, platino.
+- **Timeframe**: H4 (candele orarie Yahoo aggregate, allineate a UTC 00-04-08-12-16-20: possono differire dal broker)
+  e Daily; solo candele chiuse. Workflow ogni 4 ore a :08; il risultato va nel ramo `pattern` e la pagina lo legge da
+  raw.githubusercontent.com (nessuna ripubblicazione del sito). Ritardo tipico 10-20 minuti dalla chiusura.
+- **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
+- **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
+
 ## Azionario per settore (v6.31: `azioni.py` + `web/azioni.js`, scheda "Azioni", workflow `azioni.yml`)
 - **Titoli**: ~1.040 tra S&P 500, Nasdaq-100, FTSE MIB, DAX 40, Euro Stoxx 50, Nikkei 225, Hang Seng, SSE 50 e Nifty 50,
   negli 11 settori GICS (settori asiatici ricondotti al GICS a mano), più 9 indici. Emirati: Yahoo non ha i titoli (404).

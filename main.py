@@ -170,6 +170,8 @@ def main(argv):
                 azioni.copia_nel_sito(folder, cartella_locale=os.environ["AZIONI_LOCALE"])
             elif os.environ.get("GITHUB_ACTIONS"):
                 azioni.copia_nel_sito(folder)
+                from cot_radar import pattern
+                pattern.copia_nel_sito(folder)
         except Exception:
             log.warning("dati azioni non copiati nel sito:\n%s", traceback.format_exc())
     if not site and "--no-open" not in argv:
