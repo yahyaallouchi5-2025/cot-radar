@@ -1,11 +1,12 @@
 {
- "ultimo_n": 23,
- "hash": "35214ebd58e96dac15e9b34cee5b251549ca2badd1b204b3f3d3d28574531b53",
+ "ultimo_n": 24,
+ "hash": "409b4026421cd101d8d6551e6c0451e506e8553bea5e29f8b1605a9a7ab33bd3",
  "riepilogo_cot": "2026-10-20",
  "agenda": {
   "arrivo": {
    "canada-cpi-october-2026": "2026-10-19",
-   "uk-cpi-inflation-october-2026": "2026-10-21"
+   "uk-cpi-inflation-october-2026": "2026-10-21",
+   "australia-cpi-october-2026": "2026-10-28"
   },
   "esito": {
    "CAD-2026-10-19": "2026-10-19",
@@ -13,5 +14,5 @@
   },
   "settimana": "2026-10-26"
  },
- "aggiornato": "2026-10-25T15:55Z"
+ "aggiornato": "2026-10-26T18:44Z"
 }
