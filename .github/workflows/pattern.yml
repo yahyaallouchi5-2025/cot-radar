@@ -1,0 +1,49 @@
+# pattern.yml - PATTERN DETECTOR: ogni 4 ore, pochi minuti dopo la chiusura della candela H4 (UTC 00-04-08-12-16-20),
+# scarica da Yahoo forex e materie prime, cerca il pattern a 3 candele (cot_radar/pattern.py) e salva pattern.json nel
+# ramo "pattern" (un solo commit, sovrascritto). La pagina lo legge da raw.githubusercontent.com: niente ripubblicazione.
+# La chiusura daily entra nel giro delle 00:08 UTC. Se Yahoo non risponde: restano i dati del giro precedente, popup
+# di manutenzione nella scheda e questo job fallisce apposta -> GitHub manda la mail all'admin.
+name: Pattern
+on:
+  schedule:
+    - cron: "8 */4 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: pattern
+  cancel-in-progress: false
+jobs:
+  scansione:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Giro precedente (ramo "pattern")
+        run: |
+          mkdir -p dati_pattern
+          if git ls-remote --exit-code --heads origin pattern >/dev/null; then
+            git fetch -q --depth 1 origin pattern && git archive FETCH_HEAD | tar -x -C dati_pattern
+          fi
+      - name: Scansione dei pattern
+        id: pt
+        run: |
+          set +e
+          python -m cot_radar.pattern dati_pattern
+          echo "codice=$?" >> "$GITHUB_OUTPUT"
+      - name: Salva nel ramo "pattern"
+        run: |
+          cd dati_pattern
+          git init -q -b pattern
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "pattern: $(date -u '+%F %H:%M')"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" pattern:pattern
+      - name: Avviso all'admin se Yahoo non ha risposto
+        if: steps.pt.outputs.codice != '0'
+        run: |
+          echo "::error::Pattern: aggiornamento Yahoo non riuscito. Online restano i segnali del giro precedente."
+          exit 1
