@@ -38,9 +38,10 @@ try{(function(){const el=$("azioni");if(!el)return;
     el.innerHTML=`<h2>Azioni per settore</h2><div class="card azvuoto"><span class="pav-i grande" aria-hidden="true">!</span><h3>Dati azionari momentaneamente non disponibili</h3><p class="small">La scheda torna appena il servizio &egrave; di nuovo regolare.</p></div>`;
     if(/^https?:/.test(location.protocol)){const n=new Date(),z=x=>String(x).padStart(2,"0");
      ebManutenzione({scheda:"azioni",codice:"503",quando:`${n.getFullYear()}-${z(n.getMonth()+1)}-${z(n.getDate())} ${z(n.getHours())}:${z(n.getMinutes())}`});}});}
- if(el.offsetParent!==null)carica();
- else if("IntersectionObserver" in window){const io=new IntersectionObserver(v=>{if(v.some(x=>x.isIntersecting)){io.disconnect();carica();}});io.observe(el);}
- else carica();
+ // la sezione vuota e' alta 0 px (l'IntersectionObserver non sempre la vede): si carica al clic sulla scheda
+ // o subito se la pagina si apre gia' su "Azioni" (link #azioni)
+ const nb=document.querySelector('#nav button[data-t=azioni]');if(nb)nb.addEventListener("click",()=>setTimeout(carica,0));
+ setTimeout(()=>{if(el.classList.contains("on")||el.offsetParent!==null)carica();},0);
 
  // --- titoli dopo i filtri (listino + ricerca); il settore si applica alla tabella, non alle card
  function filtrati(conSettore){const q=ST.cerca.trim().toLowerCase();

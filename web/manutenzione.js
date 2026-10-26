@@ -30,5 +30,7 @@ window.ebManutenzione=function(o){try{
   try{window.ebStat&&ebStat.ev("avviso",{scheda:o.scheda});}catch(e){}}
  // il popup parte quando la scheda e' davvero visibile (non all'apertura della pagina su un'altra scheda)
  if(el.offsetParent!==null){mostra();return;}
- if("IntersectionObserver" in window){const io=new IntersectionObserver(v=>{if(v.some(x=>x.isIntersecting)){io.disconnect();mostra();}});io.observe(el);}
+ // la scheda diventa visibile con la classe "on" (navigazione): si osserva quella, non la geometria
+ const mo=new MutationObserver(()=>{if(el.classList.contains("on")){mo.disconnect();mostra();}});
+ mo.observe(el,{attributes:true,attributeFilter:["class"]});
 }catch(e){console.error("[BoardEdge] avviso di manutenzione:",e);}};
