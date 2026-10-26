@@ -45,6 +45,7 @@ DI_FILA = 5                    # fallimenti consecutivi oltre i quali Yahoo e' c
 SOGLIA_ANOMALIA = 0.10         # quota di titoli falliti oltre la quale scatta l'avviso di manutenzione
 PAUSA = 0.35                   # secondi tra una richiesta e l'altra (gentili con Yahoo)
 CODICE_ERRORE = "503"
+CHIUSURA_UTC = "21:00"         # dopo quest'ora (UTC) i prezzi del giorno sono definitivi anche per Wall Street
 
 SETTORI = [  # id, nome, ETF di riferimento USA (SPDR)
     ("tech", "Tecnologia", "XLK"), ("tlc", "Comunicazione", "XLC"), ("cdis", "Beni voluttuari", "XLY"),
@@ -152,7 +153,9 @@ def aggiorna(cartella, titoli=None, oggi=None, scarica=scarica, pausa=PAUSA):
     for t in titoli:
         f = os.path.join(cartella, "grezzi", _nome_file(t) + ".json")
         vecchio = _leggi(f) or {}
-        if vecchio.get("agg") == oggi.isoformat():           # gia' aggiornato oggi (giro ripetuto)
+        # gia' aggiornato DOPO la chiusura USA di oggi (giro ripetuto): niente nuove richieste.
+        # Un aggiornamento fatto durante la seduta (prezzi provvisori) invece si ripete la sera.
+        if vecchio.get("agg") == oggi.isoformat() and vecchio.get("agg_ora", "") >= CHIUSURA_UTC:
             stato["ok"] += 1
             continue
         nuovo = None
@@ -163,7 +166,8 @@ def aggiorna(cartella, titoli=None, oggi=None, scarica=scarica, pausa=PAUSA):
         if nuovo:
             di_fila = 0
             meta, d = nuovo
-            rec = dict(vecchio, t=t, agg=oggi.isoformat(), d=d, **{k: v for k, v in meta.items() if v})
+            rec = dict(vecchio, t=t, agg=oggi.isoformat(), agg_ora=datetime.now(timezone.utc).strftime("%H:%M"), d=d,
+                       **{k: v for k, v in meta.items() if v})
             # storico mensile: se manca o nel giorno del titolo (al massimo una volta a settimana)
             vecchio_m = vecchio.get("agg_m", "")
             if not vecchio.get("m") or (oggi.weekday() == giorno_mensile(t) and vecchio_m < (oggi - timedelta(days=3)).isoformat()) \
