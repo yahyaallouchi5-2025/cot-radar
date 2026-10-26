@@ -166,7 +166,19 @@ def build(data_source=load_all, demo=False, sito=False):
     try:
         righe = righe_cot or cache["cot"]["data"]
         px = portafogli.prezzi_demo() if demo else portafogli.prezzi()
-        port = portafogli.calcola(righe, px, scrivi=sito and not demo)
+        # quota "Azioni scelte": satellite.json dal ramo "azioni" (GitHub) o da AZIONI_LOCALE (prova sul PC)
+        sat = None
+        try:
+            from . import satellite
+            if os.environ.get("AZIONI_LOCALE"):
+                sat = satellite.leggi(os.environ["AZIONI_LOCALE"])
+            elif os.environ.get("GITHUB_ACTIONS"):
+                sat = satellite.leggi()
+        except Exception:
+            log.warning("satellite non letto:\n%s", traceback.format_exc())
+        if sat is None:
+            log.warning("portafogli: dati delle azioni scelte assenti, la loro quota resta in liquidita'")
+        port = portafogli.calcola(righe, px, scrivi=sito and not demo, sat=sat)
         if port:
             log.info("portafogli: rotazione del %s, prossima il %s", port["rotazione"], port["prossima"])
     except Exception:

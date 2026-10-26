@@ -232,6 +232,25 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+## Portafogli con Azioni scelte (v6.34: `satellite.py`, `portafogli.py`, `web/portafogli.js`)
+- **Quote**: conservativo 10%, moderato 20%, aggressivo 40% in 5 azioni dell'Azionario; il resto è la base di ETF
+  di sempre (pesi della base riscalati). Decisione del 26/10/2026; live dal 2 novembre 2026.
+- **Scelta** (alla chiusura del mese, solo dati fino a quel giorno): 12 e 3 mesi positivi, prezzo sopra la media di
+  10 mesi, non oltre il 15% sotto il massimo annuo, mese che entra positivo in almeno il 60% di almeno 8 anni;
+  punteggio dell'Azionario, primi 5 con un titolo per settore, pari peso. Costi 0,20% per titolo cambiato.
+- **Filtro di mercato** (in `portafogli.scegli`): S&P 500 sotto la media a 200 giorni → tutta la quota in liquidità.
+  Senza filtro la quota perdeva il 55% nel 2008; con il filtro, test 2006-2026 (mensile): aggressivo +14% l'anno con
+  caduta massima −18/−21% contro +8% / −17% senza azioni.
+- **Onestà**: lo storico delle azioni è OTTIMISTICO (titoli che oggi stanno negli indici: survivorship bias) e dentro
+  il mese la quota simulata non ha oscillazioni giornaliere. Dal live ogni scelta è registrata nel ramo `azioni`
+  (`satellite_registro.json`, mai riscritto) con il prezzo di chiusura del giorno di registrazione: l'ultimo giorno
+  feriale del mese dopo la chiusura (pronta per la rotazione), oppure al primo giro utile del mese.
+- **Flusso**: workflow Azioni (21:35 UTC) → `pubblico/satellite.json` nel ramo `azioni` → il Sito lo legge
+  (`satellite.leggi`) e lo passa a `portafogli.calcola(..., sat=...)`, che costruisce il prezzo sintetico `SAT`.
+- **Scheda**: selettore a segmenti dei profili e card principale (rischio, rendimento annuo, caduta massima,
+  10.000 € dall'inizio, mesi positivi, composizione per classe, le 5 azioni del mese, come funziona la rotazione).
+- **Strumenti (telefono)**: la colonna del punteggio ora è larga quanto serve, "STRONG SELL" resta dentro la card.
+
 ### v6.33: correzioni
 - **Storico mensile azioni**: con `range=max` Yahoo restituiva barre TRIMESTRALI per gli storici lunghi (circa 230 titoli,
   es. Apple dal 1980): la loro stagionalità era sbagliata. Ora lo storico mensile si scarica con `period1/period2`,

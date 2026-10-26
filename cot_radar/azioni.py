@@ -62,6 +62,8 @@ INDICI = [("^GSPC", "S&P 500", "sp500"), ("^NDX", "Nasdaq-100", "ndx"), ("FTSEMI
 # PUNTEGGIO di ogni titolo (0-100), ricalcolato ogni sera: media pesata dei PERCENTILI tra tutti i titoli
 # (cosi' valute e mercati diversi sono confrontabili). Forza = momento + trend + stagionalita' del mese in corso.
 PESI = {"v1a": 0.30, "v3m": 0.20, "t200": 0.15, "st_media": 0.20, "st_pos": 0.15}
+MESI_IT = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre",
+           "novembre", "dicembre"]
 TOP_N = 5                      # titoli nella vetrina della Dashboard (al massimo 1 per settore)
 MIN_ANNI_STAG = 8              # anni minimi di storico mensile perche' la stagionalita' conti
 
@@ -414,6 +416,13 @@ def main(argv):
         titoli = elenco()[:12]
     stato = aggiorna(cartella, [x["t"] for x in titoli] + [i[0] for i in INDICI] if titoli else None)
     pubblica(cartella, stato, titoli)
+    # quota "Azioni scelte" dei portafogli modello (satellite.py): mai bloccante per la scheda Azionario
+    try:
+        from . import satellite
+        satellite.calcola(cartella, titoli=titoli, anomalia=bool(stato.get("anomalia")))
+    except Exception:
+        import traceback
+        log.error("satellite non calcolato:\n%s", traceback.format_exc())
     print(json.dumps({k: (v if not isinstance(v, list) else len(v)) for k, v in stato.items()}, ensure_ascii=False))
     return 1 if stato.get("anomalia") else 0
 

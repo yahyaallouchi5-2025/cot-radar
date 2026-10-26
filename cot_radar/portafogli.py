@@ -75,25 +75,34 @@ UNIVERSO = [
     ("ETH", "ETH-USD", "Ether", "ETP Ether (o Ether a pronti)", "crypto"),
 ]
 LIQUIDITA = ("CASH", "SHY", "Liquidità", "ETF Treasury USA 1-3 anni (parcheggio)", "liquidita")
+# Quota "Azioni scelte": 5 titoli dell'Azionario a pari peso, scelti ogni mese da satellite.py (workflow delle azioni).
+# Nei calcoli e' un mercato sintetico "SAT": prezzo costruito dai rendimenti mensili dello storico simulato e, dal
+# live, dai prezzi giornalieri dei titoli registrati (vedi serie_satellite()).
+AZIONI_SCELTE = ("AZ", "SAT", "Azioni scelte", "5 azioni dell'Azionario a pari peso (1 per settore)", "azioni singole")
 BENCH = (("SPY", 0.6), ("IEF", 0.4))          # confronto: classico 60% azioni USA + 40% Treasury, ribilanciato
-TUTTI = {u[0]: u for u in UNIVERSO + [LIQUIDITA]}
+TUTTI = {u[0]: u for u in UNIVERSO + [LIQUIDITA, AZIONI_SCELTE]}
 
 # I tre profili: BASE fissa (chiave -> peso) e drawdown di riferimento. La parte "CASH" e' liquidita' fissa.
+# I tre profili: stesso motore, rischio diverso. BASE fissa di ETF (chiave -> peso relativo, somma 1) e quota di
+# AZIONI SCELTE ("az"): i pesi reali sono base x (1 - az) + az nelle 5 azioni. dd = caduta di riferimento del profilo.
+# Quote decise il 26/10/2026 dopo il test 2006-2026 con filtro di mercato (README, "Azioni scelte"): conservativo 10%,
+# moderato 20%, aggressivo 40%. La parte "CASH" della base e' liquidita' fissa.
 PROFILI = [
-    {"id": "conservativo", "nome": "Conservativo", "dd": 10,
+    {"id": "conservativo", "nome": "Conservativo", "rischio": "Basso", "dd": 14, "az": .10,
      "base": {"SP500": .20, "EAFE": .10, "US10Y": .45, "GOLD": .10, "CASH": .15},
-     "descr": "Soprattutto Treasury, poi azioni USA ed europee/asiatiche, oro e liquidità. Oscillazioni contenute: "
-              "si accetta di guadagnare meno in cambio di cadute piccole."},
-    {"id": "moderato", "nome": "Moderato", "dd": 18,
+     "descr": "Protezione del capitale prima di tutto: Treasury, oro e liquidità come cuscinetto, azioni globali "
+              "e una piccola quota di 5 azioni scelte per dare spinta al rendimento."},
+    {"id": "moderato", "nome": "Moderato", "rischio": "Medio", "dd": 18, "az": .20,
      "base": {"SP500": .35, "EAFE": .10, "EM": .05, "US10Y": .30, "GOLD": .10, "CASH": .10},
-     "descr": "Azioni e Treasury in equilibrio, con mercati emergenti e oro. Crescita e cadute nella media."},
-    {"id": "aggressivo", "nome": "Aggressivo", "dd": 25,
+     "descr": "Equilibrio tra crescita e difesa: azioni USA, Europa/Asia ed emergenti bilanciate da Treasury e oro, "
+              "più un quinto in 5 azioni scelte ogni mese."},
+    {"id": "aggressivo", "nome": "Aggressivo", "rischio": "Alto", "dd": 22, "az": .40,
      "base": {"SP500": .40, "NASDAQ": .15, "EAFE": .10, "EM": .10, "US10Y": .10, "GOLD": .10, "BTC": .05},
-     "descr": "Quasi tutto in azioni, tecnologia compresa, con una quota di Bitcoin. Punta alla crescita accettando "
-              "cadute ampie e mesi negativi più frequenti."},
+     "descr": "Massima crescita: indici azionari con tecnologia, emergenti e una quota di Bitcoin, più il 40% in "
+              "5 azioni scelte ogni mese. Cadute più ampie, ripagate da un rendimento nettamente più alto."},
 ]
 for _p in PROFILI:                                   # mercati ammessi = quelli della base (per la pagina)
-    _p["ammessi"] = [k for k in _p["base"] if k != "CASH"]
+    _p["ammessi"] = [k for k in _p["base"] if k != "CASH"] + (["AZ"] if _p.get("az") else [])
 INIZIO = "2006-01-01"          # primo ribilanciamento (prima i dati degli ETF sono troppo pochi)
 OOS_DAL = "2016-01-01"         # da qui in poi: fuori campione
 COSTO = 0.001                  # 0,10% del capitale scambiato
@@ -318,7 +327,28 @@ def scegli(profilo, g, i, sc, regola=None):
     regola = regola or regola_base
     giorno = g.date[i]
     pesi, info, esclusi = {}, {}, []
+    az = profilo.get("az", 0)
+    if az:
+        # QUOTA AZIONI SCELTE: accesa solo se l'S&P 500 e' sopra la sua media a 200 giorni (filtro di MERCATO:
+        # nel 2008 senza filtro la quota perdeva il 55%), altrimenti va in liquidita' come gli ETF in pausa.
+        spy = g.p.get("SPY") or []
+        fin = [v for v in spy[max(0, i - SMA):i] if v is not None]
+        sma = sum(fin) / len(fin) if len(fin) >= SMA * 0.9 else None
+        trend = round((spy[i - 1] / sma - 1) * 100, 1) if sma and spy[i - 1] else None
+        if "SAT" not in g.p or g.p["SAT"][i - 1 if i else 0] is None:
+            pesi["CASH"] = az                                   # dati delle azioni assenti: quota in liquidita'
+            esclusi.append({"k": "AZ", "score": None, "trend": None, "base": round(az * 100, 1),
+                            "motivo": "dati dell'Azionario non disponibili in questo aggiornamento: quota in liquidità"})
+        elif sma and spy[i - 1] > sma:
+            vol = _std([g.rend("SAT", j) for j in range(max(1, i - VOL_GIORNI), i)])
+            pesi["AZ"] = az
+            info["AZ"] = {"k": "AZ", "vol": (vol or 0) * math.sqrt(252), "score": None, "trend": trend, "base": az}
+        else:
+            pesi["CASH"] = az
+            esclusi.append({"k": "AZ", "score": None, "trend": trend, "base": round(az * 100, 1),
+                            "motivo": "S&P 500 sotto la media a 200 giorni: le 5 azioni scelte sono in pausa nella liquidità"})
     for k, w in profilo["base"].items():
+        w = w * (1 - az)                                        # la base occupa cio' che resta dopo la quota azioni
         if k == "CASH":
             pesi["CASH"] = pesi.get("CASH", 0) + w
             continue
@@ -554,25 +584,71 @@ def di_riserva(cartella=CARTELLA, oggi=None):
 
 
 # --------------------------------------------------------------------------- calcolo completo per la pagina
-def calcola(righe_cot, px, cartella=CARTELLA, scrivi=True, oggi=None):
-    """righe_cot = archivio COT; px = prezzi() (ticker -> punti). Restituisce i dati della scheda "Portafogli"
-    oppure None se mancano i prezzi di base (SPY e liquidita')."""
+def serie_satellite(sat, date_borsa):
+    """Prezzo giornaliero sintetico della quota "Azioni scelte" (ticker SAT) sulle date di borsa dello SPY.
+    - storico simulato (rendimenti MENSILI di satellite.py): dentro ogni mese il rendimento e' distribuito in modo
+      geometrico sui giorni di borsa (le oscillazioni dentro il mese di questa parte non si vedono: limite noto);
+    - live: indice GIORNALIERO dei titoli registrati, attaccato all'ultimo valore dello storico.
+    Restituisce [(data, prezzo)] o [] se i dati mancano."""
+    if not sat or not sat.get("storico"):
+        return []
+    per_mese = {}
+    for d in date_borsa:
+        per_mese.setdefault(d[:7], []).append(d)
+    rend = {m: r for m, r, *_ in sat["storico"]}
+    mesi = sorted(rend)
+    prima = [d for d in date_borsa if d[:7] < mesi[0]]
+    if not prima:
+        return []
+    out, v = [(prima[-1], 100.0)], 100.0                    # base 100 all'ultimo giorno del mese prima
+    for m in mesi:
+        giorni = per_mese.get(m, [])
+        for k, d in enumerate(giorni, 1):
+            out.append((d, round(v * (1 + rend[m]) ** (k / len(giorni)), 5)))
+        v *= 1 + rend[m]
+    lv = sat.get("live") or []
+    if lv:
+        base, v0 = out[-1][1], lv[0][1] or 1.0
+        out += [(d, round(base * x / v0, 5)) for d, x in lv if d > out[-1][0]]
+    return out
+
+
+def calcola(righe_cot, px, cartella=CARTELLA, scrivi=True, oggi=None, sat=None):
+    """righe_cot = archivio COT; px = prezzi() (ticker -> punti); sat = satellite.json delle azioni scelte (o None:
+    la quota va in liquidita'). Restituisce i dati della scheda "Portafogli" oppure None se mancano i prezzi di base
+    (SPY e liquidita')."""
     if "SPY" not in px or LIQUIDITA[1] not in px:
         return None
-    g = Griglia(px)
+    px_tutti = dict(px)
+    ss = serie_satellite(sat, [d for d, _ in px["SPY"]])
+    if ss:
+        px_tutti["SAT"] = ss
+    g = Griglia(px_tutti)
     sc = segnali_cot(righe_cot)
     giorni = date_ribilancio(g)
     if not giorni:
         return None
     ultimo_rib = giorni[-1]
     oggi = oggi or date.today()
-    prossima = (date(oggi.year + (oggi.month == 12), oggi.month % 12 + 1, 1)).isoformat()
+    prossima = date(oggi.year + (oggi.month == 12), oggi.month % 12 + 1, 1)
+    while prossima.weekday() >= 5:                 # primo giorno FERIALE del mese dopo (es. lunedi' 2 novembre)
+        prossima += timedelta(days=1)
+    prossima = prossima.isoformat()
 
     # benchmark 60/40 ribilanciato ogni mese
     bench = simula(g, {i: dict(BENCH) for i in giorni}, giorni[0]) if "IEF" in px else None
 
     rotazioni = leggi_rotazioni(cartella)
     out_prof, composizioni = [], {}
+    # i 5 titoli del mese della rotazione (registrati dal vivo da satellite.py; prima del live: ultima scelta simulata)
+    mese_rot = g.date[ultimo_rib][:7]
+    satellite_n = (sat or {}).get("n") or 5
+    reg = ((sat or {}).get("registro") or {}).get(mese_rot)
+    if reg:
+        titoli_az = [{"t": x["t"], "n": x["n"], "s": x["s"]} for x in reg["titoli"]]
+    else:
+        ult = [x for x in (sat or {}).get("storico") or [] if x[0] == mese_rot]
+        titoli_az = [{"t": t, "n": t, "s": None} for t in (ult[0][2] if ult and len(ult[0]) > 2 else [])]
     for prof in PROFILI:
         piani, storia = {}, []
         for i in giorni:
@@ -592,6 +668,10 @@ def calcola(righe_cot, px, cartella=CARTELLA, scrivi=True, oggi=None):
                  "peso": round(w * 100, 1), "score": info.get(k, {}).get("score"),
                  "trend": info.get(k, {}).get("trend"), "vol": round(info[k]["vol"] * 100, 1) if k in info else None}
                 for k, w in sorted(pesi.items(), key=lambda x: (x[0] == "CASH", -x[1]))]
+        for c in comp:
+            if c["k"] == "AZ":
+                c["titoli"] = titoli_az
+                c["peso_titolo"] = round(c["peso"] / satellite_n, 1)
         cambi = []
         for (d0, p0), (d1, p1) in zip(storia[-13:-1], storia[-12:]):
             a = set(k for k in p1 if k != "CASH")
@@ -600,7 +680,10 @@ def calcola(righe_cot, px, cartella=CARTELLA, scrivi=True, oggi=None):
                           "liquidita": round(p1.get("CASH", 0) * 100)})
         out_prof.append({
             "id": prof["id"], "nome": prof["nome"], "descr": prof["descr"], "dd_rif": prof["dd"],
-            "base": [{"k": k, "nome": TUTTI[k][2], "peso": round(w * 100)} for k, w in prof["base"].items()],
+            "rischio": prof.get("rischio"), "az": round(prof.get("az", 0) * 100),
+            "base": [{"k": k, "nome": TUTTI[k][2], "peso": round(w * (1 - prof.get("az", 0)) * 100)}
+                     for k, w in prof["base"].items()] + ([{"k": "AZ", "nome": TUTTI["AZ"][2], "peso": round(prof["az"] * 100)}]
+                                                          if prof.get("az") else []),
             "ammessi": [{"k": k, "nome": TUTTI[k][2]} for k in prof["ammessi"]],
             "composizione": comp, "esclusi": esclusi,
             "mese": rischio_mese(g, pesi, g.date[ultimo_rib][5:7], g.date[ultimo_rib][:7]),
@@ -624,6 +707,8 @@ def calcola(righe_cot, px, cartella=CARTELLA, scrivi=True, oggi=None):
                   "stat": {"storico": statistiche(_tagli(bench, al=OOS_DAL)),
                            "oos": statistiche(_tagli(bench, dal=OOS_DAL)), "totale": statistiche(bench)}} if bench else None,
         "avviso": avviso,
+        "azioni": {"live_dal": (sat or {}).get("live_dal"), "nota": (sat or {}).get("nota"),
+                   "disponibili": bool(ss)},
     }
     if scrivi:
         salva_ultimo(out, cartella)

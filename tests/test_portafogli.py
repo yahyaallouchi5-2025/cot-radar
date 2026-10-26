@@ -68,7 +68,7 @@ class Portafogli(unittest.TestCase):
         righe = cot_finto([u[0] for u in P.UNIVERSO], {"SP500", "GOLD", "US10Y", "NASDAQ"})
         r = P.calcola(righe, self.px, cartella=self.dir, scrivi=True, oggi=date(2026, 10, 25))
         self.assertEqual([p["id"] for p in r["profili"]], ["conservativo", "moderato", "aggressivo"])
-        self.assertEqual(r["prossima"], "2026-11-01")
+        self.assertEqual(r["prossima"], "2026-11-02")   # 1 novembre 2026 e' domenica: primo giorno feriale
         for p in r["profili"]:
             self.assertIsNotNone(p["stat"]["oos"])
             self.assertAlmostEqual(sum(c["peso"] for c in p["composizione"]), 100, delta=0.6)

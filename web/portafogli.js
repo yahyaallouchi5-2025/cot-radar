@@ -1,7 +1,10 @@
 
 /* ---------- portafogli modello ----------
    Dati da D.port (vedi cot_radar/portafogli.py): tre profili (conservativo, moderato, aggressivo), solo acquisti,
-   rotazione il primo giorno di borsa di ogni mese. Per il profilo scelto la scheda mostra:
+   rotazione il primo giorno di borsa di ogni mese. In alto un selettore a segmenti (Conservativo / Moderato /
+   Aggressivo: "stesso motore, rischio diverso") e la CARD PRINCIPALE del profilo: rischio, descrizione, rendimento
+   annuo, caduta massima, 10.000 euro dall'inizio dello storico, composizione per classe, le 5 azioni scelte del mese
+   e la spiegazione apribile della rotazione. Sotto, per il profilo scelto:
      1. la composizione del mese (ciambella + righe con peso, motivo e strumento da comprare);
      2. il rischio del MESE della rotazione (es. ottobre): la composizione di oggi tenuta in ogni ottobre dello
         storico, con rendimento e caduta massima dentro il mese anno per anno, esempio su 10.000 euro e
@@ -11,9 +14,11 @@
      4. tabella dei periodi, ultime rotazioni (entrati / usciti / tenuti) e mercati esclusi con il motivo.
    Il profilo scelto resta salvato nel browser (localStorage "ebProfilo"). */
 try{(function(){const P=D.port,el=$("port");if(!el)return;
- if(!P||!P.profili||!P.profili.length){el.innerHTML=`<h2>Portafogli modello</h2><p class="sub">I prezzi storici degli ETF non sono disponibili in questo aggiornamento: la scheda torna al prossimo giro.</p>`;return;}
- const CL={azioni:"var(--c1)",obbligazioni:"var(--c4)",metalli:"var(--warn)","materie prime":"var(--c2)",crypto:"var(--c5)",liquidita:"var(--c3)"};
- const LIV={conservativo:1,moderato:2,aggressivo:3};
+ if(!P||!P.profili||!P.profili.length){el.innerHTML=`<h2>Portafogli modello</h2><p class="sub">Scegli un profilo: stesso motore, rischio diverso. Solo acquisti, controllo una volta al mese.</p>`;return;}
+ const CL={azioni:"var(--c1)","azioni singole":"var(--acc)",obbligazioni:"var(--c4)",metalli:"var(--warn)","materie prime":"var(--c2)",crypto:"var(--c5)",liquidita:"var(--c3)"};
+ // nomi delle classi per la "composizione per classe" della card principale (ordine fisso di lettura)
+ const CLN=[["azioni","Azioni (ETF indici)"],["azioni singole","Azioni scelte"],["obbligazioni","Obbligazioni"],["metalli","Oro e metalli"],["materie prime","Materie prime"],["crypto","Cripto"],["liquidita","Liquidità"]];
+ const RISK={conservativo:["Basso","r1"],moderato:["Medio","r2"],aggressivo:["Alto","r3"]};
  const pc=(v,d=1)=>v==null?"n/d":(v>0?"+":"")+fx(v,d)+"%";
  const eur=v=>v==null?"n/d":Math.round(v).toLocaleString("it-IT")+" €";
  const gg=d=>d?d.slice(8,10)+"/"+d.slice(5,7)+"/"+d.slice(0,4):"";
@@ -57,8 +62,10 @@ try{(function(){const P=D.port,el=$("port");if(!el)return;
 
  function riga(c){const col=CL[c.classe]||"var(--c3)";
   const mot=c.k=="CASH"?"Liquidit&agrave; fissa del profilo + pesi dei mercati in pausa, in Treasury a breve termine."
+   :c.k=="AZ"?`${c.titoli&&c.titoli.length?`${fx(c.peso_titolo,1)}% per titolo`:"i 5 titoli arrivano con la prossima rotazione"} &middot; S&amp;P 500 ${pc(c.trend)} sopra la media a 200 giorni (filtro di mercato)`
    :`trend ${pc(c.trend)} sopra la media a 200 giorni · volatilit&agrave; ${fx(c.vol,0)}% · COT ${c.score!=null?sg(c.score,0):"n/d"} (informativo)`;
-  return `<div class="prow"><i style="background:${col}"></i><div class="pnome"><b>${esc(c.nome)}</b><span>${esc(c.strumento)}</span><em>${mot}</em></div>
+  const tit=c.k=="AZ"&&c.titoli&&c.titoli.length?`<span class="ptit">${c.titoli.map(x=>`<button class="pchip clic" data-az="${esc(x.t)}" title="${esc(x.n)}">${esc(x.t)} <small>${esc(x.n.length>22?x.n.slice(0,21)+"…":x.n)}</small></button>`).join("")}</span>`:"";
+  return `<div class="prow"><i style="background:${col}"></i><div class="pnome"><b>${esc(c.nome)}</b><span>${esc(c.strumento)}</span><em>${mot}</em>${tit}</div>
    <div class="ppeso"><b>${fx(c.peso,1)}%</b><span class="pbar"><i style="width:${Math.min(100,c.peso*2.5)}%;background:${col}"></i></span></div></div>`;}
 
  // --- rischio del MESE della rotazione: la composizione di oggi tenuta nello stesso mese di ogni anno
@@ -100,12 +107,34 @@ try{(function(){const P=D.port,el=$("port");if(!el)return;
  //     nessuna barra fissa. Data e ora dell'anomalia arrivano dal backend (P.avviso.quando).
  if(P.avviso)ebManutenzione({scheda:"port",codice:P.avviso.codice,quando:P.avviso.quando,dal:P.avviso.dal});
 
+ // --- CARD PRINCIPALE del profilo scelto: rischio, descrizione, numeri chiave, composizione per classe, 5 azioni
+ function hero(p){const t=p.stat.totale||{},rk=RISK[p.id]||["",""];
+  const cl={};p.composizione.forEach(c=>{cl[c.classe]=(cl[c.classe]||0)+c.peso;});
+  const finale=t.totale!=null?10000*(1+t.totale/100):null,anno=(t.dal||"").slice(0,4);
+  const az=p.composizione.find(c=>c.k=="AZ"),pausa=p.esclusi.find(x=>x.k=="AZ");
+  return `<div class="card phero"><div class="phtesta"><h3>${esc(p.nome)}</h3><span class="prisk ${rk[1]}">Rischio ${rk[0].toLowerCase()}</span></div>
+   <p class="phdesc">${esc(p.descr)}</p>
+   <div class="phnum"><div><em>Rendimento annuo</em><b class="up">${pc(t.cagr)}</b><span>media dal ${anno}</span></div>
+    <div><em>Caduta massima</em><b class="down">${pc(t.maxdd)}</b><span>il momento peggiore</span></div>
+    <div><em>10.000 € nel ${anno}</em><b>${eur(finale)}</b><span>valore di oggi</span></div>
+    <div><em>Mesi positivi</em><b>${t.mesi_pos??"n/d"}%</b><span>su tutti i mesi</span></div></div>
+   <div class="phcomp"><h4>Composizione del mese</h4>${CLN.filter(x=>cl[x[0]]).map(x=>`<div class="phbar"><span>${x[1]}</span><b>${fx(cl[x[0]],1)}%</b><i><s style="width:${Math.min(100,cl[x[0]])}%;background:${CL[x[0]]}"></s></i></div>`).join("")}</div>
+   <div class="phaz"><h4>Le 5 azioni del mese <span class="small">(${p.az}% del portafoglio${az&&az.titoli&&az.titoli.length?`, ${fx(az.peso_titolo,1)}% ciascuna`:""})</span></h4>
+    ${pausa?`<div class="small">${esc(pausa.motivo)}.</div>`:az&&az.titoli&&az.titoli.length?`<div class="ptit">${az.titoli.map(x=>`<button class="pchip clic" data-az="${esc(x.t)}" title="Apri nell'Azionario">${esc(x.t)} <small>${esc(x.n)}</small></button>`).join("")}</div>`
+     :`<div class="small">I titoli vengono scelti l'ultimo giorno di borsa del mese, dopo la chiusura, e entrano con la rotazione del ${gg(P.prossima)}.</div>`}</div>
+   <details class="phcome"><summary>Come funziona la rotazione di ogni mese</summary><ol>
+    <li><b>Primo giorno di borsa del mese</b>: per ogni ETF della base si controlla il trend. Se il prezzo &egrave; sotto la media a 200 giorni il suo peso va in pausa nella liquidit&agrave;.</li>
+    <li><b>Azioni scelte (${p.az}%)</b>: i 5 titoli dell'Azionario con il punteggio pi&ugrave; alto che hanno trend positivo (sopra la media a 200 giorni, 3 e 12 mesi in guadagno), non pi&ugrave; del 15% sotto il massimo dell'anno e il mese che entra positivo in almeno il 60% degli anni (minimo 8). Al massimo uno per settore, a pari peso.</li>
+    <li><b>Filtro di mercato</b>: se l'S&amp;P 500 &egrave; sotto la sua media a 200 giorni tutta la quota azioni va in liquidit&agrave; (nel 2008, senza filtro, questa quota perdeva il 55%).</li>
+    <li><b>Durante il mese non si tocca nulla</b>. Al mese dopo chi resta tra i migliori rimane, chi esce si vende, chi entra si compra. Costi inclusi: 0,10% sugli ETF, 0,20% sulle azioni.</li>
+    <li><b>Registro</b>: ogni rotazione e ogni scelta di titoli vengono salvate e non si modificano pi&ugrave;: la linea live non si pu&ograve; aggiustare dopo.</li></ol>
+    <p class="small">${esc((P.azioni||{}).nota||"")} Storico fino al 2015, fuori campione dal 2016. Prezzi in dollari di ETF ed ETC equivalenti e azioni in valuta locale (cambi non inclusi).</p></details></div>`;}
+
  function disegna(){const p=P.profili.find(x=>x.id==sel);
   el.innerHTML=`<h2>Portafogli modello</h2><p class="sub">Tre profili di rischio, solo acquisti, controllo ogni mese. Ogni profilo ha una base fissa di mercati e pesi; un mercato resta in portafoglio finch&eacute; il prezzo &egrave; sopra la media a 200 giorni, altrimenti il suo peso va in pausa nella liquidit&agrave; fino a quando torna sopra. Nei test sullo storico questo filtro di trend ha ridotto molto le cadute, mentre il posizionamento COT non migliorava i risultati: per questo il COT &egrave; mostrato accanto a ogni mercato solo come informazione. Regole decise sullo storico fino al 2015, verificate fuori campione dal 2016; la linea live parte dalla prima rotazione pubblicata. Il rischio si legge mese per mese: a ogni rotazione la scheda mostra come si &egrave; comportata la composizione del mese nello stesso mese di tutti gli anni dello storico. Prezzi in dollari di ETF ed ETC equivalenti (il cambio euro/dollaro non &egrave; incluso), costi 0,10% a ogni rotazione.</p>
    <div class="pdate"><span><i></i>Rotazione del <b>${gg(P.rotazione)}</b></span><span>Prossima rotazione: <b>${gg(P.prossima)}</b></span></div>
-   <div class="pprof">${P.profili.map(x=>{const o=x.stat.oos||x.stat.totale||{};return `<button class="pcard${x.id==sel?" on":""}" data-p="${x.id}">
-    <span class="plv">${[1,2,3].map(i=>`<i class="${i<=LIV[x.id]?"si":""}"></i>`).join("")}</span><b>${x.nome}</b><small>${esc(x.descr)}</small>
-    <span class="pnum"><span><em>Rendimento annuo</em>${pc(o.cagr)}</span><span><em>Caduta max</em><span class="down">${pc(Math.min((x.stat.totale||{}).maxdd??0,o.maxdd??0))}</span></span></span></button>`;}).join("")}</div>
+   <div class="pseg" role="tablist" aria-label="Scegli il portafoglio">${P.profili.map(x=>`<button role="tab" aria-selected="${x.id==sel}" class="${x.id==sel?"on":""}" data-p="${x.id}">${x.nome}</button>`).join("")}</div>
+   ${hero(p)}
    <div class="pgrid"><div class="card pcomp"><div class="ptesta"><div><h3>Da tenere questo mese</h3><span class="small">${p.nome} &middot; ${p.composizione.filter(c=>c.k!="CASH").length} mercati</span></div>${ciambella(p.composizione)}</div>
     ${p.composizione.map(riga).join("")}</div>${contro(p)}</div>
    <h3 class="vft">Andamento del capitale <span class="small">(base 100, scala logaritmica: la stessa percentuale ha la stessa altezza in ogni periodo. Linea turchese = portafoglio, tratteggio = 60/40 di confronto, linea luminosa = live dalla prima rotazione pubblicata)</span></h3>
@@ -115,7 +144,9 @@ try{(function(){const P=D.port,el=$("port");if(!el)return;
    <div class="grid k2 pbasso"><div><h3 class="vft">Ultime rotazioni <span class="small">(+ entrati, &minus; usciti, = rimasti)</span></h3>${rotazioni(p)}</div>
     <div><h3 class="vft">In pausa questo mese <span class="small">(mercati della base sotto la media a 200 giorni: il loro peso &egrave; nella liquidit&agrave; e rientra quando il trend torna positivo)</span></h3>
     <div class="card pescl">${p.esclusi.length?p.esclusi.map(x=>`<div class="pesr"><b>${esc(nomeK(x.k))}</b><span>${x.motivo}</span><em>base ${fx(x.base,0)}% &middot; trend ${pc(x.trend)} &middot; COT ${x.score!=null?sg(x.score,0):"n/d"}</em></div>`).join(""):'<div class="small">Nessun mercato in pausa: tutta la base &egrave; investita.</div>'}</div></div></div>`;
-  el.querySelectorAll(".pcard").forEach(b=>b.onclick=()=>{sel=b.dataset.p;try{localStorage.setItem("ebProfilo",sel);}catch(e){}disegna();});
+  el.querySelectorAll(".pseg button").forEach(b=>b.onclick=()=>{sel=b.dataset.p;try{localStorage.setItem("ebProfilo",sel);}catch(e){}disegna();});
+  // clic su un titolo delle azioni scelte: apre la sua scheda nell'Azionario (azioni.js)
+  el.querySelectorAll("[data-az]").forEach(b=>b.onclick=()=>{if(window.ebApriTitolo)window.ebApriTitolo(b.dataset.az);});
   el.querySelectorAll(".pper button").forEach(b=>b.onclick=()=>{per=b.dataset.per;disegna();});
   const bt=el.querySelector(".ptutte");if(bt)bt.onclick=()=>{tutteRot=!tutteRot;disegna();};
   suggerimento(el.querySelector(".pgraf"),p);}
