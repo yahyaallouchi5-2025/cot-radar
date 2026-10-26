@@ -21,7 +21,10 @@ try{(function(){const el=$("pattern");if(!el)return;
  const quando=(t,tf)=>{const d=new Date((t+(tf=="h4"?4*3600:0))*1000);return tf=="h4"?`${z(d.getDate())}/${z(d.getMonth()+1)} ore ${z(d.getHours())}:${z(d.getMinutes())}`:`${z(d.getDate())}/${z(d.getMonth()+1)}/${d.getFullYear()}`;};
  const num=(v,c)=>v==null?"n/d":Number(v).toLocaleString("it-IT",{minimumFractionDigits:Math.min(c,5),maximumFractionDigits:c});
  const cifre=v=>{const s=String(v);return s.includes(".")?s.split(".")[1].length:0;};
- const pc=v=>v==null?"n/d":`<span class="${v>0?"up":v<0?"down":"flat"}">${v>0?"+":""}${fx(v,2)}%</span>`;
+ // variazione %: sotto lo 0,005% e' zero (evita il "-0,00%" quando il prezzo e' fermo)
+ const pc=v=>{if(v==null)return "n/d";if(Math.abs(v)<0.005)v=0;return `<span class="${v>0?"up":v<0?"down":"flat"}">${v>0?"+":""}${fx(v,2)}%</span>`;};
+ // "1 candela fa" al singolare, "N candele fa" al plurale
+ const fa=n=>n==0?"ultima candela":n==1?"1 candela fa":n+" candele fa";
  const badge=l=>`<span class="ptb ${l=="BUY"?"buy":"sell"}">${l}</span>`;
  const sk=(w,h)=>`<i class="sk" style="width:${w};height:${h}px"></i>`;
 
@@ -66,13 +69,13 @@ try{(function(){const el=$("pattern");if(!el)return;
    ${freschi.length?`<div class="ptfresh">${freschi.map(s=>{const u=s[tf].ultimo,st=s[tf].stat;return `<button class="card ptc ${u.lato=="BUY"?"buy":"sell"}" data-id="${s.id}">
      <div class="ptct">${badge(u.lato)}<span class="small">chiusa ${quando(u.t,tf)}</span></div>
      <b class="ptn">${esc(s.n)}</b>
-     <div class="ptlv"><span>Ingresso<b>${num(u.ingresso,cifre(u.ingresso))}</b></span><span>Apertura cand. 1<b>${num(u.livello,cifre(u.livello))}</b></span><span>${u.lato=="BUY"?"Minimo":"Massimo"} pattern<b>${num(u.estremo,cifre(u.estremo))}</b></span></div>
+     <div class="ptlv"><span><em>Ingresso</em><b>${num(u.ingresso,cifre(u.ingresso))}</b></span><span><em>Apertura cand. 1</em><b>${num(u.livello,cifre(u.livello))}</b></span><span><em>${u.lato=="BUY"?"Minimo":"Massimo"} pattern</em><b>${num(u.estremo,cifre(u.estremo))}</b></span></div>
      <span class="small">Storico su ${esc(s.n)}: ${st.n?`${st.vinti}% nella direzione del segnale dopo ${st.dopo} candele (${st.n} casi, media ${st.media>0?"+":""}${fx(st.media,2)}%)`:"casi insufficienti"}</span></button>`;}).join("")}</div>`
     :`<div class="card small" style="padding:18px 20px">Nessun pattern sull'ultima candela ${tf=="h4"?"H4":"giornaliera"} chiusa. La tabella sotto mostra l'ultimo segnale di ogni strumento.</div>`}
    <h3 class="vft">Tutti gli strumenti <span class="small">(ultimo pattern di ciascuno &middot; clic per il grafico${tot?` &middot; storico complessivo ${tf=="h4"?"H4":"daily"}: ${tot.v}% nella direzione del segnale dopo ${d.dopo} candele, ${n} casi`:""})</span></h3>
    <div class="tablewrap"><table class="pttab"><tr><th>Strumento</th><th>Ultimo segnale</th><th>Chiusura candela 3</th><th class="num">Ingresso</th><th class="num">Ultimo prezzo</th><th class="num">Da ingresso</th><th class="num azh">Storico</th></tr>
     ${S.map(s=>{const u=s[tf].ultimo,st=s[tf].stat;return `<tr class="clic" data-id="${s.id}" tabindex="0"><td class="aznome"><b>${esc(s.n)}</b><span>${s.g=="forex"?"Forex":"Materie prime"}${s.copia?" &middot; dati del giro precedente":""}</span></td>
-     <td>${u?`${badge(u.lato)} <span class="small">${u.fa==0?"ultima candela":u.fa+" candele fa"}</span>`:'<span class="small">nessuno di recente</span>'}</td>
+     <td>${u?`${badge(u.lato)} <span class="small">${fa(u.fa)}</span>`:'<span class="small">nessuno di recente</span>'}</td>
      <td>${u?quando(u.t,tf):""}</td><td class="num">${u?num(u.ingresso,cifre(u.ingresso)):""}</td><td class="num">${u?num(u.ora,cifre(u.ora)):""}</td><td class="num">${u?pc(u.mossa):""}</td>
      <td class="num azh">${st.n?`${st.vinti}% <span class="small">su ${st.n}</span>`:'<span class="small">n/d</span>'}</td></tr>`;}).join("")}</table></div>`;
   el.querySelectorAll(".pttf button").forEach(b=>b.onclick=()=>{ST.tf=b.dataset.tf;salva();disegna();});
@@ -94,18 +97,18 @@ try{(function(){const el=$("pattern");if(!el)return;
   const cand=C.map((c,i)=>{const su=c[4]>=c[1],top=Y(Math.max(c[1],c[4])),h=Math.max(1,Math.abs(Y(c[1])-Y(c[4])));
    return `<line x1="${X(i).toFixed(1)}" x2="${X(i).toFixed(1)}" y1="${Y(c[2]).toFixed(1)}" y2="${Y(c[3]).toFixed(1)}" class="ptw ${su?"su":"giu"}"/><rect x="${(X(i)-bw*0.36).toFixed(1)}" y="${top.toFixed(1)}" width="${(bw*0.72).toFixed(1)}" height="${h.toFixed(1)}" class="ptk ${su?"su":"giu"}"><title>${quando(c[0],tf)} · A ${c[1]} · M ${c[2]} · m ${c[3]} · C ${c[4]}</title></rect>`;}).join("");
   let linee="";if(u&&idx.has(u.t)){const i=idx.get(u.t);
-   linee=`<line x1="${X(i-2)}" x2="${W-R}" y1="${Y(u.livello)}" y2="${Y(u.livello)}" class="ptl lv"/><text x="${W-R+4}" y="${Y(u.livello)+4}" class="ptlt lv">${u.livello}</text>
-    <line x1="${X(i)}" x2="${W-R}" y1="${Y(u.ingresso)}" y2="${Y(u.ingresso)}" class="ptl in"/><text x="${W-R+4}" y="${Y(u.ingresso)+4}" class="ptlt in">${u.ingresso}</text>`;}
+   linee=`<line x1="${X(i-2)}" x2="${W-R}" y1="${Y(u.livello)}" y2="${Y(u.livello)}" class="ptl lv"/><text x="${W-R+4}" y="${Y(u.livello)+4}" class="ptlt lv">${num(u.livello,cifre(u.livello))}</text>
+    <line x1="${X(i)}" x2="${W-R}" y1="${Y(u.ingresso)}" y2="${Y(u.ingresso)}" class="ptl in"/><text x="${W-R+4}" y="${Y(u.ingresso)+4}" class="ptlt in">${num(u.ingresso,cifre(u.ingresso))}</text>`;}
   const tick=[0,.25,.5,.75,1].map(k=>lo+(hi-lo)*k).map(v=>`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" class="pgr"/>`).join("");
   ov.innerHTML=`<aside class="azpan" role="dialog" aria-modal="true" aria-label="${esc(s.n)}"><button class="azx" aria-label="Chiudi">&times;</button>
    <div class="aztesta"><span class="small">${s.g=="forex"?"Forex":"Materie prime"} &middot; ${tf=="h4"?"H4":"Daily"} &middot; ultime ${C.length} candele chiuse</span><h3>${esc(s.n)}</h3>
-    ${u?`<div class="azprz">${badge(u.lato)}<span class="small">pattern chiuso il ${quando(u.t,tf)} &middot; ${u.fa==0?"ultima candela":u.fa+" candele fa"}</span></div>`:""}</div>
+    ${u?`<div class="azprz">${badge(u.lato)}<span class="small">pattern chiuso il ${quando(u.t,tf)} &middot; ${fa(u.fa)}</span></div>`:""}</div>
    <div class="azgraf"><svg viewBox="0 0 ${W} ${H}" class="ptsvg" preserveAspectRatio="none">${tick}${bande}${cand}${linee}</svg></div>
-   ${u?`<div class="pleg ptleg"><span><i class="lv"></i>Apertura candela 1 (${u.livello})</span><span><i class="in"></i>Chiusura candela 3 = ingresso (${u.ingresso})</span></div>
+   ${u?`<div class="pleg ptleg"><span><i class="lv"></i>Apertura candela 1 (${num(u.livello,cifre(u.livello))})</span><span><i class="in"></i>Chiusura candela 3 = ingresso (${num(u.ingresso,cifre(u.ingresso))})</span></div>
    <div class="azmini"><div><span>Ingresso</span><b>${num(u.ingresso,cifre(u.ingresso))}</b></div><div><span>${u.lato=="BUY"?"Minimo":"Massimo"} del pattern</span><b>${num(u.estremo,cifre(u.estremo))}</b></div><div><span>Da ingresso</span>${pc(u.mossa)}</div></div>`:""}
    <h4 class="aztit">Pattern passati <span class="small">(esito dopo ${ST.d.dopo} candele nella direzione del segnale)</span></h4>
    <div class="tablewrap"><table class="compatta"><tr><th>Chiusura candela 3</th><th>Segnale</th><th class="num">Ingresso</th><th class="num">Esito</th></tr>
-    ${[...a.segnali].reverse().map(p=>`<tr><td>${quando(p.t,tf)}</td><td>${badge(p.lato)}</td><td class="num">${p.ingresso}</td><td class="num">${p.esito==null?'<span class="small">in corso</span>':pc(p.esito)}</td></tr>`).join("")||'<tr><td colspan="4" class="small">Nessun pattern nel periodo.</td></tr>'}</table></div>
+    ${[...a.segnali].reverse().map(p=>`<tr><td>${quando(p.t,tf)}</td><td>${badge(p.lato)}</td><td class="num">${num(p.ingresso,cifre(p.ingresso))}</td><td class="num">${p.esito==null?'<span class="small">in corso</span>':pc(p.esito)}</td></tr>`).join("")||'<tr><td colspan="4" class="small">Nessun pattern nel periodo.</td></tr>'}</table></div>
    <p class="small azfonte">${s.fonte&&s.fonte.endsWith("=F")?"Prezzi del future (approssimazione dello spot). ":""}Le candele H4 sono allineate alle ore UTC 00-04-08-12-16-20 e possono differire da quelle del proprio broker.</p></aside>`;
   requestAnimationFrame(()=>ov.classList.add("on"));ov.querySelector(".azx").focus({preventScroll:true});
   try{window.ebStat&&ebStat.ev("pattern",{strumento:id,tf:tf});}catch(e){}}

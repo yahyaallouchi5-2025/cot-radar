@@ -97,8 +97,14 @@ def _valida(pts, min_punti=20):
 def scarica(ticker, intervallo="1d", periodo="2y", timeout=20, tentativi=TENTATIVI, attesa=2):
     """({meta}, [(data, prezzo rettificato)]) da Yahoo, oppure None dopo `tentativi` prove fallite.
     meta = nome, valuta, borsa (dal grafico: nessun cookie o crumb richiesto)."""
-    q = urllib.parse.urlencode({"range": periodo, "interval": intervallo, "includeAdjustedClose": "true",
-                                "events": "div,split"})
+    # ATTENZIONE: con range=max Yahoo "comprime" gli storici lunghi (es. Apple dal 1980) in barre TRIMESTRALI anche se
+    # si chiede interval=1mo. Con l'intervallo esplicito period1/period2 rispetta invece la granularita' mensile.
+    if periodo == "max":
+        q = urllib.parse.urlencode({"period1": 0, "period2": int(time.time()), "interval": intervallo,
+                                    "includeAdjustedClose": "true", "events": "div,split"})
+    else:
+        q = urllib.parse.urlencode({"range": periodo, "interval": intervallo, "includeAdjustedClose": "true",
+                                    "events": "div,split"})
     for n in range(tentativi):
         try:
             req = urllib.request.Request(YAHOO.format(t=urllib.parse.quote(ticker), q=q),
@@ -115,6 +121,9 @@ def scarica(ticker, intervallo="1d", periodo="2y", timeout=20, tentativi=TENTATI
                     d = datetime.fromtimestamp(ts + off, tz=timezone.utc).date().isoformat()
                     out[d[:7] if intervallo == "1mo" else d] = round(float(v), 4)
             pts = _valida(sorted(out.items()), 12 if intervallo == "1mo" else 20)
+            if pts and intervallo == "1mo" and not mensile_ok(pts):
+                log.warning("Yahoo %s: storico mensile non mensile (granularita' %s)", ticker, m.get("dataGranularity"))
+                pts = None
             if pts:
                 return {"nome": m.get("longName") or m.get("shortName"), "valuta": m.get("currency"),
                         "borsa": m.get("fullExchangeName") or m.get("exchangeName")}, pts
@@ -125,6 +134,20 @@ def scarica(ticker, intervallo="1d", periodo="2y", timeout=20, tentativi=TENTATI
         if n + 1 < tentativi and attesa:
             time.sleep(attesa * (3 ** n))
     return None
+
+
+def _mesi(x):
+    """'AAAA-MM' -> numero progressivo del mese (per misurare la distanza tra due barre)."""
+    return int(x[:4]) * 12 + int(x[5:7])
+
+
+def mensile_ok(m):
+    """True se lo storico [(AAAA-MM, prezzo)] e' davvero MENSILE: almeno il 90% delle barre consecutive dista 1 mese
+    (le copie vecchie scaricate con range=max possono essere trimestrali: vanno riscaricate)."""
+    if not m or len(m) < 3:
+        return False
+    salti = [_mesi(b[0]) - _mesi(a[0]) for a, b in zip(m, m[1:])]
+    return sum(s == 1 for s in salti) >= 0.9 * len(salti)
 
 
 def _nome_file(t):
@@ -178,7 +201,7 @@ def aggiorna(cartella, titoli=None, oggi=None, scarica=scarica, pausa=PAUSA):
                        **{k: v for k, v in meta.items() if v})
             # storico mensile: se manca o nel giorno del titolo (al massimo una volta a settimana)
             vecchio_m = vecchio.get("agg_m", "")
-            if not vecchio.get("m") or (oggi.weekday() == giorno_mensile(t) and vecchio_m < (oggi - timedelta(days=3)).isoformat()) \
+            if not mensile_ok(vecchio.get("m")) or (oggi.weekday() == giorno_mensile(t) and vecchio_m < (oggi - timedelta(days=3)).isoformat()) \
                     or vecchio_m < (oggi - timedelta(days=10)).isoformat():
                 mm = scarica(t, "1mo", "max")
                 if pausa:
@@ -252,6 +275,8 @@ def stagionalita(m):
     for (a, va), (b, vb) in zip(m, m[1:]):
         if b >= corrente:            # mese in corso: non ancora chiuso
             break
+        if _mesi(b) - _mesi(a) != 1:  # buco o barra trimestrale: non e' il rendimento di UN mese, si salta
+            continue
         r.setdefault(int(b[5:]), []).append(vb / va - 1)
     out = []
     for mese in range(1, 13):

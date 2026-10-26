@@ -108,3 +108,24 @@ class Azioni(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestMensile(unittest.TestCase):
+    """Storico mensile: le copie TRIMESTRALI (range=max di Yahoo sugli storici lunghi) vanno riconosciute e la
+    stagionalita' non deve mai usare rendimenti su piu' mesi."""
+
+    def test_riconosce_trimestrale(self):
+        mensile = [("2020-%02d" % m, 100 + m) for m in range(1, 13)]
+        trimestrale = [("2020-%02d" % m, 100 + m) for m in (3, 6, 9, 12)]
+        self.assertTrue(A.mensile_ok(mensile))
+        self.assertFalse(A.mensile_ok(trimestrale))
+        self.assertFalse(A.mensile_ok(None))
+
+    def test_stagionalita_salta_i_buchi(self):
+        # 2010-01..2012-12 mensile, poi un buco di 3 mesi: quel rendimento non deve finire su un mese
+        m = [("%d-%02d" % (a, x), 100.0 * (1.01 ** i)) for i, (a, x) in
+             enumerate((a, x) for a in (2010, 2011, 2012) for x in range(1, 13))]
+        m.append(("2013-03", m[-1][1] * 2))           # +100% in 3 mesi: va ignorato
+        st = A.stagionalita(m)
+        self.assertEqual(st["mesi"][2]["n"], 3)        # marzo: 2010, 2011, 2012 (NON il salto dic 2012 -> mar 2013)
+        self.assertLess(st["mesi"][2]["media"], 2)

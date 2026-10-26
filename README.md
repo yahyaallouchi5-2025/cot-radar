@@ -232,6 +232,14 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+### v6.33: correzioni
+- **Storico mensile azioni**: con `range=max` Yahoo restituiva barre TRIMESTRALI per gli storici lunghi (circa 230 titoli,
+  es. Apple dal 1980): la loro stagionalità era sbagliata. Ora lo storico mensile si scarica con `period1/period2`,
+  `mensile_ok()` scarta e fa riscaricare le copie trimestrali e `stagionalita()` usa solo rendimenti di UN mese.
+- **Pattern Detector, UI**: barra comandi con switch e filtri alla stessa altezza (38px) e centrati; nelle card i tre
+  valori (ingresso, apertura candela 1, minimo/massimo) sempre sulla stessa linea; numeri in formato italiano anche nel
+  pannello; niente più "-0,00%"; "1 candela fa" al singolare.
+
 ## Azionario per settore (v6.31: `azioni.py` + `web/azioni.js`, scheda "Azioni", workflow `azioni.yml`)
 - **Titoli**: ~1.040 tra S&P 500, Nasdaq-100, FTSE MIB, DAX 40, Euro Stoxx 50, Nikkei 225, Hang Seng, SSE 50 e Nifty 50,
   negli 11 settori GICS (settori asiatici ricondotti al GICS a mano), più 9 indici. Emirati: Yahoo non ha i titoli (404).
