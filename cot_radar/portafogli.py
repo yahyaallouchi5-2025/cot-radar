@@ -512,7 +512,16 @@ def controlla_prezzi(px, oggi=None):
     if not vecchi:
         return None
     ultimi = [px[t][-1][0] for t in vecchi if px.get(t)]
-    return {"codice": CODICE_ERRORE, "dal": min(ultimi) if ultimi else None, "mercati": vecchi}
+    return {"codice": CODICE_ERRORE, "dal": min(ultimi) if ultimi else None, "mercati": vecchi, "quando": _adesso()}
+
+
+def _adesso():
+    """Data e ora italiane dell'anomalia ('AAAA-MM-GG HH:MM'), mostrate all'utente nel popup."""
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo("Europe/Rome")).strftime("%Y-%m-%d %H:%M")
+    except Exception:
+        return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
 
 def _ultimo_file(cartella):
@@ -540,7 +549,7 @@ def di_riserva(cartella=CARTELLA, oggi=None):
     """Se il calcolo di oggi non e' riuscito: l'ultima scheda buona con l'avviso di manutenzione (o None)."""
     d = leggi_ultimo(cartella)
     if d:
-        d["avviso"] = {"codice": CODICE_ERRORE, "dal": d.get("aggiornato"), "mercati": []}
+        d["avviso"] = {"codice": CODICE_ERRORE, "dal": d.get("aggiornato"), "mercati": [], "quando": _adesso()}
     return d
 
 

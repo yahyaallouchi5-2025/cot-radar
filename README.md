@@ -222,6 +222,23 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Prezzi**: Yahoo Finance (rettificati), copia in `storico/yahoo/`, al massimo un download al giorno. Per un servizio
   commerciale conviene un fornitore con licenza: basta sostituire `scarica_yahoo()`.
 
+## Azioni per settore (v6.30: `azioni.py` + `web/azioni.js`, scheda "Azioni", workflow `azioni.yml`)
+- **Titoli**: ~630 tra S&P 500, Nasdaq-100, FTSE MIB, DAX 40 ed Euro Stoxx 50, negli 11 settori GICS, più i 5 indici.
+  Elenco con settore e listini in `cot_radar/azioni_elenco.csv` (da aggiornare a ogni ribilanciamento trimestrale):
+  Yahoo da GitHub Actions non concede il profilo aziendale (risposta 401/429), quindi il settore non arriva da lì;
+  il nome del titolo invece sì, a ogni download.
+- **Flusso serale** (`azioni.yml`, 21:35 UTC, separato dal sito): per titolo 2 anni giornalieri + storico mensile
+  completo una volta a settimana (giorno sparso per ticker). 3 tentativi per richiesta, 5 fallimenti di fila = Yahoo
+  fermo e si usano le copie. Copie nel ramo `azioni`, riscritto con un solo commit (non si gonfia). Il sito copia
+  `pubblico/` in `/azioni/`: `indice.json` (~220 KB, tutti i titoli) e `titoli/<T>.json` (grafico e stagionalità).
+- **Anomalia** (Yahoo fermo o oltre il 10% dei titoli non aggiornati): restano i dati del giorno prima, la scheda
+  mostra il popup comune "Manutenzione in corso" con giorno e ora dell'anomalia (una volta per sessione, nessuna
+  barra fissa), il workflow fallisce e GitHub manda la mail all'admin.
+- **Frontend**: il file si scarica solo all'apertura della scheda, con lo scheletro di attesa; filtri per listino e
+  settore, ricerca, colonne ordinabili, pannello di dettaglio con grafico (1 anno, 2 anni, storico mensile) e
+  stagionalità mensile del titolo.
+- **Popup comune** (`web/manutenzione.js`): lo usano anche i Portafogli (la barra gialla fissa è stata tolta).
+
 ## Landing e note legali (v6.23)
 - Landing: sezione **Il metodo** (COT + politica monetaria + notizie macro + stagionalità), orizzonte swing e
   medio-lungo periodo, **domande frequenti**, piè di pagina con link legali.

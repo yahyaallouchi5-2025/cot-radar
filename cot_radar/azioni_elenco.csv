@@ -1,0 +1,630 @@
+# azioni_elenco.csv - titoli della scheda Azioni: ticker Yahoo;nome;settore (GICS);listini
+# Composizioni: S&P 500 (S&P Dow Jones), Nasdaq-100 (Nasdaq), FTSE MIB, DAX, Euro Stoxx 50 (Wikipedia).
+# Da aggiornare a ogni ribilanciamento trimestrale degli indici (marzo, giugno, settembre, dicembre).
+ticker;nome;settore;listini
+ABNB;Airbnb;cdis;ndx,sp500
+ADS.DE;Adidas;cdis;dax,sx5e
+AMZN;Amazon;cdis;ndx,sp500
+APTV;Aptiv;cdis;sp500
+AZO;AutoZone;cdis;sp500
+BBY;Best Buy;cdis;sp500
+BC.MI;Brunello Cucinelli;cdis;mib
+BKNG;Booking Holdings;cdis;ndx,sp500
+BMW.DE;BMW;cdis;dax,sx5e
+CCL;Carnival Corporation;cdis;sp500
+CMG;Chipotle Mexican Grill;cdis;sp500
+CON.DE;Continental;cdis;dax
+CVNA;Carvana;cdis;sp500
+DASH;DoorDash;cdis;ndx,sp500
+DECK;Deckers Brands;cdis;sp500
+DHI;D. R. Horton;cdis;sp500
+DPZ;Domino's;cdis;sp500
+DRI;Darden Restaurants;cdis;sp500
+EBAY;eBay Inc.;cdis;sp500
+EXPE;Expedia Group;cdis;sp500
+F;Ford Motor Company;cdis;sp500
+GM;General Motors;cdis;sp500
+GPC;Genuine Parts Company;cdis;sp500
+GRMN;Garmin;cdis;sp500
+HAS;Hasbro;cdis;sp500
+HD;Home Depot (The);cdis;sp500
+HLT;Hilton Worldwide;cdis;sp500
+ITX.MC;Inditex;cdis;sx5e
+LEN;Lennar;cdis;sp500
+LOW;Lowe's;cdis;sp500
+LTMC.MI;Lottomatica Group;cdis;mib
+LULU;Lululemon Athletica;cdis;sp500
+LVS;Las Vegas Sands;cdis;sp500
+MAR;Marriott International;cdis;ndx,sp500
+MBG.DE;Mercedes-Benz Group;cdis;dax,sx5e
+MC.PA;LVMH Moët Hennessy Louis Vuitton;cdis;sx5e
+MCD;McDonald's;cdis;sp500
+MELI;MercadoLibre;cdis;ndx
+MGM;MGM Resorts;cdis;sp500
+MONC.MI;Moncler;cdis;mib
+NCLH;Norwegian Cruise Line Holdings;cdis;sp500
+NKE;Nike, Inc.;cdis;sp500
+NVR;NVR, Inc.;cdis;sp500
+ORLY;O'Reilly Automotive;cdis;ndx,sp500
+PDD;PDD Holdings;cdis;ndx
+PHM;PulteGroup;cdis;sp500
+PRX.AS;Prosus;cdis;sx5e
+RACE.MI;Ferrari;cdis;mib,sx5e
+RCL;Royal Caribbean Group;cdis;sp500
+RL;Ralph Lauren Corporation;cdis;sp500
+RMS.PA;Hermès;cdis;sx5e
+ROST;Ross Stores;cdis;ndx,sp500
+SBUX;Starbucks;cdis;ndx,sp500
+STLAM.MI;Stellantis;cdis;mib
+TJX;TJX Companies;cdis;sp500
+TPR;Tapestry, Inc.;cdis;sp500
+TSCO;Tractor Supply;cdis;sp500
+TSLA;Tesla, Inc.;cdis;ndx,sp500
+ULTA;Ulta Beauty;cdis;sp500
+VOW3.DE;Volkswagen Group;cdis;dax
+WSM;Williams-Sonoma, Inc.;cdis;sp500
+WYNN;Wynn Resorts;cdis;sp500
+YUM;Yum! Brands;cdis;sp500
+ZAL.DE;Zalando;cdis;dax
+ABI.BR;Anheuser-Busch InBev;cstap;sx5e
+AD.AS;Ahold Delhaize;cstap;sx5e
+ADM;Archer Daniels Midland;cstap;sp500
+BEI.DE;Beiersdorf;cstap;dax
+BF-B;Brown–Forman;cstap;sp500
+BG;Bunge Global;cstap;sp500
+BN.PA;Danone;cstap;sx5e
+CASY;Casey's;cstap;sp500
+CCEP;Coca-Cola Europacific Partners;cstap;ndx
+CHD;Church & Dwight;cstap;sp500
+CL;Colgate-Palmolive;cstap;sp500
+CLX;Clorox;cstap;sp500
+COST;Costco;cstap;ndx,sp500
+CPR.MI;Campari;cstap;mib
+DG;Dollar General;cstap;sp500
+DLTR;Dollar Tree;cstap;sp500
+EL;Estée Lauder Companies (The);cstap;sp500
+GIS;General Mills;cstap;sp500
+HEN3.DE;Henkel;cstap;dax
+HRL;Hormel Foods;cstap;sp500
+HSY;Hershey Company (The);cstap;sp500
+KDP;Keurig Dr Pepper;cstap;ndx,sp500
+KHC;Kraft Heinz;cstap;sp500
+KMB;Kimberly-Clark;cstap;sp500
+KO;Coca-Cola Company (The);cstap;sp500
+KR;Kroger;cstap;sp500
+KVUE;Kenvue;cstap;sp500
+MDLZ;Mondelez International;cstap;ndx,sp500
+MKC;McCormick & Company;cstap;sp500
+MNST;Monster Beverage;cstap;ndx,sp500
+MO;Altria;cstap;sp500
+OR.PA;L'Oréal;cstap;sx5e
+PEP;PepsiCo;cstap;ndx,sp500
+PG;Procter & Gamble;cstap;sp500
+PM;Philip Morris International;cstap;sp500
+SJM;J.M. Smucker Company (The);cstap;sp500
+STZ;Constellation Brands;cstap;sp500
+SYY;Sysco;cstap;sp500
+TGT;Target Corporation;cstap;sp500
+TSN;Tyson Foods;cstap;sp500
+VYLR;Vylor;cstap;sp500
+WMT;Walmart;cstap;ndx,sp500
+APA;APA Corporation;ener;sp500
+BKR;Baker Hughes;ener;ndx,sp500
+COP;ConocoPhillips;ener;sp500
+CVX;Chevron Corporation;ener;sp500
+DVN;Devon Energy;ener;sp500
+ENI.MI;Eni;ener;mib,sx5e
+EOG;EOG Resources;ener;sp500
+EQT;EQT Corporation;ener;sp500
+EXE;Expand Energy;ener;sp500
+FANG;Diamondback Energy;ener;ndx,sp500
+HAL;Halliburton;ener;sp500
+KMI;Kinder Morgan;ener;sp500
+MPC;Marathon Petroleum;ener;sp500
+OKE;Oneok;ener;sp500
+OXY;Occidental Petroleum;ener;sp500
+PSX;Phillips 66;ener;sp500
+SLB;Schlumberger;ener;sp500
+SPM.MI;Saipem;ener;mib
+TEN.MI;Tenaris;ener;mib
+TPL;Texas Pacific Land Corporation;ener;sp500
+TRGP;Targa Resources;ener;sp500
+TTE.PA;TotalEnergies;ener;sx5e
+VLO;Valero Energy;ener;sp500
+WMB;Williams Companies;ener;sp500
+XOM;ExxonMobil;ener;sp500
+ACGL;Arch Capital Group;fin;sp500
+ADYEN.AS;Adyen;fin;sx5e
+AFL;Aflac;fin;sp500
+AIG;American International Group;fin;sp500
+AIZ;Assurant;fin;sp500
+AJG;Arthur J. Gallagher & Co.;fin;sp500
+ALL;Allstate;fin;sp500
+ALV.DE;Allianz;fin;dax,sx5e
+AMP;Ameriprise Financial;fin;sp500
+AON;Aon plc;fin;sp500
+APO;Apollo Global Management;fin;sp500
+ARES;Ares Management;fin;sp500
+AXP;American Express;fin;sp500
+AZM.MI;Azimut;fin;mib
+BAC;Bank of America;fin;sp500
+BAMI.MI;Banco BPM;fin;mib
+BBVA.MC;BBVA;fin;sx5e
+BEN;Franklin Resources;fin;sp500
+BLK;BlackRock;fin;sp500
+BMED.MI;Banca Mediolanum;fin;mib
+BMPS.MI;Banca Monte dei Paschi di Siena;fin;mib
+BNP.PA;BNP Paribas;fin;sx5e
+BNY;BNY Mellon;fin;sp500
+BPE.MI;BPER Banca;fin;mib
+BRK-B;Berkshire Hathaway;fin;sp500
+BRO;Brown & Brown;fin;sp500
+BX;Blackstone Inc.;fin;sp500
+C;Citigroup;fin;sp500
+CB;Chubb Limited;fin;sp500
+CBK.DE;Commerzbank;fin;dax
+CBOE;Cboe Global Markets;fin;sp500
+CFG;Citizens Financial Group;fin;sp500
+CINF;Cincinnati Financial;fin;sp500
+CME;CME Group;fin;sp500
+COF;Capital One;fin;sp500
+COIN;Coinbase;fin;sp500
+CPAY;Corpay;fin;sp500
+CS.PA;Axa;fin;sx5e
+DB1.DE;Deutsche Börse;fin;dax,sx5e
+DBK.DE;Deutsche Bank;fin;dax,sx5e
+EG;Everest Group;fin;sp500
+ERIE;Erie Indemnity;fin;sp500
+FBK.MI;FinecoBank;fin;mib
+FDS;FactSet;fin;sp500
+FIS;Fidelity National Information Services;fin;sp500
+FISV;Fiserv;fin;sp500
+FITB;Fifth Third Bancorp;fin;sp500
+G.MI;Generali;fin;mib
+GL;Globe Life;fin;sp500
+GPN;Global Payments;fin;sp500
+GS;Goldman Sachs;fin;sp500
+HBAN;Huntington Bancshares;fin;sp500
+HIG;Hartford (The);fin;sp500
+HNR1.DE;Hannover Re;fin;dax
+HOOD;Robinhood Markets;fin;sp500
+IBKR;Interactive Brokers;fin;sp500
+ICE;Intercontinental Exchange;fin;sp500
+INGA.AS;ING Group;fin;sx5e
+ISP.MI;Intesa Sanpaolo;fin;mib,sx5e
+IVZ;Invesco;fin;sp500
+JKHY;Jack Henry & Associates;fin;sp500
+JPM;JPMorgan Chase;fin;sp500
+KEY;KeyCorp;fin;sp500
+KKR;KKR & Co.;fin;sp500
+L;Loews Corporation;fin;sp500
+MA;Mastercard;fin;sp500
+MB.MI;Mediobanca;fin;mib
+MCO;Moody's Corporation;fin;sp500
+MET;MetLife;fin;sp500
+MRSH;Marsh McLennan;fin;sp500
+MS;Morgan Stanley;fin;sp500
+MSCI;MSCI;fin;sp500
+MTB;M&T Bank;fin;sp500
+MUV2.DE;Munich Re;fin;dax,sx5e
+NDA-FI.HE;Nordea;fin;sx5e
+NDAQ;Nasdaq, Inc.;fin;sp500
+NEXI.MI;Nexi;fin;mib
+NTRS;Northern Trust;fin;sp500
+PAH3.DE;Porsche SE;fin;dax
+PFG;Principal Financial Group;fin;sp500
+PGR;Progressive Corporation;fin;sp500
+PNC;PNC Financial Services;fin;sp500
+PRU;Prudential Financial;fin;sp500
+PST.MI;Poste italiane;fin;mib
+PYPL;PayPal;fin;ndx,sp500
+RF;Regions Financial Corporation;fin;sp500
+RJF;Raymond James Financial;fin;sp500
+SAN.MC;Banco Santander;fin;sx5e
+SCHW;Charles Schwab Corporation;fin;sp500
+SPGI;S&P Global;fin;sp500
+STT;State Street Corporation;fin;sp500
+SYF;Synchrony Financial;fin;sp500
+TFC;Truist Financial;fin;sp500
+TROW;T. Rowe Price;fin;sp500
+TRV;Travelers Companies (The);fin;sp500
+UCG.MI;UniCredit;fin;mib,sx5e
+UNI.MI;Unipol;fin;mib
+USB;U.S. Bancorp;fin;sp500
+V;Visa Inc.;fin;sp500
+WFC;Wells Fargo;fin;sp500
+WRB;W. R. Berkley Corporation;fin;sp500
+WTW;Willis Towers Watson;fin;sp500
+XYZ;Block, Inc.;fin;sp500
+AMT;American Tower;imm;sp500
+ARE;Alexandria Real Estate Equities;imm;sp500
+BXP;BXP, Inc.;imm;sp500
+CBRE;CBRE Group;imm;sp500
+CCI;Crown Castle;imm;sp500
+CPT;Camden Property Trust;imm;sp500
+CSGP;CoStar Group;imm;sp500
+DLR;Digital Realty;imm;sp500
+DOC;Healthpeak Properties;imm;sp500
+EQIX;Equinix;imm;sp500
+ESS;Essex Property Trust;imm;sp500
+EXR;Extra Space Storage;imm;sp500
+FRT;Federal Realty Investment Trust;imm;sp500
+HST;Host Hotels & Resorts;imm;sp500
+INVH;Invitation Homes;imm;sp500
+IRM;Iron Mountain;imm;sp500
+KIM;Kimco Realty;imm;sp500
+MAA;Mid-America Apartment Communities;imm;sp500
+O;Realty Income;imm;sp500
+PLD;Prologis;imm;sp500
+PSA;Public Storage;imm;sp500
+REG;Regency Centers;imm;sp500
+SBAC;SBA Communications;imm;sp500
+SPG;Simon Property Group;imm;sp500
+UDR;UDR, Inc.;imm;sp500
+VICI;Vici Properties;imm;sp500
+VMRK;Vivmark Residential;imm;sp500
+VNA.DE;Vonovia;imm;dax
+VTR;Ventas;imm;sp500
+WELL;Welltower;imm;sp500
+WY;Weyerhaeuser;imm;sp500
+ADP;Automatic Data Processing;ind;ndx,sp500
+AIR.PA;Airbus;ind;dax,sx5e
+ALLE;Allegion;ind;sp500
+AME;Ametek;ind;sp500
+AOS;A. O. Smith;ind;sp500
+AVIO.MI;Avio;ind;mib
+AXON;Axon Enterprise;ind;ndx,sp500
+BA;Boeing;ind;sp500
+BE;Bloom Energy;ind;sp500
+BNR.DE;Brenntag;ind;dax
+BR;Broadridge Financial Solutions;ind;sp500
+CARR;Carrier Global;ind;sp500
+CAT;Caterpillar Inc.;ind;sp500
+CHRW;C.H. Robinson;ind;sp500
+CMI;Cummins;ind;sp500
+CPRT;Copart;ind;ndx,sp500
+CSX;CSX Corporation;ind;ndx,sp500
+CTAS;Cintas;ind;ndx,sp500
+DAL;Delta Air Lines;ind;sp500
+DD;DuPont;ind;sp500
+DE;Deere & Company;ind;sp500
+DG.PA;Vinci SA;ind;sx5e
+DHL.DE;Deutsche Post;ind;dax,sx5e
+DOV;Dover Corporation;ind;sp500
+DTG.DE;Daimler Truck;ind;dax
+EFX;Equifax;ind;sp500
+EME;Emcor;ind;sp500
+EMR;Emerson Electric;ind;sp500
+ENR.DE;Siemens Energy;ind;dax,sx5e
+ETN;Eaton Corporation;ind;sp500
+EXPD;Expeditors International;ind;sp500
+FAST;Fastenal;ind;ndx,sp500
+FCT.MI;Fincantieri;ind;mib
+FDX;FedEx;ind;sp500
+FDXF;FedEx Freight;ind;sp500
+FER;Ferrovial;ind;ndx
+FERG;Ferguson Enterprises;ind;sp500
+FIX;Comfort Systems USA;ind;sp500
+FTV;Fortive;ind;sp500
+G1A.DE;GEA Group;ind;dax
+GD;General Dynamics;ind;sp500
+GE;GE Aerospace;ind;sp500
+GEV;GE Vernova;ind;sp500
+GNRC;Generac;ind;sp500
+GWW;W. W. Grainger;ind;sp500
+HII;Huntington Ingalls Industries;ind;sp500
+HON;Honeywell Technologies;ind;ndx,sp500
+HONA;Honeywell Aerospace;ind;ndx,sp500
+HUBB;Hubbell Incorporated;ind;sp500
+HWM;Howmet Aerospace;ind;sp500
+IEX;IDEX Corporation;ind;sp500
+IR;Ingersoll Rand;ind;sp500
+ITW;Illinois Tool Works;ind;sp500
+IVG.MI;Iveco;ind;mib
+J;Jacobs Solutions;ind;sp500
+JBHT;J.B. Hunt;ind;sp500
+JCI;Johnson Controls;ind;sp500
+LDO.MI;Leonardo;ind;mib
+LDOS;Leidos;ind;sp500
+LHX;L3Harris;ind;sp500
+LII;Lennox International;ind;sp500
+LMT;Lockheed Martin;ind;sp500
+LUV;Southwest Airlines;ind;sp500
+MAS;Masco;ind;sp500
+MMM;3M;ind;sp500
+MTX.DE;MTU Aero Engines;ind;dax
+NDSN;Nordson Corporation;ind;sp500
+NOC;Northrop Grumman;ind;sp500
+NSC;Norfolk Southern;ind;sp500
+ODFL;Old Dominion;ind;ndx,sp500
+OTIS;Otis Worldwide;ind;sp500
+PAYX;Paychex;ind;ndx,sp500
+PCAR;Paccar;ind;ndx,sp500
+PH;Parker Hannifin;ind;sp500
+PNR;Pentair;ind;sp500
+PRY.MI;Prysmian;ind;mib
+PWR;Quanta Services;ind;sp500
+RHM.DE;Rheinmetall;ind;dax,sx5e
+RKLB;Rocket Lab;ind;ndx
+ROK;Rockwell Automation;ind;sp500
+ROL;Rollins, Inc.;ind;sp500
+RSG;Republic Services;ind;sp500
+RTX;RTX Corporation;ind;sp500
+SAF.PA;Safran;ind;sx5e
+SGO.PA;Saint-Gobain;ind;sx5e
+SIE.DE;Siemens;ind;dax,sx5e
+SNA;Snap-on;ind;sp500
+SPCX;Space Exploration Technologies;ind;ndx
+SU.PA;Schneider Electric;ind;sx5e
+SWK;Stanley Black & Decker;ind;sp500
+TDG;TransDigm Group;ind;sp500
+TRI;Thomson Reuters;ind;ndx
+TT;Trane Technologies;ind;sp500
+TXT;Textron;ind;sp500
+UAL;United Airlines Holdings;ind;sp500
+UBER;Uber;ind;sp500
+UNP;Union Pacific Corporation;ind;sp500
+UPS;United Parcel Service;ind;sp500
+URI;United Rentals;ind;sp500
+VLTO;Veralto;ind;sp500
+VRSK;Verisk Analytics;ind;sp500
+VRT;Vertiv;ind;sp500
+WAB;Wabtec;ind;sp500
+WM;Waste Management;ind;sp500
+XYL;Xylem Inc.;ind;sp500
+AI.PA;Air Liquide;mat;sx5e
+ALB;Albemarle Corporation;mat;sp500
+AMCR;Amcor;mat;sp500
+APD;Air Products;mat;sp500
+AVY;Avery Dennison;mat;sp500
+BALL;Ball Corporation;mat;sp500
+BAS.DE;BASF;mat;dax,sx5e
+BZU.MI;Buzzi;mat;mib
+CF;CF Industries;mat;sp500
+CRH;CRH plc;mat;sp500
+DOW;Dow Inc.;mat;sp500
+ECL;Ecolab;mat;sp500
+FCX;Freeport-McMoRan;mat;sp500
+HEI.DE;Heidelberg Materials;mat;dax
+IFF;International Flavors & Fragrances;mat;sp500
+IP;International Paper;mat;sp500
+LIN;Linde plc;mat;ndx,sp500
+LYB;LyondellBasell;mat;sp500
+MLM;Martin Marietta Materials;mat;sp500
+MOS;Mosaic Company (The);mat;sp500
+NEM;Newmont;mat;sp500
+NUE;Nucor;mat;sp500
+PKG;Packaging Corporation of America;mat;sp500
+PPG;PPG Industries;mat;sp500
+SHW;Sherwin-Williams;mat;sp500
+STLD;Steel Dynamics;mat;sp500
+SW;Smurfit Westrock;mat;sp500
+SY1.DE;Symrise;mat;dax
+VMC;Vulcan Materials Company;mat;sp500
+A;Agilent Technologies;salute;sp500
+ABBV;AbbVie;salute;sp500
+ABT;Abbott Laboratories;salute;sp500
+ALGN;Align Technology;salute;sp500
+ALNY;Alnylam Pharmaceuticals;salute;ndx
+AMGN;Amgen;salute;ndx,sp500
+AMP.MI;Amplifon;salute;mib
+ARGX.BR;Argenx;salute;sx5e
+BAX;Baxter International;salute;sp500
+BAYN.DE;Bayer;salute;dax,sx5e
+BDX;Becton Dickinson;salute;sp500
+BIIB;Biogen;salute;sp500
+BMY;Bristol Myers Squibb;salute;sp500
+BSX;Boston Scientific;salute;sp500
+CAH;Cardinal Health;salute;sp500
+CI;Cigna;salute;sp500
+CNC;Centene Corporation;salute;sp500
+COO;Cooper Companies (The);salute;sp500
+COR;Cencora;salute;sp500
+CRL;Charles River Laboratories;salute;sp500
+CVS;CVS Health;salute;sp500
+DGX;Quest Diagnostics;salute;sp500
+DHR;Danaher Corporation;salute;sp500
+DVA;DaVita;salute;sp500
+DXCM;Dexcom;salute;ndx,sp500
+EL.PA;EssilorLuxottica;salute;sx5e
+ELV;Elevance Health;salute;sp500
+EW;Edwards Lifesciences;salute;sp500
+FME.DE;Fresenius Medical Care;salute;dax
+FRE.DE;Fresenius;salute;dax
+GEHC;GE HealthCare;salute;ndx,sp500
+GILD;Gilead Sciences;salute;ndx,sp500
+HCA;HCA Healthcare;salute;sp500
+HSIC;Henry Schein;salute;sp500
+HUM;Humana;salute;sp500
+IDXX;Idexx Laboratories;salute;ndx,sp500
+ILMN;Illumina, Inc.;salute;sp500
+INCY;Incyte;salute;sp500
+IQV;IQVIA;salute;sp500
+ISRG;Intuitive Surgical;salute;ndx,sp500
+JNJ;Johnson & Johnson;salute;sp500
+LH;Labcorp;salute;sp500
+LLY;Lilly (Eli);salute;sp500
+MCK;McKesson;salute;sp500
+MDT;Medtronic;salute;sp500
+MRK;Merck & Co.;salute;sp500
+MRK.DE;Merck;salute;dax
+MRNA;Moderna;salute;ndx,sp500
+MTD;Mettler Toledo;salute;sp500
+PFE;Pfizer;salute;sp500
+PODD;Insulet Corporation;salute;sp500
+QIA.DE;Qiagen;salute;dax
+REC.MI;Recordati;salute;mib
+REGN;Regeneron Pharmaceuticals;salute;ndx,sp500
+RMD;ResMed;salute;sp500
+RVTY;Revvity;salute;sp500
+SAN.PA;Sanofi;salute;sx5e
+SHL.DE;Siemens Healthineers;salute;dax
+SOLV;Solventum;salute;sp500
+STE;Steris;salute;sp500
+SYK;Stryker Corporation;salute;sp500
+TECH;Bio-Techne;salute;sp500
+TMO;Thermo Fisher Scientific;salute;sp500
+UHS;Universal Health Services;salute;sp500
+UNH;UnitedHealth Group;salute;sp500
+VEEV;Veeva Systems;salute;sp500
+VRTX;Vertex Pharmaceuticals;salute;ndx,sp500
+VTRS;Viatris;salute;sp500
+WAT;Waters Corporation;salute;sp500
+WST;West Pharmaceutical Services;salute;sp500
+ZBH;Zimmer Biomet;salute;sp500
+ZTS;Zoetis;salute;sp500
+AAPL;Apple Inc.;tech;ndx,sp500
+ACN;Accenture;tech;sp500
+ADBE;Adobe Inc.;tech;ndx,sp500
+ADI;Analog Devices;tech;ndx,sp500
+ADSK;Autodesk;tech;ndx,sp500
+AKAM;Akamai Technologies;tech;sp500
+ALAB;Astera Labs;tech;ndx
+AMAT;Applied Materials;tech;ndx,sp500
+AMD;Advanced Micro Devices;tech;ndx,sp500
+ANET;Arista Networks;tech;sp500
+APH;Amphenol;tech;sp500
+ARM;Arm Holdings;tech;ndx
+ASML;ASML Holding;tech;ndx
+ASML.AS;ASML Holding;tech;sx5e
+AVGO;Broadcom;tech;ndx,sp500
+CDNS;Cadence Design Systems;tech;ndx,sp500
+CDW;CDW Corporation;tech;sp500
+CIEN;Ciena;tech;sp500
+COHR;Coherent Corp.;tech;sp500
+CRM;Salesforce;tech;sp500
+CRWD;CrowdStrike;tech;ndx,sp500
+CRWV;CoreWeave;tech;ndx
+CSCO;Cisco;tech;ndx,sp500
+CTSH;Cognizant;tech;sp500
+DDOG;Datadog;tech;ndx,sp500
+DELL;Dell Technologies;tech;sp500
+FFIV;F5, Inc.;tech;sp500
+FICO;Fair Isaac;tech;sp500
+FLEX;Flex Ltd.;tech;sp500
+FSLR;First Solar;tech;sp500
+FTNT;Fortinet;tech;ndx,sp500
+GDDY;GoDaddy;tech;sp500
+GEN;Gen Digital;tech;sp500
+GLW;Corning Inc.;tech;sp500
+HPE;Hewlett Packard Enterprise;tech;sp500
+HPQ;HP Inc.;tech;sp500
+IBM;IBM;tech;sp500
+IFX.DE;Infineon Technologies;tech;dax,sx5e
+INTC;Intel;tech;ndx,sp500
+INTU;Intuit;tech;ndx,sp500
+IT;Gartner;tech;sp500
+JBL;Jabil;tech;sp500
+KEYS;Keysight Technologies;tech;sp500
+KLAC;KLA Corporation;tech;ndx,sp500
+LITE;Lumentum;tech;ndx,sp500
+LRCX;Lam Research;tech;ndx,sp500
+MCHP;Microchip Technology;tech;ndx,sp500
+MPWR;Monolithic Power Systems;tech;ndx,sp500
+MRVL;Marvell Technology;tech;ndx,sp500
+MSFT;Microsoft;tech;ndx,sp500
+MSI;Motorola Solutions;tech;sp500
+MSTR;Strategy;tech;ndx
+MU;Micron Technology;tech;ndx,sp500
+NBIS;Nebius Group;tech;ndx
+NOKIA.HE;Nokia;tech;sx5e
+NOW;ServiceNow;tech;sp500
+NTAP;NetApp;tech;sp500
+NVDA;Nvidia;tech;ndx,sp500
+NXPI;NXP Semiconductors;tech;ndx,sp500
+ON;ON Semiconductor;tech;sp500
+ORCL;Oracle Corporation;tech;sp500
+P;Everpure;tech;sp500
+PANW;Palo Alto Networks;tech;ndx,sp500
+PLTR;Palantir Technologies;tech;ndx,sp500
+PTC;PTC Inc.;tech;sp500
+Q;Qnity Electronics;tech;sp500
+QCOM;Qualcomm;tech;ndx,sp500
+ROP;Roper Technologies;tech;ndx,sp500
+SAP.DE;SAP;tech;dax,sx5e
+SHOP;Shopify;tech;ndx
+SMCI;Supermicro;tech;sp500
+SNDK;Sandisk;tech;ndx,sp500
+SNPS;Synopsys;tech;ndx,sp500
+STMMI.MI;STMicroelectronics;tech;mib
+STX;Seagate Technology;tech;ndx,sp500
+SWKS;Skyworks Solutions;tech;sp500
+TDY;Teledyne Technologies;tech;sp500
+TEL;TE Connectivity;tech;sp500
+TER;Teradyne;tech;ndx,sp500
+TPRO.MI;Technoprobe;tech;mib
+TRMB;Trimble Inc.;tech;sp500
+TWLO;Twilio;tech;sp500
+TXN;Texas Instruments;tech;ndx,sp500
+TYL;Tyler Technologies;tech;sp500
+VRSN;Verisign;tech;sp500
+WDAY;Workday, Inc.;tech;ndx,sp500
+WDC;Western Digital;tech;ndx,sp500
+ZBRA;Zebra Technologies;tech;sp500
+APP;AppLovin;tlc;ndx,sp500
+CHTR;Charter Communications;tlc;sp500
+CMCSA;Comcast;tlc;ndx,sp500
+DIS;Walt Disney Company (The);tlc;sp500
+DTE.DE;Deutsche Telekom;tlc;dax,sx5e
+ECHO;EchoStar;tlc;sp500
+FOX;Fox Corporation (Class B);tlc;sp500
+FOXA;Fox Corporation (Class A);tlc;sp500
+G24.DE;Scout24;tlc;dax
+GOOG;Alphabet Inc. (Class C);tlc;ndx,sp500
+GOOGL;Alphabet Inc. (Class A);tlc;ndx,sp500
+INW.MI;INWIT;tlc;mib
+LYV;Live Nation Entertainment;tlc;sp500
+META;Meta Platforms;tlc;ndx,sp500
+NFLX;Netflix;tlc;ndx,sp500
+NWS;News Corp (Class B);tlc;sp500
+NWSA;News Corp (Class A);tlc;sp500
+OMC;Omnicom Group;tlc;sp500
+RDDT;Reddit;tlc;sp500
+SKYD;Skydance;tlc;sp500
+T;AT&T;tlc;sp500
+TIT.MI;Telecom Italia;tlc;mib
+TKO;TKO Group Holdings;tlc;sp500
+TMUS;T-Mobile US;tlc;ndx,sp500
+TTWO;Take-Two Interactive;tlc;ndx,sp500
+VZ;Verizon;tlc;sp500
+A2A.MI;A2A;util;mib
+AEE;Ameren;util;sp500
+AEP;American Electric Power;util;ndx,sp500
+AES;AES Corporation;util;sp500
+ATO;Atmos Energy;util;sp500
+AWK;American Water Works;util;sp500
+CEG;Constellation Energy;util;ndx,sp500
+CMS;CMS Energy;util;sp500
+CNP;CenterPoint Energy;util;sp500
+D;Dominion Energy;util;sp500
+DTE;DTE Energy;util;sp500
+DUK;Duke Energy;util;sp500
+ED;Consolidated Edison;util;sp500
+EIX;Edison International;util;sp500
+ENEL.MI;Enel;util;mib,sx5e
+ENGI.PA;Engie;util;sx5e
+EOAN.DE;E.ON;util;dax
+ES;Eversource Energy;util;sp500
+ETR;Entergy;util;sp500
+EVRG;Evergy;util;sp500
+EXC;Exelon;util;ndx,sp500
+FE;FirstEnergy;util;sp500
+HER.MI;Hera;util;mib
+IBE.MC;Iberdrola;util;sx5e
+IG.MI;Italgas;util;mib
+LNT;Alliant Energy;util;sp500
+NEE;NextEra Energy;util;sp500
+NI;NiSource;util;sp500
+NRG;NRG Energy;util;sp500
+PCG;PG&E Corporation;util;sp500
+PEG;Public Service Enterprise Group;util;sp500
+PNW;Pinnacle West Capital;util;sp500
+PPL;PPL Corporation;util;sp500
+RWE.DE;RWE;util;dax
+SO;Southern Company;util;sp500
+SRE;Sempra;util;sp500
+SRG.MI;Snam;util;mib
+TRN.MI;Terna;util;mib
+VST;Vistra Corp.;util;sp500
+WEC;WEC Energy Group;util;sp500
+XEL;Xcel Energy;util;ndx,sp500

@@ -162,6 +162,16 @@ def main(argv):
             vetrina.crea(folder)
         except Exception:
             log.error("landing page non creata:\n%s", traceback.format_exc())
+        # SCHEDA AZIONI: dati del ramo "azioni" (workflow azioni.yml) copiati in <sito>/azioni/.
+        # Su GitHub dal ramo; sul PC da una cartella indicata in AZIONI_LOCALE (prova). Mai bloccante.
+        try:
+            from cot_radar import azioni
+            if os.environ.get("AZIONI_LOCALE"):
+                azioni.copia_nel_sito(folder, cartella_locale=os.environ["AZIONI_LOCALE"])
+            elif os.environ.get("GITHUB_ACTIONS"):
+                azioni.copia_nel_sito(folder)
+        except Exception:
+            log.warning("dati azioni non copiati nel sito:\n%s", traceback.format_exc())
     if not site and "--no-open" not in argv:
         webbrowser.open("file:///" + out.replace("\\", "/").lstrip("/"))
     return 0

@@ -482,10 +482,7 @@ h3.vft+p.sub.infotesto.aperta{text-transform:none;letter-spacing:0;font-size:14p
 @media (max-width:520px){.pmasse{flex-wrap:wrap}.pmasse span:nth-child(2){order:3;flex-basis:100%;text-align:center}}
 .pstag{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.pstag>.small{flex-basis:100%}
 .pstag .pchip b{font-weight:750}.pstag .pchip.pos b{color:#9df0cb}.pstag .pchip.neg b{color:#ffb3ae}
-/* avviso "dati non aggiornati" (banner in testa alla scheda + popup una volta per sessione) */
-.pavviso{display:flex;gap:14px;align-items:flex-start;margin:0 0 18px;padding:14px 18px;border-radius:14px;
- border:1px solid color-mix(in srgb,var(--warn) 45%,var(--line));background:color-mix(in srgb,var(--warn) 9%,transparent)}
-.pavviso b{display:block;font-size:14.5px;color:var(--ink)}.pavviso span:not(.pav-i){font-size:13px;color:var(--mute)}
+/* popup comune "manutenzione in corso" (web/manutenzione.js): nessuna barra fissa nelle schede */
 .pav-i{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:15px;
  color:#1a1203;background:var(--warn);box-shadow:0 0 0 5px color-mix(in srgb,var(--warn) 18%,transparent)}
 .pav-i.grande{width:46px;height:46px;font-size:24px;margin:0 auto 14px;box-shadow:0 0 0 9px color-mix(in srgb,var(--warn) 16%,transparent)}
@@ -496,7 +493,7 @@ h3.vft+p.sub.infotesto.aperta{text-transform:none;letter-spacing:0;font-size:14p
  border:1px solid color-mix(in srgb,var(--warn) 35%,var(--line));box-shadow:0 24px 60px rgba(0,0,0,.5);
  transform:translateY(10px) scale(.97);transition:transform .22s cubic-bezier(.2,.8,.2,1)}
 .pmodal.on .pmodal-box{transform:none}
-.pmodal-box h3{margin:0 0 8px;font-size:19px}.pmodal-box p{margin:0 0 8px;color:var(--ink2,var(--ink));font-size:14.5px;line-height:1.55}
+.pmodal-box h3{margin:0 0 8px;font-size:19px;text-transform:none;letter-spacing:-.2px}.pmodal-q{font-weight:700;color:var(--warn)!important}.pmodal-box p{margin:0 0 8px;color:var(--ink2,var(--ink));font-size:14.5px;line-height:1.55}
 .pmodal-ok{margin-top:14px;min-width:150px;padding:11px 20px;border:0;border-radius:11px;font:inherit;font-weight:750;cursor:pointer;
  color:#1a1203;background:var(--warn);transition:transform .15s,box-shadow .15s}
 .pmodal-ok:hover{transform:translateY(-1px);box-shadow:0 8px 22px color-mix(in srgb,var(--warn) 35%,transparent)}
@@ -550,3 +547,73 @@ h3.vft+p.sub.infotesto.aperta{text-transform:none;letter-spacing:0;font-size:14p
 .ptutte{align-self:flex-start;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:7px 16px;font:600 13px system-ui;cursor:pointer;transition:border-color .2s}
 .ptutte:hover{border-color:var(--acc)}
 .ptab th:first-child{position:sticky;left:0;background:var(--card2);z-index:1}
+
+/* ============ AZIONI PER SETTORE (web/azioni.js) ============ */
+/* scheletro di attesa: blocchi che "respirano" finche' arrivano i dati */
+.sk{display:block;border-radius:8px;background:linear-gradient(90deg,var(--soft) 25%,color-mix(in srgb,var(--line) 70%,var(--soft)) 37%,var(--soft) 63%);background-size:400% 100%;animation:skr 1.3s ease-in-out infinite}
+@keyframes skr{0%{background-position:100% 50%}100%{background-position:0 50%}}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}}
+.azsk{display:flex;flex-direction:column;gap:10px}.azskr{display:flex;gap:18px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line)}.azskr:last-child{border:0}
+/* barra comandi: data, ricerca, listini */
+.azbar{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;margin:0 0 20px}
+.azbar .filters{margin:0}
+.azdata{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:var(--mute)}.azdata b{color:var(--ink)}
+.azdata i{width:8px;height:8px;border-radius:50%;background:var(--b);box-shadow:0 0 0 4px color-mix(in srgb,var(--b) 20%,transparent)}
+.azcerca{display:flex;align-items:center;gap:8px;min-width:240px;flex:0 1 300px;padding:0 14px;height:38px;border-radius:99px;border:1px solid var(--line);background:var(--card);transition:border-color .15s,box-shadow .15s}
+.azcerca:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 22%,transparent)}
+.azcerca svg{width:16px;height:16px;fill:none;stroke:var(--mute);stroke-width:2;flex:none}
+.azcerca input{flex:1;min-width:0;border:0;outline:0;background:none;color:var(--ink);font:500 14px system-ui}
+/* indici */
+.azidx{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:8px}
+.azi{position:relative;display:flex;flex-direction:column;gap:3px;padding:14px 16px 12px;cursor:pointer;overflow:hidden;transition:transform .18s,border-color .18s,box-shadow .18s}
+.azi:hover,.azi:focus-visible{transform:translateY(-2px);border-color:color-mix(in srgb,var(--acc) 55%,var(--line));outline:0}
+.azi.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),var(--shadow)}
+.azi>span{font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.4px}
+.azi>b{font-size:22px;font-variant-numeric:tabular-nums;letter-spacing:-.4px}.azi>em{display:flex;flex-wrap:wrap;gap:2px 12px;font-style:normal;font-size:12px;color:var(--mute)}.azi>em span{white-space:nowrap}
+.azi .azsp{position:absolute;right:10px;top:12px;width:64px;height:24px;opacity:.85}
+/* card dei settori */
+.azset{display:grid;grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:12px;margin-bottom:8px}
+.azsc{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:13px 15px;border-radius:14px;cursor:pointer;color:var(--ink);font:inherit;
+ border:1px solid var(--line);background:linear-gradient(180deg,var(--card),var(--card2));transition:transform .18s,border-color .18s,box-shadow .18s}
+.azsc:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--acc) 50%,var(--line));box-shadow:0 12px 26px rgba(2,8,20,.4)}
+.azsc.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 12px 26px rgba(2,8,20,.4);background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 10%,var(--card)),var(--card2))}
+.azsc>span:first-child{font-size:13px;font-weight:700;color:var(--ink2)}.azsc>span small{color:var(--mute);font-weight:600;margin-left:4px}
+.azsc>b{font-size:20px;letter-spacing:-.3px;font-variant-numeric:tabular-nums}.azsc>em{font-style:normal;font-size:12px;color:var(--mute)}
+.azbr{display:block;width:100%;height:5px;border-radius:9px;background:var(--soft);margin-top:6px;overflow:hidden}.azbr i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,var(--acc),var(--b))}
+.azbrt{font-size:11px;color:var(--mute)}
+/* tabella */
+.aztab th.azo{cursor:pointer;user-select:none;transition:color .15s}.aztab th.azo:hover,.aztab th.on{color:var(--ink)}
+.aztab tr.clic{cursor:pointer;transition:background .12s}.aztab tr.clic:focus-visible td{background:var(--soft);outline:0}
+.aznome b{display:block;max-width:260px;overflow:hidden;text-overflow:ellipsis;font-size:14px}.aznome span{font-size:11.5px;color:var(--mute)}
+.azsp{width:96px;height:28px;display:block}.azsp polyline{fill:none;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.azsp.su polyline{stroke:var(--b)}.azsp.giu polyline{stroke:var(--s)}
+.azaltri{margin-top:14px}.azfonte{margin-top:14px}
+.azvuoto{text-align:center;padding:40px 24px}.azvuoto h3{margin:0 0 6px}
+/* pannello di dettaglio (da destra) */
+.azdett{position:fixed;inset:0;z-index:900;background:rgba(3,8,20,.55);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .22s}
+.azdett.on{opacity:1;pointer-events:auto}
+.azpan{position:absolute;right:0;top:0;bottom:0;width:min(720px,100%);overflow-y:auto;padding:26px 28px 40px;background:linear-gradient(180deg,var(--card),var(--card2));
+ border-left:1px solid var(--line);box-shadow:-20px 0 60px rgba(0,0,0,.45);transform:translateX(30px);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.azdett.on .azpan{transform:none}
+.azx{position:absolute;right:18px;top:16px;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--soft);color:var(--ink);font-size:22px;line-height:1;cursor:pointer;transition:background .15s,transform .15s}
+.azx:hover{background:var(--line);transform:rotate(90deg)}
+.aztesta h3{text-transform:none;letter-spacing:-.3px;margin:4px 0 6px;font-size:22px;letter-spacing:-.3px;padding-right:44px}.aztesta h3 small{font-size:13px;color:var(--mute);font-weight:600}
+.azprz{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:18px}.azprz b{font-size:28px;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.azper{margin-bottom:12px}
+.azgraf{position:relative;border-radius:14px;background:var(--soft);padding:6px 4px 0}
+.azsvg{width:100%;height:240px;display:block}.azsvg.su{color:var(--b)}.azsvg.giu{color:var(--s)}
+.azlin{fill:none;stroke:currentColor;stroke-width:2;vector-effect:non-scaling-stroke}
+.azmini{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}
+.azmini>div{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:12px;background:var(--soft)}
+.azmini>div>span:last-child{font-size:18px;font-variant-numeric:tabular-nums}.azmini>div>span:first-child{font-size:11.5px;color:var(--mute);text-transform:uppercase;letter-spacing:.3px;font-weight:650}
+.aztit{margin:22px 0 10px;font-size:15px;text-transform:none}
+.azstag{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:6px}
+.azstag>div{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 2px;border-radius:10px;background:var(--soft);border:1px solid transparent;transition:border-color .15s}
+.azstag>div:hover{border-color:var(--line)}.azstag>div.cur{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.azsb{position:relative;width:60%;height:70px}.azsb i{position:absolute;left:0;right:0;border-radius:3px}.azsb i.su{background:var(--b)}.azsb i.giu{background:var(--s)}
+.azsb::after{content:"";position:absolute;left:-20%;right:-20%;top:50%;border-top:1px solid var(--line)}
+.azstag b{font-size:11.5px;font-variant-numeric:tabular-nums}.azstag small{font-size:10.5px;color:var(--mute)}.azstag em{font-style:normal;font-size:11px;font-weight:700;color:var(--ink2)}
+@media (max-width:1100px){.azidx{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:760px){.azidx{grid-template-columns:repeat(2,minmax(0,1fr))}.azh{display:none}.azcerca{flex:1 1 100%}
+ .azpan{padding:20px 16px 32px}.azmini{grid-template-columns:repeat(2,minmax(0,1fr))}.azstag{grid-template-columns:repeat(6,minmax(0,1fr))}.aznome b{max-width:150px}}
+@media (max-width:480px){.azh2{display:none}.azset{grid-template-columns:repeat(2,minmax(0,1fr))}}

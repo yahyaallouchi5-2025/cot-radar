@@ -46,7 +46,7 @@ def template():
     def read(name):
         with open(os.path.join(WEB_DIR, name), encoding="utf-8") as f:
             return f.read()
-    return read("index.html").replace("{{CSS}}", read("stile.css")).replace("{{JS}}", read("app.js") + read("portafogli.js")) \
+    return read("index.html").replace("{{CSS}}", read("stile.css")).replace("{{JS}}", read("app.js") + read("manutenzione.js") + read("portafogli.js") + read("azioni.js")) \
         .replace("{{TELEGRAM}}", TELEGRAM_CANALE).replace("{{STATISTICHE}}", statistiche())
 
 
