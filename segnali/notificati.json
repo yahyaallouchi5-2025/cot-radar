@@ -6,7 +6,8 @@
   "arrivo": {
    "canada-cpi-october-2026": "2026-10-19",
    "uk-cpi-inflation-october-2026": "2026-10-21",
-   "australia-cpi-october-2026": "2026-10-28"
+   "australia-cpi-october-2026": "2026-10-28",
+   "rbnz-rate-decision-october-2026": "2026-10-28"
   },
   "esito": {
    "CAD-2026-10-19": "2026-10-19",
@@ -14,5 +15,5 @@
   },
   "settimana": "2026-10-26"
  },
- "aggiornato": "2026-10-26T18:44Z"
+ "aggiornato": "2026-10-26T19:48Z"
 }
