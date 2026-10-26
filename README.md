@@ -222,8 +222,9 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Prezzi**: Yahoo Finance (rettificati), copia in `storico/yahoo/`, al massimo un download al giorno. Per un servizio
   commerciale conviene un fornitore con licenza: basta sostituire `scarica_yahoo()`.
 
-## Azioni per settore (v6.30: `azioni.py` + `web/azioni.js`, scheda "Azioni", workflow `azioni.yml`)
-- **Titoli**: ~630 tra S&P 500, Nasdaq-100, FTSE MIB, DAX 40 ed Euro Stoxx 50, negli 11 settori GICS, più i 5 indici.
+## Azionario per settore (v6.31: `azioni.py` + `web/azioni.js`, scheda "Azioni", workflow `azioni.yml`)
+- **Titoli**: ~1.040 tra S&P 500, Nasdaq-100, FTSE MIB, DAX 40, Euro Stoxx 50, Nikkei 225, Hang Seng, SSE 50 e Nifty 50,
+  negli 11 settori GICS (settori asiatici ricondotti al GICS a mano), più 9 indici. Emirati: Yahoo non ha i titoli (404).
   Elenco con settore e listini in `cot_radar/azioni_elenco.csv` (da aggiornare a ogni ribilanciamento trimestrale):
   Yahoo da GitHub Actions non concede il profilo aziendale (risposta 401/429), quindi il settore non arriva da lì;
   il nome del titolo invece sì, a ogni download.
@@ -237,6 +238,12 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Frontend**: il file si scarica solo all'apertura della scheda, con lo scheletro di attesa; filtri per listino e
   settore, ricerca, colonne ordinabili, pannello di dettaglio con grafico (1 anno, 2 anni, storico mensile) e
   stagionalità mensile del titolo.
+- **Punteggio e classifica** (v6.31): ogni sera ogni titolo riceve un punteggio 0-100 = percentili pesati di
+  rendimento a 12 mesi (30%), a 3 mesi (20%), distanza dalla media a 200 giorni (15%) e stagionalità del mese in
+  corso (rendimento medio 20%, anni positivi 15%). La tabella è in classifica per punteggio, a pagine da 50.
+- **Vetrina della Dashboard** (`web/topaz.js`, `top.json`): al massimo 5 titoli, uno per settore, con punteggio
+  alto e tutte le condizioni favorevoli (sopra la media a 200 giorni, 3 e 12 mesi positivi, mese in corso positivo
+  in almeno il 60% di almeno 8 anni, non oltre il 15% sotto il massimo annuo). Carosello ogni 6 secondi.
 - **Popup comune** (`web/manutenzione.js`): lo usano anche i Portafogli (la barra gialla fissa è stata tolta).
 
 ## Landing e note legali (v6.23)

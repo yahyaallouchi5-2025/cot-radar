@@ -1,12 +1,66 @@
-# azioni_elenco.csv - titoli della scheda Azioni: ticker Yahoo;nome;settore (GICS);listini
-# Composizioni: S&P 500 (S&P Dow Jones), Nasdaq-100 (Nasdaq), FTSE MIB, DAX, Euro Stoxx 50 (Wikipedia).
-# Da aggiornare a ogni ribilanciamento trimestrale degli indici (marzo, giugno, settembre, dicembre).
+# azioni_elenco.csv - titoli della scheda Azionario: ticker Yahoo;nome;settore (GICS);listini
+# Composizioni: S&P 500, Nasdaq-100, FTSE MIB, DAX, Euro Stoxx 50, Nikkei 225 (Nikkei Inc.), Hang Seng,
+# SSE 50, Nifty 50 (Wikipedia). Settori asiatici ricondotti al GICS. Da aggiornare a ogni ribilanciamento.
 ticker;nome;settore;listini
+0027.HK;Galaxy Entertainment;cdis;hsi
+0175.HK;Geely Automobile;cdis;hsi
+0300.HK;Midea Group;cdis;hsi
+0881.HK;Zhongsheng Group;cdis;hsi
+1211.HK;BYD Company;cdis;hsi
+1925.T;Daiwa House Ind.;cdis;n225
+1928.HK;Sands China;cdis;hsi
+1928.T;Sekisui House;cdis;n225
+1929.HK;Chow Tai Fook;cdis;hsi
+2015.HK;Li Auto;cdis;hsi
+2020.HK;Anta Sports;cdis;hsi
+2313.HK;Shenzhou International;cdis;hsi
+2331.HK;Li Ning;cdis;hsi
+3086.T;J.Front Retailing;cdis;n225
+3092.T;Zozo;cdis;n225
+3099.T;Isetan Mitsukoshi Holdings;cdis;n225
+3690.HK;Meituan;cdis;hsi
+4661.T;Oriental Land;cdis;n225
+4755.T;Rakuten Group;cdis;n225
+5101.T;The Yokohama Rubber;cdis;n225
+5108.T;Bridgestone;cdis;n225
+600104.SS;SAIC Motor;cdis;sse50
+600690.SS;Haier Smart Home;cdis;sse50
+601633.SS;Great Wall Motor;cdis;sse50
+601888.SS;China Tourism Group Duty Free;cdis;sse50
+6690.HK;Haier Smart Home;cdis;hsi
+6752.T;Panasonic Holdings;cdis;n225
+6753.T;Sharp;cdis;n225
+6758.T;Sony Group;cdis;n225
+6862.HK;Haidilao;cdis;hsi
+6902.T;Denso;cdis;n225
+7201.T;Nissan Motor;cdis;n225
+7202.T;Isuzu Motors;cdis;n225
+7203.T;Toyota Motor;cdis;n225
+7211.T;Mitsubishi Motors;cdis;n225
+7261.T;Mazda Motor;cdis;n225
+7267.T;Honda Motor;cdis;n225
+7269.T;Suzuki Motor;cdis;n225
+7270.T;Subaru;cdis;n225
+7272.T;Yamaha Motor;cdis;n225
+7453.T;Ryohin Keikaku;cdis;n225
+7532.T;Pan Pacific International Holdings;cdis;n225
+7832.T;Bandai Namco Holdings;cdis;n225
+7951.T;Yamaha;cdis;n225
+8233.T;Takashimaya;cdis;n225
+8252.T;Marui Group;cdis;n225
+9618.HK;JD.com;cdis;hsi
+9843.T;Nitori Holdings;cdis;n225
+9961.HK;Trip.com;cdis;hsi
+9983.T;Fast Retailing;cdis;n225
+9988.HK;Alibaba Group;cdis;hsi
+9992.HK;Pop Mart;cdis;hsi
 ABNB;Airbnb;cdis;ndx,sp500
 ADS.DE;Adidas;cdis;dax,sx5e
 AMZN;Amazon;cdis;ndx,sp500
 APTV;Aptiv;cdis;sp500
+ASIANPAINT.NS;Asian Paints;cdis;nifty
 AZO;AutoZone;cdis;sp500
+BAJAJ-AUTO.NS;Bajaj Auto;cdis;nifty
 BBY;Best Buy;cdis;sp500
 BC.MI;Brunello Cucinelli;cdis;mib
 BKNG;Booking Holdings;cdis;ndx,sp500
@@ -21,6 +75,8 @@ DHI;D. R. Horton;cdis;sp500
 DPZ;Domino's;cdis;sp500
 DRI;Darden Restaurants;cdis;sp500
 EBAY;eBay Inc.;cdis;sp500
+EICHERMOT.NS;Eicher Motors;cdis;nifty
+ETERNAL.NS;Eternal;cdis;nifty
 EXPE;Expedia Group;cdis;sp500
 F;Ford Motor Company;cdis;sp500
 GM;General Motors;cdis;sp500
@@ -35,7 +91,9 @@ LOW;Lowe's;cdis;sp500
 LTMC.MI;Lottomatica Group;cdis;mib
 LULU;Lululemon Athletica;cdis;sp500
 LVS;Las Vegas Sands;cdis;sp500
+M&M.NS;Mahindra & Mahindra;cdis;nifty
 MAR;Marriott International;cdis;ndx,sp500
+MARUTI.NS;Maruti Suzuki;cdis;nifty
 MBG.DE;Mercedes-Benz Group;cdis;dax,sx5e
 MC.PA;LVMH Moët Hennessy Louis Vuitton;cdis;sx5e
 MCD;McDonald's;cdis;sp500
@@ -56,8 +114,11 @@ RMS.PA;Hermès;cdis;sx5e
 ROST;Ross Stores;cdis;ndx,sp500
 SBUX;Starbucks;cdis;ndx,sp500
 STLAM.MI;Stellantis;cdis;mib
+TITAN.NS;Titan Company;cdis;nifty
 TJX;TJX Companies;cdis;sp500
+TMPV.NS;Tata Motors Passenger Vehicles;cdis;nifty
 TPR;Tapestry, Inc.;cdis;sp500
+TRENT.NS;Trent;cdis;nifty
 TSCO;Tractor Supply;cdis;sp500
 TSLA;Tesla, Inc.;cdis;ndx,sp500
 ULTA;Ulta Beauty;cdis;sp500
@@ -66,6 +127,32 @@ WSM;Williams-Sonoma, Inc.;cdis;sp500
 WYNN;Wynn Resorts;cdis;sp500
 YUM;Yum! Brands;cdis;sp500
 ZAL.DE;Zalando;cdis;dax
+0288.HK;WH Group;cstap;hsi
+0291.HK;China Resources Beer;cstap;hsi
+0322.HK;Tingyi;cstap;hsi
+1044.HK;Hengan International;cstap;hsi
+1332.T;Nissui;cstap;n225
+1876.HK;Budweiser Brewing APAC;cstap;hsi
+2002.T;Nisshin Seifun;cstap;n225
+2269.T;Meiji Holdings;cstap;n225
+2282.T;Nh Foods;cstap;n225
+2319.HK;China Mengniu Dairy;cstap;hsi
+2501.T;Sapporo Breweries;cstap;n225
+2502.T;Asahi Group Holdings;cstap;n225
+2503.T;Kirin Holdings;cstap;n225
+2801.T;Kikkoman;cstap;n225
+2802.T;Ajinomoto Co.;cstap;n225
+2871.T;Nichirei;cstap;n225
+2914.T;Japan Tobacco;cstap;n225
+3382.T;Seven & I Holdings;cstap;n225
+4452.T;Kao;cstap;n225
+4911.T;Shiseido;cstap;n225
+600519.SS;Kweichow Moutai;cstap;sse50
+600809.SS;Shanxi Xinghuacun Fen Wine;cstap;sse50
+600887.SS;Yili Group;cstap;sse50
+603288.SS;Foshan Haitian Flavouring;cstap;sse50
+8267.T;Aeon;cstap;n225
+9633.HK;Nongfu Spring;cstap;hsi
 ABI.BR;Anheuser-Busch InBev;cstap;sx5e
 AD.AS;Ahold Delhaize;cstap;sx5e
 ADM;Archer Daniels Midland;cstap;sp500
@@ -85,8 +172,10 @@ DLTR;Dollar Tree;cstap;sp500
 EL;Estée Lauder Companies (The);cstap;sp500
 GIS;General Mills;cstap;sp500
 HEN3.DE;Henkel;cstap;dax
+HINDUNILVR.NS;Hindustan Unilever;cstap;nifty
 HRL;Hormel Foods;cstap;sp500
 HSY;Hershey Company (The);cstap;sp500
+ITC.NS;ITC;cstap;nifty
 KDP;Keurig Dr Pepper;cstap;ndx,sp500
 KHC;Kraft Heinz;cstap;sp500
 KMB;Kimberly-Clark;cstap;sp500
@@ -97,6 +186,7 @@ MDLZ;Mondelez International;cstap;ndx,sp500
 MKC;McCormick & Company;cstap;sp500
 MNST;Monster Beverage;cstap;ndx,sp500
 MO;Altria;cstap;sp500
+NESTLEIND.NS;Nestlé India;cstap;nifty
 OR.PA;L'Oréal;cstap;sx5e
 PEP;PepsiCo;cstap;ndx,sp500
 PG;Procter & Gamble;cstap;sp500
@@ -104,12 +194,25 @@ PM;Philip Morris International;cstap;sp500
 SJM;J.M. Smucker Company (The);cstap;sp500
 STZ;Constellation Brands;cstap;sp500
 SYY;Sysco;cstap;sp500
+TATACONSUM.NS;Tata Consumer Products;cstap;nifty
 TGT;Target Corporation;cstap;sp500
 TSN;Tyson Foods;cstap;sp500
 VYLR;Vylor;cstap;sp500
 WMT;Walmart;cstap;ndx,sp500
+0386.HK;Sinopec;ener;hsi
+0857.HK;PetroChina;ener;hsi
+0883.HK;CNOOC;ener;hsi
+1088.HK;China Shenhua Energy;ener;hsi
+1605.T;Inpex;ener;n225
+5019.T;Idemitsu Kosan;ener;n225
+5020.T;Eneos Holdings;ener;n225
+600028.SS;China Petroleum & Chemical;ener;sse50
+601088.SS;China Shenhua Energy;ener;sse50
+601225.SS;Shaanxi Coal Industry;ener;sse50
+601857.SS;PetroChina;ener;sse50
 APA;APA Corporation;ener;sp500
 BKR;Baker Hughes;ener;ndx,sp500
+COALINDIA.NS;Coal India;ener;nifty
 COP;ConocoPhillips;ener;sp500
 CVX;Chevron Corporation;ener;sp500
 DVN;Devon Energy;ener;sp500
@@ -122,8 +225,10 @@ HAL;Halliburton;ener;sp500
 KMI;Kinder Morgan;ener;sp500
 MPC;Marathon Petroleum;ener;sp500
 OKE;Oneok;ener;sp500
+ONGC.NS;Oil and Natural Gas Corporation;ener;nifty
 OXY;Occidental Petroleum;ener;sp500
 PSX;Phillips 66;ener;sp500
+RELIANCE.NS;Reliance Industries;ener;nifty
 SLB;Schlumberger;ener;sp500
 SPM.MI;Saipem;ener;mib
 TEN.MI;Tenaris;ener;mib
@@ -133,6 +238,46 @@ TTE.PA;TotalEnergies;ener;sx5e
 VLO;Valero Energy;ener;sp500
 WMB;Williams Companies;ener;sp500
 XOM;ExxonMobil;ener;sp500
+0005.HK;HSBC Holdings;fin;hsi
+0388.HK;Hong Kong Exchanges and Clearing;fin;hsi
+0939.HK;China Construction Bank;fin;hsi
+1299.HK;AIA Group;fin;hsi
+1398.HK;Industrial and Commercial Bank of China;fin;hsi
+2318.HK;Ping An Insurance;fin;hsi
+2388.HK;BOC Hong Kong;fin;hsi
+2628.HK;China Life Insurance;fin;hsi
+3968.HK;China Merchants Bank;fin;hsi
+3988.HK;Bank of China;fin;hsi
+5831.T;Shizuoka Financial Group;fin;n225
+600030.SS;CITIC Securities;fin;sse50
+600036.SS;China Merchants Bank;fin;sse50
+601166.SS;Industrial Bank;fin;sse50
+601288.SS;Agricultural Bank of China;fin;sse50
+601318.SS;Ping An Insurance;fin;sse50
+601398.SS;Industrial and Commercial Bank of China;fin;sse50
+601601.SS;China Pacific Insurance;fin;sse50
+601628.SS;China Life Insurance;fin;sse50
+601988.SS;Bank of China;fin;sse50
+6178.T;Japan Post Holdings;fin;n225
+7186.T;Yokohama Financial Group;fin;n225
+8253.T;Credit Saison;fin;n225
+8304.T;Aozora Bank;fin;n225
+8306.T;Mitsubishi Ufj Financial Group;fin;n225
+8308.T;Resona Holdings;fin;n225
+8309.T;Sumitomo Mitsui Trust Group;fin;n225
+8316.T;Sumitomo Mitsui Financial Group;fin;n225
+8331.T;The Chiba Bank;fin;n225
+8354.T;Fukuoka Financial Group;fin;n225
+8411.T;Mizuho Financial Group;fin;n225
+8591.T;Orix;fin;n225
+8601.T;Daiwa Securities;fin;n225
+8604.T;Nomura Holdings;fin;n225
+8630.T;Sompo Holdings;fin;n225
+8697.T;Japan Exchange Group;fin;n225
+8725.T;Ms&Ad Insurance Group Holdings;fin;n225
+8750.T;Daiichi Life Group;fin;n225
+8766.T;Tokio Marine Holdings;fin;n225
+8795.T;T&D Holdings;fin;n225
 ACGL;Arch Capital Group;fin;sp500
 ADYEN.AS;Adyen;fin;sx5e
 AFL;Aflac;fin;sp500
@@ -145,9 +290,12 @@ AMP;Ameriprise Financial;fin;sp500
 AON;Aon plc;fin;sp500
 APO;Apollo Global Management;fin;sp500
 ARES;Ares Management;fin;sp500
+AXISBANK.NS;Axis Bank;fin;nifty
 AXP;American Express;fin;sp500
 AZM.MI;Azimut;fin;mib
 BAC;Bank of America;fin;sp500
+BAJAJFINSV.NS;Bajaj Finserv;fin;nifty
+BAJFINANCE.NS;Bajaj Finance;fin;nifty
 BAMI.MI;Banco BPM;fin;mib
 BBVA.MC;BBVA;fin;sx5e
 BEN;Franklin Resources;fin;sp500
@@ -159,6 +307,7 @@ BNY;BNY Mellon;fin;sp500
 BPE.MI;BPER Banca;fin;mib
 BRK-B;Berkshire Hathaway;fin;sp500
 BRO;Brown & Brown;fin;sp500
+BSE.NS;BSE;fin;nifty
 BX;Blackstone Inc.;fin;sp500
 C;Citigroup;fin;sp500
 CB;Chubb Limited;fin;sp500
@@ -185,18 +334,23 @@ GL;Globe Life;fin;sp500
 GPN;Global Payments;fin;sp500
 GS;Goldman Sachs;fin;sp500
 HBAN;Huntington Bancshares;fin;sp500
+HDFCBANK.NS;HDFC Bank;fin;nifty
+HDFCLIFE.NS;HDFC Life;fin;nifty
 HIG;Hartford (The);fin;sp500
 HNR1.DE;Hannover Re;fin;dax
 HOOD;Robinhood Markets;fin;sp500
 IBKR;Interactive Brokers;fin;sp500
 ICE;Intercontinental Exchange;fin;sp500
+ICICIBANK.NS;ICICI Bank;fin;nifty
 INGA.AS;ING Group;fin;sx5e
 ISP.MI;Intesa Sanpaolo;fin;mib,sx5e
 IVZ;Invesco;fin;sp500
+JIOFIN.NS;Jio Financial Services;fin;nifty
 JKHY;Jack Henry & Associates;fin;sp500
 JPM;JPMorgan Chase;fin;sp500
 KEY;KeyCorp;fin;sp500
 KKR;KKR & Co.;fin;sp500
+KOTAKBANK.NS;Kotak Mahindra Bank;fin;nifty
 L;Loews Corporation;fin;sp500
 MA;Mastercard;fin;sp500
 MB.MI;Mediobanca;fin;mib
@@ -221,7 +375,10 @@ PYPL;PayPal;fin;ndx,sp500
 RF;Regions Financial Corporation;fin;sp500
 RJF;Raymond James Financial;fin;sp500
 SAN.MC;Banco Santander;fin;sx5e
+SBILIFE.NS;SBI Life Insurance;fin;nifty
+SBIN.NS;State Bank of India;fin;nifty
 SCHW;Charles Schwab Corporation;fin;sp500
+SHRIRAMFIN.NS;Shriram Finance;fin;nifty
 SPGI;S&P Global;fin;sp500
 STT;State Street Corporation;fin;sp500
 SYF;Synchrony Financial;fin;sp500
@@ -236,6 +393,22 @@ WFC;Wells Fargo;fin;sp500
 WRB;W. R. Berkley Corporation;fin;sp500
 WTW;Willis Towers Watson;fin;sp500
 XYZ;Block, Inc.;fin;sp500
+0012.HK;Henderson Land Development;imm;hsi
+0016.HK;Sun Hung Kai Properties;imm;hsi
+0101.HK;Hang Lung Properties;imm;hsi
+0688.HK;China Overseas Land & Investment;imm;hsi
+0823.HK;Link REIT;imm;hsi
+0960.HK;Longfor Group;imm;hsi
+1109.HK;China Resources Land;imm;hsi
+1113.HK;CK Asset Holdings;imm;hsi
+1209.HK;China Resources Mixc Lifestyle;imm;hsi
+1997.HK;Wharf Real Estate Investment;imm;hsi
+3289.T;Tokyu Fudosan Holdings;imm;n225
+600048.SS;Poly Developments;imm;sse50
+8801.T;Mitsui Fudosan;imm;n225
+8802.T;Mitsubishi Estate;imm;n225
+8804.T;Tokyo Tatemono;imm;n225
+8830.T;Sumitomo Realty & Development;imm;n225
 AMT;American Tower;imm;sp500
 ARE;Alexandria Real Estate Equities;imm;sp500
 BXP;BXP, Inc.;imm;sp500
@@ -267,6 +440,84 @@ VNA.DE;Vonovia;imm;dax
 VTR;Ventas;imm;sp500
 WELL;Welltower;imm;sp500
 WY;Weyerhaeuser;imm;sp500
+0001.HK;CK Hutchison Holdings;ind;hsi
+0066.HK;MTR Corporation;ind;hsi
+0267.HK;CITIC;ind;hsi
+0316.HK;Orient Overseas;ind;hsi
+0669.HK;Techtronic Industries;ind;hsi
+0868.HK;Xinyi Glass;ind;hsi
+1721.T;Comsys Holdings;ind;n225
+1801.T;Taisei;ind;n225
+1802.T;Obayashi;ind;n225
+1803.T;Shimizu;ind;n225
+1808.T;Haseko;ind;n225
+1812.T;Kajima;ind;n225
+1963.T;Jgc Holdings;ind;n225
+2057.HK;ZTO Express;ind;hsi
+2618.HK;JD Logistics;ind;hsi
+2768.T;Sojitz;ind;n225
+5332.T;Toto;ind;n225
+5333.T;Ngk;ind;n225
+5631.T;The Japan Steel Works;ind;n225
+5801.T;Furukawa Electric;ind;n225
+5802.T;Sumitomo Electric Ind.;ind;n225
+5803.T;Fujikura;ind;n225
+600031.SS;Sany Heavy Industry;ind;sse50
+600089.SS;TBEA;ind;sse50
+600150.SS;China CSSC Holdings;ind;sse50
+600406.SS;NARI Technology;ind;sse50
+600893.SS;AECC Aviation Power;ind;sse50
+601390.SS;China Railway Group;ind;sse50
+601668.SS;China State Construction;ind;sse50
+601669.SS;Power Construction Corp of China;ind;sse50
+601919.SS;COSCO Shipping;ind;sse50
+6098.T;Recruit Holdings;ind;n225
+6103.T;Okuma;ind;n225
+6113.T;Amada;ind;n225
+6273.T;Smc;ind;n225
+6301.T;Komatsu;ind;n225
+6302.T;Sumitomo Heavy Ind.;ind;n225
+6305.T;Hitachi Const. Mach.;ind;n225
+6326.T;Kubota;ind;n225
+6361.T;Ebara;ind;n225
+6367.T;Daikin Industries;ind;n225
+6471.T;Nsk;ind;n225
+6472.T;Ntn;ind;n225
+6473.T;Jtekt;ind;n225
+6501.T;Hitachi;ind;n225
+6503.T;Mitsubishi Electric;ind;n225
+6504.T;Fuji Electric;ind;n225
+6506.T;Yaskawa Electric;ind;n225
+6532.T;Baycurrent;ind;n225
+6954.T;Fanuc;ind;n225
+7011.T;Mitsubishi Heavy Ind.;ind;n225
+7012.T;Kawasaki Heavy Ind.;ind;n225
+7013.T;Ihi;ind;n225
+7911.T;Toppan Holdings;ind;n225
+7912.T;Dai Nippon Printing;ind;n225
+8001.T;Itochu;ind;n225
+8002.T;Marubeni;ind;n225
+8015.T;Toyota Tsusho;ind;n225
+8031.T;Mitsui &;ind;n225
+8053.T;Sumitomo;ind;n225
+8058.T;Mitsubishi;ind;n225
+9001.T;Tobu Railway;ind;n225
+9005.T;Tokyu;ind;n225
+9007.T;Odakyu Electric Railway;ind;n225
+9008.T;Keio;ind;n225
+9009.T;Keisei Electric Railway;ind;n225
+9020.T;East Japan Railway Co.;ind;n225
+9021.T;West Japan Railway Co.;ind;n225
+9022.T;Central Japan Railway;ind;n225
+9064.T;Yamato Holdings;ind;n225
+9101.T;Nippon Yusen;ind;n225
+9104.T;Mitsui O.S.K.Lines;ind;n225
+9107.T;Kawasaki Kisen Kaisha;ind;n225
+9147.T;Nippon Express Holdings;ind;n225
+9201.T;Japan Airlines;ind;n225
+9202.T;Ana Holdings;ind;n225
+9735.T;Secom;ind;n225
+ADANIPORTS.NS;Adani Ports & SEZ;ind;nifty
 ADP;Automatic Data Processing;ind;ndx,sp500
 AIR.PA;Airbus;ind;dax,sx5e
 ALLE;Allegion;ind;sp500
@@ -276,6 +527,7 @@ AVIO.MI;Avio;ind;mib
 AXON;Axon Enterprise;ind;ndx,sp500
 BA;Boeing;ind;sp500
 BE;Bloom Energy;ind;sp500
+BEL.NS;Bharat Electronics;ind;nifty
 BNR.DE;Brenntag;ind;dax
 BR;Broadridge Financial Solutions;ind;sp500
 CARR;Carrier Global;ind;sp500
@@ -318,6 +570,7 @@ HONA;Honeywell Aerospace;ind;ndx,sp500
 HUBB;Hubbell Incorporated;ind;sp500
 HWM;Howmet Aerospace;ind;sp500
 IEX;IDEX Corporation;ind;sp500
+INDIGO.NS;IndiGo;ind;nifty
 IR;Ingersoll Rand;ind;sp500
 ITW;Illinois Tool Works;ind;sp500
 IVG.MI;Iveco;ind;mib
@@ -329,6 +582,7 @@ LDOS;Leidos;ind;sp500
 LHX;L3Harris;ind;sp500
 LII;Lennox International;ind;sp500
 LMT;Lockheed Martin;ind;sp500
+LT.NS;Larsen & Toubro;ind;nifty
 LUV;Southwest Airlines;ind;sp500
 MAS;Masco;ind;sp500
 MMM;3M;ind;sp500
@@ -372,6 +626,41 @@ VRT;Vertiv;ind;sp500
 WAB;Wabtec;ind;sp500
 WM;Waste Management;ind;sp500
 XYL;Xylem Inc.;ind;sp500
+1378.HK;China Hongqiao Group;mat;hsi
+2899.HK;Zijin Mining;mat;hsi
+3401.T;Teijin;mat;n225
+3402.T;Toray Industries;mat;n225
+3405.T;Kuraray;mat;n225
+3407.T;Asahi Kasei;mat;n225
+3861.T;Oji Holdings;mat;n225
+4004.T;Resonac Holdings;mat;n225
+4005.T;Sumitomo Chemical;mat;n225
+4021.T;Nissan Chemical;mat;n225
+4042.T;Tosoh;mat;n225
+4043.T;Tokuyama;mat;n225
+4061.T;Denka;mat;n225
+4063.T;Shin-Etsu Chemical;mat;n225
+4183.T;Mitsui Chemicals;mat;n225
+4188.T;Mitsubishi Chemical Group;mat;n225
+4208.T;Ube;mat;n225
+5016.T;Jx Advanced Metals;mat;n225
+5201.T;Agc;mat;n225
+5214.T;Nippon Electric Glass;mat;n225
+5233.T;Taiheiyo Cement;mat;n225
+5301.T;Tokai Carbon;mat;n225
+5401.T;Nippon Steel;mat;n225
+5406.T;Kobe Steel;mat;n225
+5411.T;Jfe Holdings;mat;n225
+5706.T;Mitsui Kinzoku;mat;n225
+5711.T;Mitsubishi Materials;mat;n225
+5713.T;Sumitomo Metal Mining;mat;n225
+5714.T;Dowa Holdings;mat;n225
+600111.SS;China Northern Rare Earth;mat;sse50
+600309.SS;Wanhua Chemical;mat;sse50
+601899.SS;Zijin Mining;mat;sse50
+603799.SS;Zhejiang Huayou Cobalt;mat;sse50
+6988.T;Nitto Denko;mat;n225
+ADANIENT.NS;Adani Enterprises;mat;nifty
 AI.PA;Air Liquide;mat;sx5e
 ALB;Albemarle Corporation;mat;sp500
 AMCR;Amcor;mat;sp500
@@ -385,9 +674,12 @@ CRH;CRH plc;mat;sp500
 DOW;Dow Inc.;mat;sp500
 ECL;Ecolab;mat;sp500
 FCX;Freeport-McMoRan;mat;sp500
+GRASIM.NS;Grasim Industries;mat;nifty
 HEI.DE;Heidelberg Materials;mat;dax
+HINDALCO.NS;Hindalco Industries;mat;nifty
 IFF;International Flavors & Fragrances;mat;sp500
 IP;International Paper;mat;sp500
+JSWSTEEL.NS;JSW Steel;mat;nifty
 LIN;Linde plc;mat;ndx,sp500
 LYB;LyondellBasell;mat;sp500
 MLM;Martin Marietta Materials;mat;sp500
@@ -400,7 +692,33 @@ SHW;Sherwin-Williams;mat;sp500
 STLD;Steel Dynamics;mat;sp500
 SW;Smurfit Westrock;mat;sp500
 SY1.DE;Symrise;mat;dax
+TATASTEEL.NS;Tata Steel;mat;nifty
+ULTRACEMCO.NS;UltraTech Cement;mat;nifty
 VMC;Vulcan Materials Company;mat;sp500
+0241.HK;Alibaba Health;salute;hsi
+1093.HK;CSPC Pharmaceutical;salute;hsi
+1099.HK;Sinopharm Group;salute;hsi
+1177.HK;Sino Biopharmaceutical;salute;hsi
+2269.HK;WuXi Biologics;salute;hsi
+2359.HK;WuXi AppTec;salute;hsi
+2413.T;M3;salute;n225
+3692.HK;Hansoh Pharmaceutical;salute;hsi
+4151.T;Kyowa Kirin;salute;n225
+4502.T;Takeda Pharmaceutical;salute;n225
+4503.T;Astellas Pharma;salute;n225
+4506.T;Sumitomo Pharma;salute;n225
+4507.T;Shionogi &;salute;n225
+4519.T;Chugai Pharmaceutical;salute;n225
+4523.T;Eisai;salute;n225
+4543.T;Terumo;salute;n225
+4568.T;Daiichi Sankyo;salute;n225
+4578.T;Otsuka Holdings;salute;n225
+600276.SS;Jiangsu Hengrui Pharmaceuticals;salute;sse50
+600436.SS;Zhangzhou Pientzehuang;salute;sse50
+603259.SS;WuXi AppTec;salute;sse50
+6618.HK;JD Health;salute;hsi
+7733.T;Olympus;salute;n225
+7741.T;Hoya;salute;n225
 A;Agilent Technologies;salute;sp500
 ABBV;AbbVie;salute;sp500
 ABT;Abbott Laboratories;salute;sp500
@@ -408,6 +726,7 @@ ALGN;Align Technology;salute;sp500
 ALNY;Alnylam Pharmaceuticals;salute;ndx
 AMGN;Amgen;salute;ndx,sp500
 AMP.MI;Amplifon;salute;mib
+APOLLOHOSP.NS;Apollo Hospitals;salute;nifty
 ARGX.BR;Argenx;salute;sx5e
 BAX;Baxter International;salute;sp500
 BAYN.DE;Bayer;salute;dax,sx5e
@@ -417,6 +736,7 @@ BMY;Bristol Myers Squibb;salute;sp500
 BSX;Boston Scientific;salute;sp500
 CAH;Cardinal Health;salute;sp500
 CI;Cigna;salute;sp500
+CIPLA.NS;Cipla;salute;nifty
 CNC;Centene Corporation;salute;sp500
 COO;Cooper Companies (The);salute;sp500
 COR;Cencora;salute;sp500
@@ -424,6 +744,7 @@ CRL;Charles River Laboratories;salute;sp500
 CVS;CVS Health;salute;sp500
 DGX;Quest Diagnostics;salute;sp500
 DHR;Danaher Corporation;salute;sp500
+DRREDDY.NS;Dr. Reddy's Laboratories;salute;nifty
 DVA;DaVita;salute;sp500
 DXCM;Dexcom;salute;ndx,sp500
 EL.PA;EssilorLuxottica;salute;sx5e
@@ -444,6 +765,7 @@ ISRG;Intuitive Surgical;salute;ndx,sp500
 JNJ;Johnson & Johnson;salute;sp500
 LH;Labcorp;salute;sp500
 LLY;Lilly (Eli);salute;sp500
+MAXHEALTH.NS;Max Healthcare;salute;nifty
 MCK;McKesson;salute;sp500
 MDT;Medtronic;salute;sp500
 MRK;Merck & Co.;salute;sp500
@@ -461,6 +783,7 @@ SAN.PA;Sanofi;salute;sx5e
 SHL.DE;Siemens Healthineers;salute;dax
 SOLV;Solventum;salute;sp500
 STE;Steris;salute;sp500
+SUNPHARMA.NS;Sun Pharma;salute;nifty
 SYK;Stryker Corporation;salute;sp500
 TECH;Bio-Techne;salute;sp500
 TMO;Thermo Fisher Scientific;salute;sp500
@@ -473,6 +796,51 @@ WAT;Waters Corporation;salute;sp500
 WST;West Pharmaceutical Services;salute;sp500
 ZBH;Zimmer Biomet;salute;sp500
 ZTS;Zoetis;salute;sp500
+0285.HK;BYD Electronic;tech;hsi
+0968.HK;Xinyi Solar;tech;hsi
+0981.HK;SMIC;tech;hsi
+0992.HK;Lenovo Group;tech;hsi
+1810.HK;Xiaomi;tech;hsi
+2382.HK;Sunny Optical;tech;hsi
+285A.T;Kioxia Holdings;tech;n225
+3436.T;Sumco;tech;n225
+3697.T;Shift;tech;n225
+4062.T;Ibiden;tech;n225
+4307.T;Nomura Research Institute;tech;n225
+4704.T;Trend Micro;tech;n225
+4901.T;Fujifilm Holdings;tech;n225
+600438.SS;Tongwei;tech;sse50
+601012.SS;LONGi Green Energy;tech;sse50
+603501.SS;Will Semiconductor;tech;sse50
+603986.SS;GigaDevice;tech;sse50
+6146.T;Disco;tech;n225
+6479.T;Minebea Mitsumi;tech;n225
+6525.T;Kokusai Electric;tech;n225
+6526.T;Socionext;tech;n225
+6645.T;Omron;tech;n225
+6701.T;Nec;tech;n225
+6702.T;Fujitsu;tech;n225
+6723.T;Renesas Electronics;tech;n225
+6724.T;Seiko Epson;tech;n225
+6762.T;Tdk;tech;n225
+6770.T;Alps Alpine;tech;n225
+6841.T;Yokogawa Electric;tech;n225
+6857.T;Advantest;tech;n225
+6861.T;Keyence;tech;n225
+688041.SS;Hygon Information Technology;tech;sse50
+688111.SS;Beijing Kingsoft Office;tech;sse50
+688599.SS;Trina Solar;tech;sse50
+688981.SS;SMIC;tech;sse50
+6920.T;Lasertec;tech;n225
+6963.T;Rohm;tech;n225
+6971.T;Kyocera;tech;n225
+6976.T;Taiyo Yuden;tech;n225
+6981.T;Murata Manufacturing;tech;n225
+7731.T;Nikon;tech;n225
+7735.T;Screen Holdings;tech;n225
+7751.T;Canon;tech;n225
+7752.T;Ricoh;tech;n225
+8035.T;Tokyo Electron;tech;n225
 AAPL;Apple Inc.;tech;ndx,sp500
 ACN;Accenture;tech;sp500
 ADBE;Adobe Inc.;tech;ndx,sp500
@@ -507,10 +875,12 @@ FTNT;Fortinet;tech;ndx,sp500
 GDDY;GoDaddy;tech;sp500
 GEN;Gen Digital;tech;sp500
 GLW;Corning Inc.;tech;sp500
+HCLTECH.NS;HCLTech;tech;nifty
 HPE;Hewlett Packard Enterprise;tech;sp500
 HPQ;HP Inc.;tech;sp500
 IBM;IBM;tech;sp500
 IFX.DE;Infineon Technologies;tech;dax,sx5e
+INFY.NS;Infosys;tech;nifty
 INTC;Intel;tech;ndx,sp500
 INTU;Intuit;tech;ndx,sp500
 IT;Gartner;tech;sp500
@@ -549,7 +919,9 @@ SNPS;Synopsys;tech;ndx,sp500
 STMMI.MI;STMicroelectronics;tech;mib
 STX;Seagate Technology;tech;ndx,sp500
 SWKS;Skyworks Solutions;tech;sp500
+TCS.NS;Tata Consultancy Services;tech;nifty
 TDY;Teledyne Technologies;tech;sp500
+TECHM.NS;Tech Mahindra;tech;nifty
 TEL;TE Connectivity;tech;sp500
 TER;Teradyne;tech;ndx,sp500
 TPRO.MI;Technoprobe;tech;mib
@@ -561,7 +933,30 @@ VRSN;Verisign;tech;sp500
 WDAY;Workday, Inc.;tech;ndx,sp500
 WDC;Western Digital;tech;ndx,sp500
 ZBRA;Zebra Technologies;tech;sp500
+0700.HK;Tencent Holdings;tlc;hsi
+0762.HK;China Unicom;tlc;hsi
+0941.HK;China Mobile;tlc;hsi
+1024.HK;Kuaishou Technology;tlc;hsi
+2432.T;Dena;tlc;n225
+3659.T;Nexon;tlc;n225
+4324.T;Dentsu;tlc;n225
+4385.T;Mercari;tlc;n225
+4689.T;Ly;tlc;n225
+4751.T;Cyberagent;tlc;n225
+600050.SS;China United Network;tlc;sse50
+601728.SS;China Telecom;tlc;sse50
+7974.T;Nintendo;tlc;n225
+9432.T;Ntt;tlc;n225
+9433.T;Kddi;tlc;n225
+9434.T;Softbank;tlc;n225
+9602.T;Toho Co., Ltd;tlc;n225
+9697.T;Capcom;tlc;n225
+9766.T;Konami Group;tlc;n225
+9888.HK;Baidu;tlc;hsi
+9984.T;Softbank Group;tlc;n225
+9999.HK;NetEase;tlc;hsi
 APP;AppLovin;tlc;ndx,sp500
+BHARTIARTL.NS;Bharti Airtel;tlc;nifty
 CHTR;Charter Communications;tlc;sp500
 CMCSA;Comcast;tlc;ndx,sp500
 DIS;Walt Disney Company (The);tlc;sp500
@@ -587,6 +982,19 @@ TKO;TKO Group Holdings;tlc;sp500
 TMUS;T-Mobile US;tlc;ndx,sp500
 TTWO;Take-Two Interactive;tlc;ndx,sp500
 VZ;Verizon;tlc;sp500
+0002.HK;CLP Holdings;util;hsi
+0003.HK;Hong Kong and China Gas;util;hsi
+0006.HK;Power Assets Holdings;util;hsi
+0836.HK;China Resources Power;util;hsi
+1038.HK;CK Infrastructure;util;hsi
+2688.HK;ENN Energy;util;hsi
+600900.SS;China Yangtze Power;util;sse50
+600905.SS;China Three Gorges Renewables;util;sse50
+9501.T;Tokyo Electric Power Company Holdings;util;n225
+9502.T;Chubu Electric Power Co.;util;n225
+9503.T;The Kansai Electric Power Co.;util;n225
+9531.T;Tokyo Gas;util;n225
+9532.T;Osaka Gas;util;n225
 A2A.MI;A2A;util;mib
 AEE;Ameren;util;sp500
 AEP;American Electric Power;util;ndx,sp500
@@ -616,9 +1024,11 @@ LNT;Alliant Energy;util;sp500
 NEE;NextEra Energy;util;sp500
 NI;NiSource;util;sp500
 NRG;NRG Energy;util;sp500
+NTPC.NS;NTPC;util;nifty
 PCG;PG&E Corporation;util;sp500
 PEG;Public Service Enterprise Group;util;sp500
 PNW;Pinnacle West Capital;util;sp500
+POWERGRID.NS;Power Grid;util;nifty
 PPL;PPL Corporation;util;sp500
 RWE.DE;RWE;util;dax
 SO;Southern Company;util;sp500

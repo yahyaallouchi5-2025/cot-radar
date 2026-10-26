@@ -564,7 +564,7 @@ h3.vft+p.sub.infotesto.aperta{text-transform:none;letter-spacing:0;font-size:14p
 .azcerca svg{width:16px;height:16px;fill:none;stroke:var(--mute);stroke-width:2;flex:none}
 .azcerca input{flex:1;min-width:0;border:0;outline:0;background:none;color:var(--ink);font:500 14px system-ui}
 /* indici */
-.azidx{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:8px}
+.azidx{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin-bottom:8px}
 .azi{position:relative;display:flex;flex-direction:column;gap:3px;padding:14px 16px 12px;cursor:pointer;overflow:hidden;transition:transform .18s,border-color .18s,box-shadow .18s}
 .azi:hover,.azi:focus-visible{transform:translateY(-2px);border-color:color-mix(in srgb,var(--acc) 55%,var(--line));outline:0}
 .azi.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),var(--shadow)}
@@ -613,7 +613,72 @@ h3.vft+p.sub.infotesto.aperta{text-transform:none;letter-spacing:0;font-size:14p
 .azsb{position:relative;width:60%;height:70px}.azsb i{position:absolute;left:0;right:0;border-radius:3px}.azsb i.su{background:var(--b)}.azsb i.giu{background:var(--s)}
 .azsb::after{content:"";position:absolute;left:-20%;right:-20%;top:50%;border-top:1px solid var(--line)}
 .azstag b{font-size:11.5px;font-variant-numeric:tabular-nums}.azstag small{font-size:10.5px;color:var(--mute)}.azstag em{font-style:normal;font-size:11px;font-weight:700;color:var(--ink2)}
-@media (max-width:1100px){.azidx{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media (max-width:760px){.azidx{grid-template-columns:repeat(2,minmax(0,1fr))}.azh{display:none}.azcerca{flex:1 1 100%}
+@media (max-width:760px){.azidx{grid-template-columns:repeat(2,minmax(0,1fr))}.azpag em{flex-basis:100%;text-align:center;margin:4px 0 0}.azh{display:none}.azcerca{flex:1 1 100%}
  .azpan{padding:20px 16px 32px}.azmini{grid-template-columns:repeat(2,minmax(0,1fr))}.azstag{grid-template-columns:repeat(6,minmax(0,1fr))}.aznome b{max-width:150px}}
 @media (max-width:480px){.azh2{display:none}.azset{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* classifica: posizione, punteggio a barra, stagionalita' del mese, pagine numerate */
+.azrk{color:var(--mute);font-weight:700;width:36px}
+.azpt{display:inline-flex;align-items:center;gap:8px;min-width:96px}
+.azptb{display:block;width:56px;height:6px;border-radius:9px;background:var(--soft);overflow:hidden}
+.azptb i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,var(--acc),var(--b))}
+.azpt b{font-variant-numeric:tabular-nums;font-size:13.5px;min-width:22px}
+.azpt.alto b{color:var(--b)}.azpt.basso b{color:var(--mute)}
+.azst b{color:var(--ink2);font-weight:700;margin-right:4px}
+.azpag{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;margin:18px 0 6px}
+.azpag button{min-width:38px;height:38px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 14px system-ui;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
+.azpag button:hover:not(:disabled){border-color:var(--acc);transform:translateY(-1px)}
+.azpag button.on{background:var(--acc);border-color:var(--acc);color:#04211e}
+.azpag button:disabled{opacity:.35;cursor:default}
+.azpag span{color:var(--mute);padding:0 2px}.azpag em{font-style:normal;font-size:12.5px;color:var(--mute);margin-left:10px}
+
+/* ============ VETRINA DASHBOARD: le azioni piu' forti di oggi (web/topaz.js) ============ */
+.tz{position:relative;overflow:hidden;margin-bottom:24px;padding:22px 24px;outline:0;
+ background:radial-gradient(120% 140% at 100% 0%,color-mix(in srgb,var(--acc) 12%,transparent),transparent 55%),linear-gradient(180deg,var(--card),var(--card2));
+ border-color:color-mix(in srgb,var(--acc) 35%,var(--line))}
+.tz:focus-visible{box-shadow:0 0 0 2px var(--acc),var(--shadow)}
+.tzsk{display:flex;flex-direction:column}
+.tztesta{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.tztesta h3{margin:6px 0 2px;font-size:20px;letter-spacing:-.3px;text-transform:none}
+.tzchip{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--acc)}
+.tzchip i{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 0 color-mix(in srgb,var(--acc) 60%,transparent);animation:tzpulse 2s infinite}
+@keyframes tzpulse{70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.tzcom{display:flex;align-items:center;gap:8px}
+.tzfr{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--soft);color:var(--ink);font-size:20px;line-height:1;cursor:pointer;transition:border-color .15s,transform .15s}
+.tzfr:hover{border-color:var(--acc);transform:scale(1.06)}
+.tzdots{display:flex;gap:6px}
+.tzdots button{position:relative;width:26px;height:6px;padding:0;border:0;border-radius:9px;background:var(--soft);overflow:hidden;cursor:pointer}
+.tzdots button i{position:absolute;inset:0;width:0;background:var(--acc);border-radius:9px}
+.tzdots button.on i{animation:tzbar var(--tzdur,6000ms) linear forwards}
+.tz.pausa .tzdots button.on i,.tz.fermo .tzdots button.on i{animation:none;width:100%}
+@keyframes tzbar{to{width:100%}}
+.tzvedi{margin-left:6px;padding:8px 14px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 13px system-ui;cursor:pointer;transition:border-color .15s,background .15s}
+.tzvedi:hover{border-color:var(--acc);background:var(--soft)}
+.tzbox{display:grid}
+.tzs{grid-area:1/1;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.4fr) auto;gap:22px;align-items:center;
+ opacity:0;visibility:hidden;transform:translateX(18px);transition:opacity .45s ease,transform .45s cubic-bezier(.2,.8,.2,1),visibility 0s .45s}
+.tzs.on{opacity:1;visibility:visible;transform:none;transition:opacity .45s ease,transform .45s cubic-bezier(.2,.8,.2,1)}
+.tzpos{font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.4px}
+.tzinfo h4{margin:4px 0 2px;font-size:24px;letter-spacing:-.4px;line-height:1.15}
+.tzprz{display:flex;align-items:baseline;gap:10px;margin-top:10px}.tzprz b{font-size:22px;font-variant-numeric:tabular-nums}
+.tzperche{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.tzperche li{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--ink2);line-height:1.45}
+.tzperche i.ok{flex:none;width:18px;height:18px;margin-top:1px;border-radius:50%;background:color-mix(in srgb,var(--b) 20%,transparent);position:relative}
+.tzperche i.ok::after{content:"";position:absolute;left:6px;top:3px;width:4px;height:8px;border:solid var(--b);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.tzdx{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;gap:10px 14px;align-items:center;min-width:300px}
+.tzring{position:relative;width:76px;height:76px}.tzring svg{width:100%;height:100%}
+.tzring .f{fill:none;stroke:var(--soft);stroke-width:7}.tzring .a{fill:none;stroke:var(--b);stroke-width:7;stroke-linecap:round;transition:stroke-dasharray .6s}
+.tzring b{position:absolute;inset:0;display:grid;place-items:center;font-size:22px;padding-bottom:10px}
+.tzring small{position:absolute;left:0;right:0;bottom:17px;text-align:center;font-size:10px;color:var(--mute);text-transform:uppercase;letter-spacing:.5px}
+.tzgraf{display:flex;flex-direction:column;align-items:flex-end;color:var(--b)}
+.tzsp{width:100%;height:60px}.tzsp polyline{fill:none;stroke:currentColor;stroke-width:2;vector-effect:non-scaling-stroke}
+.tzapri{grid-column:1/-1;justify-self:stretch;padding:11px 16px;border-radius:12px;border:0;cursor:pointer;font:700 14px system-ui;color:#04211e;
+ background:linear-gradient(90deg,var(--acc),var(--b));transition:transform .15s,box-shadow .15s}
+.tzapri:hover{transform:translateY(-1px);box-shadow:0 10px 24px color-mix(in srgb,var(--acc) 35%,transparent)}
+.tzapri span{display:inline-block;transition:transform .15s}.tzapri:hover span{transform:translateX(3px)}
+@media (max-width:1100px){.tzs{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.tzdx{grid-column:1/-1;grid-template-columns:auto 1fr auto;grid-template-rows:auto;min-width:0}.tzapri{grid-column:auto}}
+@media (max-width:700px){.tz{padding:18px 16px}.tzs{grid-template-columns:minmax(0,1fr);gap:14px}.tzdx{grid-template-columns:auto 1fr}.tzapri{grid-column:1/-1}
+ .tzcom{width:100%;justify-content:space-between}.tzvedi{display:none}.tzinfo h4{font-size:21px}}
+@media (prefers-reduced-motion:reduce){.tzs,.tzs.on{transition:none}.tzchip i{animation:none}}
+.aztab th,.aztab td{padding:12px 10px}.aztab .aznome b{max-width:220px}
+@media (max-width:1560px){.aztab .azh3{display:none}}

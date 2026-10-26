@@ -53,9 +53,17 @@ SETTORI = [  # id, nome, ETF di riferimento USA (SPDR)
     ("ind", "Industria", "XLI"), ("mat", "Materiali", "XLB"), ("ener", "Energia", "XLE"),
     ("util", "Servizi pubblici", "XLU"), ("imm", "Immobiliare", "XLRE"),
 ]
-LISTINI = {"sp500": "S&P 500", "ndx": "Nasdaq-100", "mib": "FTSE MIB", "dax": "DAX 40", "sx5e": "Euro Stoxx 50"}
+LISTINI = {"sp500": "S&P 500", "ndx": "Nasdaq-100", "mib": "FTSE MIB", "dax": "DAX 40", "sx5e": "Euro Stoxx 50",
+           "n225": "Nikkei 225", "hsi": "Hang Seng", "sse50": "SSE 50 Cina", "nifty": "Nifty 50 India"}
 INDICI = [("^GSPC", "S&P 500", "sp500"), ("^NDX", "Nasdaq-100", "ndx"), ("FTSEMIB.MI", "FTSE MIB", "mib"),
-          ("^GDAXI", "DAX 40", "dax"), ("^STOXX50E", "Euro Stoxx 50", "sx5e")]
+          ("^GDAXI", "DAX 40", "dax"), ("^STOXX50E", "Euro Stoxx 50", "sx5e"), ("^N225", "Nikkei 225", "n225"),
+          ("^HSI", "Hang Seng", "hsi"), ("000001.SS", "Shanghai Composite", "sse50"), ("^NSEI", "Nifty 50", "nifty")]
+
+# PUNTEGGIO di ogni titolo (0-100), ricalcolato ogni sera: media pesata dei PERCENTILI tra tutti i titoli
+# (cosi' valute e mercati diversi sono confrontabili). Forza = momento + trend + stagionalita' del mese in corso.
+PESI = {"v1a": 0.30, "v3m": 0.20, "t200": 0.15, "st_media": 0.20, "st_pos": 0.15}
+TOP_N = 5                      # titoli nella vetrina della Dashboard (al massimo 1 per settore)
+MIN_ANNI_STAG = 8              # anni minimi di storico mensile perche' la stagionalita' conti
 
 
 def ora_italia():
@@ -267,11 +275,13 @@ def pubblica(cartella, stato=None, titoli=None):
         r = riassunto(rec) if rec else None
         if not r:
             continue
+        stag = stagionalita(rec.get("m"))
+        mese = (stag or {}).get("mesi", [None] * 12)[ora_italia().month - 1] if stag else None
         righe.append(dict({"t": x["t"], "n": rec.get("nome") or x["nome"], "s": x["s"], "l": x["l"],
-                           "val": rec.get("valuta")}, **r))
+                           "val": rec.get("valuta"), "st_media": mese and mese["media"], "st_pos": mese and mese["pos"],
+                           "st_n": mese and mese["n"]}, **r))
         det = {"t": x["t"], "n": rec.get("nome") or x["nome"], "s": x["s"], "l": x["l"], "val": rec.get("valuta"),
-               "borsa": rec.get("borsa"), "d": rec["d"], "m": rec.get("m") or [],
-               "stag": stagionalita(rec.get("m"))}
+               "borsa": rec.get("borsa"), "d": rec["d"], "m": rec.get("m") or [], "stag": stag}
         _scrivi(os.path.join(cartella, "pubblico", "titoli", _nome_file(x["t"]) + ".json"), det)
         dettagli += 1
     indici = []
@@ -280,16 +290,59 @@ def pubblica(cartella, stato=None, titoli=None):
         r = riassunto(rec) if rec else None
         if r:
             indici.append(dict({"t": t, "n": nome, "l": l, "val": rec.get("valuta")}, **r))
+    punteggi(righe)
+    top = vetrina(righe)
     ultimo = max((r["data"] for r in righe), default=None)
     indice = {"aggiornato": ultimo, "generato": ora_italia().strftime("%Y-%m-%d %H:%M"),
               "anomalia": (stato or {}).get("anomalia"),
               "settori": [{"id": i, "nome": n, "etf": e} for i, n, e in SETTORI],
               "listini": [{"id": k, "nome": v} for k, v in LISTINI.items()],
-              "indici": indici, "titoli": righe, "fonte": "Yahoo Finance (prezzi rettificati)"}
+              "indici": indici, "titoli": righe, "top": [r["t"] for r in top]}
     _scrivi(os.path.join(cartella, "pubblico", "indice.json"), indice)
+    # file piccolo per la vetrina della Dashboard (si carica all'apertura del terminale, ~3 KB)
+    _scrivi(os.path.join(cartella, "pubblico", "top.json"),
+            {"aggiornato": ultimo, "mese": ora_italia().month, "anomalia": indice["anomalia"],
+             "settori": {i: n for i, n, _ in SETTORI}, "listini": LISTINI, "titoli": top})
     _scrivi(os.path.join(cartella, "stato.json"), dict(stato or {}, pubblicati=len(righe)))
     log.info("azioni: %d titoli pubblicati (%d schede dettaglio), dati al %s", len(righe), dettagli, ultimo)
     return indice
+
+
+def punteggi(righe):
+    """Aggiunge a ogni riga 'pt' (0-100) e 'rk' (posizione). Un dato mancante vale il percentile mediano (50)."""
+    n = len(righe)
+    if not n:
+        return righe
+    perc = {}
+    for k in PESI:
+        val = sorted((r[k], i) for i, r in enumerate(righe) if r.get(k) is not None)
+        for pos, (_, i) in enumerate(val):
+            perc.setdefault(i, {})[k] = 100 * pos / max(1, len(val) - 1)
+    for i, r in enumerate(righe):
+        p = perc.get(i, {})
+        r["pt"] = round(sum(w * p.get(k, 50) for k, w in PESI.items()))
+    for pos, r in enumerate(sorted(righe, key=lambda x: -x["pt"])):
+        r["rk"] = pos + 1
+    return righe
+
+
+def vetrina(righe, n=TOP_N):
+    """I titoli piu' forti di oggi per la Dashboard: punteggio alto E condizioni tutte favorevoli
+    (sopra la media a 200 giorni, 3 e 12 mesi positivi, mese in corso storicamente positivo in almeno il 60% degli
+    anni con almeno 8 anni di storia, non piu' del 15% sotto il massimo a 52 settimane). Al massimo 1 per settore."""
+    ok = [r for r in righe if (r.get("t200") or -1) > 0 and (r.get("v3m") or -1) > 0 and (r.get("v1a") or -1) > 0
+          and (r.get("st_media") or -1) > 0 and (r.get("st_pos") or 0) >= 60 and (r.get("st_n") or 0) >= MIN_ANNI_STAG
+          and (r.get("dmax") or -100) > -15]
+    out, settori = [], set()
+    for r in sorted(ok, key=lambda x: -x["pt"]):
+        if r["s"] in settori:
+            continue
+        settori.add(r["s"])
+        out.append({k: r.get(k) for k in ("t", "n", "s", "l", "val", "p", "v1g", "v1m", "v3m", "v1a", "t200", "dmax",
+                                          "st_media", "st_pos", "st_n", "pt", "rk", "sp")})
+        if len(out) == n:
+            break
+    return out
 
 
 # --------------------------------------------------------------------------- copia nel sito

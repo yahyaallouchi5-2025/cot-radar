@@ -59,6 +59,19 @@ class Azioni(unittest.TestCase):
         self.assertEqual(len(det["stag"]["mesi"]), 12)
         self.assertAlmostEqual(det["stag"]["mesi"][0]["media"], 1.0, places=1)    # +1% al mese
 
+    def test_punteggio_e_vetrina(self):
+        base = {"s": "tech", "l": ["sp500"], "t200": 5, "v3m": 4, "v1a": 20, "st_media": 1.0, "st_pos": 70, "st_n": 20,
+                "dmax": -3}
+        righe = [dict(base, t="A%d" % i, v1a=i, s="tech" if i % 2 else "fin") for i in range(10)]
+        righe.append(dict(base, t="DEBOLE", v1a=-30, t200=-10))
+        A.punteggi(righe)
+        self.assertEqual(sorted(r["rk"] for r in righe), list(range(1, 12)))
+        top = A.vetrina(righe)
+        self.assertLessEqual(len(top), A.TOP_N)
+        self.assertNotIn("DEBOLE", [r["t"] for r in top])                     # sotto la media a 200 giorni: escluso
+        self.assertEqual(len({r["s"] for r in top}), len(top))                 # al massimo un titolo per settore
+        self.assertEqual(top[0]["t"], "A9")                                     # il piu' forte del suo settore
+
     def test_yahoo_fermo_copia_e_anomalia(self):
         A.aggiorna(self.dir, ["AAA"], oggi=date(2026, 10, 23), scarica=finto, pausa=0)
         chiesti = []

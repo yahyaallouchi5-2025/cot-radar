@@ -9,33 +9,33 @@
      manutenzione (manutenzione.js) con giorno e ora dell'anomalia, e la scheda mostra gli ultimi dati validi.
    DEBUG: F12 -> Console -> window.__azioni (dati caricati). */
 try{(function(){const el=$("azioni");if(!el)return;
- const BASE="../azioni/",LIM=80;
- const ST={dati:null,list:"tutti",set:"tutti",ord:"vytd",dir:-1,cerca:"",mostra:LIM,per:"1a",tit:null};
- try{const s=JSON.parse(localStorage.getItem("ebAzioni")||"{}");if(s.list)ST.list=s.list;if(s.ord){ST.ord=s.ord;ST.dir=s.dir||-1;}}catch(e){}
- const salva=()=>{try{localStorage.setItem("ebAzioni",JSON.stringify({list:ST.list,ord:ST.ord,dir:ST.dir}));}catch(e){}};
+ const BASE="../azioni/",PAG=50;                       // titoli per pagina della tabella
+ const ST={dati:null,list:"tutti",set:"tutti",ord:"pt",dir:-1,cerca:"",pag:1,per:"1a",tit:null};
+ try{const s=JSON.parse(localStorage.getItem("ebAzioni2")||"{}");if(s.list)ST.list=s.list;if(s.ord){ST.ord=s.ord;ST.dir=s.dir||-1;}}catch(e){}
+ const salva=()=>{try{localStorage.setItem("ebAzioni2",JSON.stringify({list:ST.list,ord:ST.ord,dir:ST.dir}));}catch(e){}};
  const gg=d=>d?d.slice(8,10)+"/"+d.slice(5,7)+"/"+d.slice(0,4):"";
  const pc=(v,d=1)=>v==null?'<span class="flat">n/d</span>':`<span class="${v>0?"up":v<0?"down":"flat"}">${v>0?"+":""}${fx(v,d)}%</span>`;
- const SIMB={USD:"$",EUR:"€",GBP:"£",CHF:"CHF "};
+ const SIMB={USD:"$",EUR:"€",GBP:"£",CHF:"CHF ",JPY:"¥",HKD:"HK$",CNY:"CN¥",INR:"₹"};
  const prezzo=(v,val)=>v==null?"n/d":(SIMB[val]||"")+Number(v).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2});
  const nomeSet=id=>((ST.dati&&ST.dati.settori.find(s=>s.id==id))||{}).nome||id;
  const nomeList=id=>((ST.dati&&ST.dati.listini.find(s=>s.id==id))||{}).nome||id;
 
  // --- scheletro di attesa (blocchi grigi che "respirano" al posto dei contenuti)
  const sk=(w,h,extra="")=>`<i class="sk" style="width:${w};height:${h}px;${extra}"></i>`;
- function scheletro(){el.innerHTML=`<h2>Azioni per settore</h2><p class="sub">Caricamento dei titoli in corso&hellip;</p>
+ function scheletro(){el.innerHTML=`<h2>Azionario per settore</h2><p class="sub">Caricamento dei titoli in corso&hellip;</p>
   <div class="azbar">${sk("240px",38,"border-radius:99px")}${sk("320px",38,"border-radius:99px")}</div>
-  <div class="azidx">${Array(5).fill(`<div class="card azsk">${sk("60%",14)}${sk("80%",26)}${sk("50%",12)}</div>`).join("")}</div>
+  <div class="azidx">${Array(6).fill(`<div class="card azsk">${sk("60%",14)}${sk("80%",26)}${sk("50%",12)}</div>`).join("")}</div>
   <div class="azset">${Array(11).fill(`<div class="azsc azsk">${sk("70%",14)}${sk("45%",24)}${sk("100%",6)}</div>`).join("")}</div>
   <div class="tablewrap" style="padding:14px">${Array(8).fill(`<div class="azskr">${sk("28%",14)}${sk("12%",14)}${sk("10%",14)}${sk("10%",14)}${sk("18%",22)}</div>`).join("")}</div>`;}
 
  // --- caricamento (una sola volta, quando la scheda diventa visibile)
- let caricato=false;
- function carica(){if(caricato)return;caricato=true;scheletro();
-  fetch(BASE+"indice.json",{cache:"no-cache"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
+ let caricato=null;
+ function carica(){if(caricato)return caricato;scheletro();
+  return caricato=fetch(BASE+"indice.json",{cache:"no-cache"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
    .then(d=>{ST.dati=d;window.__azioni=d;disegna();
     if(d.anomalia)ebManutenzione({scheda:"azioni",codice:d.anomalia.codice,quando:d.anomalia.quando,dal:d.aggiornato});})
    .catch(e=>{console.error("[BoardEdge] azioni non caricate:",e);
-    el.innerHTML=`<h2>Azioni per settore</h2><div class="card azvuoto"><span class="pav-i grande" aria-hidden="true">!</span><h3>Dati azionari momentaneamente non disponibili</h3><p class="small">La scheda torna appena il servizio &egrave; di nuovo regolare.</p></div>`;
+    el.innerHTML=`<h2>Azionario per settore</h2><div class="card azvuoto"><span class="pav-i grande" aria-hidden="true">!</span><h3>Dati azionari momentaneamente non disponibili</h3><p class="small">La scheda torna appena il servizio &egrave; di nuovo regolare.</p></div>`;
     if(/^https?:/.test(location.protocol)){const n=new Date(),z=x=>String(x).padStart(2,"0");
      ebManutenzione({scheda:"azioni",codice:"503",quando:`${n.getFullYear()}-${z(n.getMonth()+1)}-${z(n.getDate())} ${z(n.getHours())}:${z(n.getMinutes())}`});}});}
  // la sezione vuota e' alta 0 px (l'IntersectionObserver non sempre la vede): si carica al clic sulla scheda
@@ -53,16 +53,27 @@ try{(function(){const el=$("azioni");if(!el)return;
   const pts=sp.map((v,i)=>`${(i/(sp.length-1)*W).toFixed(1)},${(H-2-v/99*(H-4)).toFixed(1)}`).join(" ");
   return `<svg class="azsp ${cls}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}"/></svg>`;}
 
- function disegna(){const d=ST.dati,base=filtrati(false),righe=filtrati(true);
-  const COL=[["n","Titolo",0],["p","Prezzo",1],["v1g","1G",1],["v1m","1M",1],["v3m","3M",1,"azh"],["vytd","Da inizio anno",1],["v1a","1 anno",1,"azh"],["dmax","Dal massimo 52s",1,"azh"],["t200","Media 200g",1,"azh"],["sp","Ultimo anno",0,"azh2"]];
+ // pulsanti delle pagine: 1 2 3 ... 12 (sempre prima, ultima e le due vicine a quella aperta)
+ function pagine(tot){const n=Math.ceil(tot/PAG);if(n<2)return "";const p=ST.pag,v=[];
+  for(let i=1;i<=n;i++)if(i==1||i==n||Math.abs(i-p)<=2)v.push(i);else if(v[v.length-1]!="…")v.push("…");
+  return `<nav class="azpag" aria-label="Pagine"><button data-pg="${p-1}" ${p<=1?"disabled":""} aria-label="Pagina precedente">&lsaquo;</button>
+   ${v.map(i=>i=="…"?`<span>&hellip;</span>`:`<button data-pg="${i}" class="${i==p?"on":""}" ${i==p?'aria-current="page"':""}>${i}</button>`).join("")}
+   <button data-pg="${p+1}" ${p>=n?"disabled":""} aria-label="Pagina successiva">&rsaquo;</button><em>${(p-1)*PAG+1}&ndash;${Math.min(tot,p*PAG)} di ${tot}</em></nav>`;}
+ // punteggio 0-100 come barra + numero (verde forte sopra 75)
+ const forza=v=>v==null?"n/d":`<span class="azpt${v>=75?" alto":v<40?" basso":""}" title="Punteggio ${v} su 100"><span class="azptb"><i style="width:${v}%"></i></span><b>${v}</b></span>`;
+ const MESI=["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
+
+ function disegna(){const d=ST.dati,base=filtrati(false),righe=filtrati(true),mese=MESI[new Date().getMonth()];
+  const COL=[["rk","#",1],["n","Titolo",0],["pt","Punteggio",0],["p","Prezzo",1],["v1g","1G",1],["v1m","1M",1],["v3m","3M",1,"azh"],["vytd","Da gennaio",1,"azh"],["v1a","1 anno",1],["st_pos",mese[0].toUpperCase()+mese.slice(1),1,"azh"],["t200","vs media 200g",1,"azh azh3"],["sp","Ultimo anno",0,"azh2"]];
   const ord=[...righe].sort((a,b)=>{const k=ST.ord;if(k=="n")return ST.dir*String(a.n).localeCompare(String(b.n));
    const x=a[k],y=b[k];if(x==null)return 1;if(y==null)return -1;return ST.dir*(x-y);});
-  const vis=ord.slice(0,ST.mostra);
-  el.innerHTML=`<h2>Azioni per settore</h2><p class="sub">${d.titoli.length} titoli di S&amp;P 500, Nasdaq-100, FTSE MIB, DAX 40 ed Euro Stoxx 50 nei 11 settori. Clicca un settore per filtrare la tabella, un titolo per grafico e stagionalit&agrave; mensile. Prezzi rettificati per dividendi e frazionamenti, nella valuta del listino.</p>
+  const np=Math.max(1,Math.ceil(ord.length/PAG));if(ST.pag>np)ST.pag=np;
+  const vis=ord.slice((ST.pag-1)*PAG,ST.pag*PAG);
+  el.innerHTML=`<h2>Azionario per settore</h2><p class="sub">${d.titoli.length} titoli di Stati Uniti, Europa, Giappone, Hong Kong, Cina e India nei 11 settori, in classifica per punteggio. Il punteggio (0-100) si ricalcola ogni sera: forza degli ultimi 12 e 3 mesi, posizione rispetto alla media a 200 giorni e stagionalit&agrave; di ${mese} (rendimento medio e anni positivi), confrontati tra tutti i titoli. Clicca un settore per filtrare la tabella, un titolo per grafico e stagionalit&agrave;.</p>
    <div class="azbar"><span class="azdata"><i></i>Dati al <b>${gg(d.aggiornato)}</b></span>
     <label class="azcerca"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input type="search" placeholder="Cerca titolo o ticker" value="${esc(ST.cerca)}" aria-label="Cerca titolo o ticker"></label>
     <div class="filters azlist">${[["tutti","Tutti"]].concat(d.listini.map(l=>[l.id,l.nome])).map(x=>`<button data-l="${x[0]}" class="${ST.list==x[0]?"on":""}">${x[1]}</button>`).join("")}</div></div>
-   <div class="azidx">${d.indici.map(i=>`<div class="card azi${ST.list==i.l?" on":""}" data-l="${i.l}" role="button" tabindex="0"><span>${esc(i.n)}</span><b>${Number(i.p).toLocaleString("it-IT",{maximumFractionDigits:0})}</b>
+   <div class="azidx">${d.indici.map(i=>`<div class="card azi${ST.list==i.l?" on":""}" data-l="${i.l}" role="button" tabindex="0"><span>${esc(i.n)}</span><b>${Number(i.p).toLocaleString("it-IT",{maximumFractionDigits:0,useGrouping:"always"})}</b>
     <em><span>oggi ${pc(i.v1g,2)}</span><span>anno ${pc(i.vytd)}</span></em>${spark(i.sp,(i.v1a||0)>=0?"su":"giu")}</div>`).join("")}</div>
    <h3 class="vft">Settori <span class="small">(media dei titoli${ST.list!="tutti"?" del "+esc(nomeList(ST.list)):""}: rendimento da inizio anno, ultimo mese e quota sopra la media a 200 giorni)</span></h3>
    <div class="azset"><button class="azsc${ST.set=="tutti"?" on":""}" data-s="tutti"><span>Tutti i settori</span><b>${base.length}</b><em>titoli</em></button>
@@ -70,22 +81,24 @@ try{(function(){const el=$("azioni");if(!el)return;
      sopra=Math.round(100*t.filter(x=>x.t200!=null&&x.t200>0).length/Math.max(1,t.filter(x=>x.t200!=null).length));
      return `<button class="azsc${ST.set==s.id?" on":""}" data-s="${s.id}"><span>${esc(s.nome)} <small>${t.length}</small></span><b class="${y>=0?"up":"down"}">${y==null?"n/d":(y>0?"+":"")+fx(y,1)+"%"}</b>
       <em>1 mese ${m==null?"n/d":(m>0?"+":"")+fx(m,1)+"%"}</em><span class="azbr" title="${sopra}% dei titoli sopra la media a 200 giorni"><i style="width:${sopra}%"></i></span><small class="azbrt">${sopra}% sopra media 200g</small></button>`;}).join("")}</div>
-   <h3 class="vft">${ST.set=="tutti"?"Tutti i titoli":esc(nomeSet(ST.set))} <span class="small">(${righe.length} titoli${ST.cerca?" per &laquo;"+esc(ST.cerca)+"&raquo;":""} &middot; clic sulle colonne per ordinare)</span></h3>
-   <div class="tablewrap"><table class="aztab"><tr>${COL.map(c=>`<th class="${c[2]?"num":""} ${c[3]||""}${c[0]!="sp"?" azo":""}${ST.ord==c[0]?" on":""}" ${c[0]!="sp"?`data-o="${c[0]}"`:""}>${c[1]}${ST.ord==c[0]?(ST.dir>0?" &uarr;":" &darr;"):""}</th>`).join("")}</tr>
-    ${vis.map(t=>`<tr class="clic" data-t="${esc(t.t)}" tabindex="0"><td class="aznome"><b>${esc(t.n)}</b><span>${esc(t.t)} &middot; ${t.l.map(nomeList).join(", ")}</span></td>
-     <td class="num">${prezzo(t.p,t.val)}</td><td class="num">${pc(t.v1g,2)}</td><td class="num">${pc(t.v1m)}</td><td class="num azh">${pc(t.v3m)}</td><td class="num">${pc(t.vytd)}</td>
-     <td class="num azh">${pc(t.v1a)}</td><td class="num azh">${pc(t.dmax)}</td><td class="num azh">${pc(t.t200)}</td><td class="azh2">${spark(t.sp,(t.v1a||0)>=0?"su":"giu")}</td></tr>`).join("")}
-    ${!righe.length?`<tr><td colspan="10" class="small" style="text-align:center;padding:28px">Nessun titolo con questi filtri.</td></tr>`:""}</table></div>
-   ${righe.length>ST.mostra?`<button class="ptutte azaltri">Mostra altri ${Math.min(LIM,righe.length-ST.mostra)} (${righe.length-ST.mostra} rimasti)</button>`:""}
-   <p class="small azfonte">Fonte: ${esc(d.fonte||"Yahoo Finance")}. Settori secondo la classificazione GICS. Elenco dei titoli aggiornato a ogni ribilanciamento trimestrale degli indici.</p>`;
+   <h3 class="vft azcl">${ST.set=="tutti"?"Classifica":esc(nomeSet(ST.set))} <span class="small">(${righe.length} titoli${ST.cerca?" per &laquo;"+esc(ST.cerca)+"&raquo;":""} &middot; clic sulle colonne per ordinare)</span></h3>
+   <div class="tablewrap"><table class="aztab"><tr>${COL.map(c=>`<th class="${c[2]?"num":""} ${c[3]||""}${c[0]!="sp"?" azo":""}${ST.ord==c[0]?" on":""}" ${c[0]!="sp"?`data-o="${c[0]}"`:""}${c[0]=="st_pos"?` title="Stagionalit&agrave; di ${mese}: quota di anni positivi e rendimento medio del mese"`:""}>${c[1]}${ST.ord==c[0]?(ST.dir>0?" &uarr;":" &darr;"):""}</th>`).join("")}</tr>
+    ${vis.map(t=>`<tr class="clic" data-t="${esc(t.t)}" tabindex="0"><td class="num azrk">${t.rk}</td><td class="aznome"><b>${esc(t.n)}</b><span>${esc(t.t)} &middot; ${t.l.map(nomeList).join(", ")}</span></td>
+     <td>${forza(t.pt)}</td><td class="num">${prezzo(t.p,t.val)}</td><td class="num">${pc(t.v1g,2)}</td><td class="num">${pc(t.v1m)}</td><td class="num azh">${pc(t.v3m)}</td><td class="num azh">${pc(t.vytd)}</td>
+     <td class="num">${pc(t.v1a)}</td><td class="num azh azst">${t.st_pos==null?'<span class="flat">n/d</span>':`<b>${t.st_pos}%</b> ${pc(t.st_media)}`}</td><td class="num azh azh3">${pc(t.t200)}</td><td class="azh2">${spark(t.sp,(t.v1a||0)>=0?"su":"giu")}</td></tr>`).join("")}
+    ${!righe.length?`<tr><td colspan="12" class="small" style="text-align:center;padding:28px">Nessun titolo con questi filtri.</td></tr>`:""}</table></div>
+   ${pagine(ord.length)}`;
   // eventi
   const inp=el.querySelector(".azcerca input");let tm;
-  inp.oninput=()=>{clearTimeout(tm);tm=setTimeout(()=>{ST.cerca=inp.value;ST.mostra=LIM;const pos=inp.selectionStart;disegna();const n=el.querySelector(".azcerca input");n.focus();n.setSelectionRange(pos,pos);},180);};
-  el.querySelectorAll(".azlist button,.azi").forEach(b=>{const f=()=>{ST.list=ST.list==b.dataset.l&&b.classList.contains("azi")?"tutti":b.dataset.l;ST.mostra=LIM;salva();disegna();};b.onclick=f;b.onkeydown=e=>{if(e.key=="Enter")f();};});
-  el.querySelectorAll(".azsc").forEach(b=>b.onclick=()=>{ST.set=b.dataset.s;ST.mostra=LIM;disegna();el.querySelector(".aztab").scrollIntoView({behavior:"smooth",block:"nearest"});});
-  el.querySelectorAll("th.azo").forEach(h=>h.onclick=()=>{const k=h.dataset.o;if(ST.ord==k)ST.dir=-ST.dir;else{ST.ord=k;ST.dir=k=="n"?1:-1;}salva();disegna();});
+  inp.oninput=()=>{clearTimeout(tm);tm=setTimeout(()=>{ST.cerca=inp.value;ST.pag=1;const pos=inp.selectionStart;disegna();const n=el.querySelector(".azcerca input");n.focus();n.setSelectionRange(pos,pos);},180);};
+  el.querySelectorAll(".azlist button,.azi").forEach(b=>{const f=()=>{ST.list=ST.list==b.dataset.l&&b.classList.contains("azi")?"tutti":b.dataset.l;ST.pag=1;salva();disegna();};b.onclick=f;b.onkeydown=e=>{if(e.key=="Enter")f();};});
+  el.querySelectorAll(".azsc").forEach(b=>b.onclick=()=>{ST.set=b.dataset.s;ST.pag=1;disegna();el.querySelector(".azcl").scrollIntoView({behavior:"smooth",block:"start"});});
+  el.querySelectorAll("th.azo").forEach(h=>h.onclick=()=>{const k=h.dataset.o;if(ST.ord==k)ST.dir=-ST.dir;else{ST.ord=k;ST.dir=(k=="n"||k=="rk")?1:-1;}ST.pag=1;salva();disegna();});
   el.querySelectorAll(".aztab tr[data-t]").forEach(r=>{r.onclick=()=>apri(r.dataset.t);r.onkeydown=e=>{if(e.key=="Enter")apri(r.dataset.t);};});
-  const alt=el.querySelector(".azaltri");if(alt)alt.onclick=()=>{ST.mostra+=LIM;disegna();};}
+  el.querySelectorAll(".azpag button[data-pg]").forEach(b=>b.onclick=()=>{ST.pag=+b.dataset.pg;disegna();el.querySelector(".azcl").scrollIntoView({behavior:"smooth",block:"start"});});}
+
+ // ingresso dalla vetrina della Dashboard: apre la scheda e il dettaglio del titolo
+ window.ebApriTitolo=tk=>{try{go("azioni");}catch(e){}const p=carica();(p&&p.then?p:Promise.resolve()).then(()=>{if(ST.dati)apri(tk);});};
 
  // --- DETTAGLIO di un titolo (pannello laterale): grafico 1 anno / 2 anni / storico mensile + stagionalita'
  function apri(tk){const t=ST.dati.titoli.find(x=>x.t==tk);if(!t)return;
@@ -118,7 +131,7 @@ try{(function(){const el=$("azioni");if(!el)return;
    <div class="azgraf">${grafico(serie(),ST.per=="max",t.val)}</div>
    <div class="azmini"><div><span>1 mese</span>${pc(t.v1m)}</div><div><span>3 mesi</span>${pc(t.v3m)}</div><div><span>Da inizio anno</span>${pc(t.vytd)}</div>
     <div><span>1 anno</span>${pc(t.v1a)}</div><div><span>Dal massimo 52 sett.</span>${pc(t.dmax)}</div><div><span>Rispetto media 200g</span>${pc(t.t200)}</div></div>
-   ${stag}<p class="small azfonte">${esc(x.borsa||"")}${x.val?" &middot; prezzi in "+esc(x.val):""} &middot; Yahoo Finance, prezzi rettificati.</p>`;
+   ${stag}<p class="small azfonte">${esc(x.borsa||"")}${x.val?" &middot; prezzi in "+esc(x.val):""}</p>`;
   c.querySelectorAll(".azper button").forEach(b=>b.onclick=()=>{ST.per=b.dataset.p;corpo(ov,t,x);});
   tooltip(c.querySelector(".azgraf"),serie(),t.val,ST.per=="max");}
 
