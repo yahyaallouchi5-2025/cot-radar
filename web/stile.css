@@ -831,6 +831,36 @@ html.cbloccato,html.cbloccato body{overflow:hidden}
 .fbgrazie{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:10px 0}.fbgrazie h3{margin:0;text-transform:none;color:var(--ink)}.fbgrazie p{margin:0;color:var(--ink2)}
 .fbgrazie .csi{height:42px;padding:0 22px;border-radius:11px;border:0;background:var(--acc);color:#04211e;font:700 14px system-ui;cursor:pointer}
 @media (max-width:600px){.cmodal-box{padding:18px 16px 16px;max-height:92vh}.cmodal-piede{flex-direction:column;align-items:stretch}.cmodal-btn{margin-left:0}.cmodal-btn>*{flex:1}}
+/* ---------- VOTO A STELLE (web/js/27_voto.js): scheda discreta in basso a destra, su telefono pannello in basso ---------- */
+.ebvoto{position:fixed;right:20px;bottom:20px;z-index:900;width:min(360px,calc(100vw - 32px));padding:18px 18px 16px;border-radius:18px;
+ background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid color-mix(in srgb,var(--acc) 35%,var(--line));
+ box-shadow:0 18px 50px rgba(2,8,20,.55),0 0 0 1px rgba(46,196,182,.06);text-align:center;
+ opacity:0;transform:translateY(18px) scale(.98);transition:opacity .25s ease,transform .25s ease}
+.ebvoto.on{opacity:1;transform:none}
+.ebvoto h3{margin:0 26px 4px;font-size:16.5px;text-transform:none;letter-spacing:-.2px;color:var(--ink)}
+.evsub{margin:0 0 12px;font-size:13px;color:var(--mute);line-height:1.45}
+.evx{position:absolute;right:10px;top:10px;width:30px;height:30px;border-radius:9px;border:1px solid transparent;background:none;color:var(--mute);cursor:pointer;font-size:13px}
+.evx:hover{border-color:var(--line);color:var(--ink)}
+.evstelle{display:flex;justify-content:center;gap:4px}
+.evstelle button{width:46px;height:46px;padding:5px;border:0;border-radius:12px;background:none;cursor:pointer;transition:transform .12s}
+.evstelle button:hover{transform:scale(1.12)}.evstelle button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.evstelle svg{width:100%;height:100%;fill:none;stroke:var(--mute);stroke-width:1.6;stroke-linejoin:round;transition:fill .12s,stroke .12s}
+.evstelle button.on svg{fill:var(--warn);stroke:var(--warn);filter:drop-shadow(0 0 6px rgba(233,180,76,.35))}
+.evetic{min-height:20px;margin-top:4px;font:700 13px system-ui;color:var(--warn)}
+.evaltro{margin-top:10px;display:flex;flex-direction:column;gap:10px;text-align:left;animation:evapri .22s ease}.evaltro[hidden]{display:none}
+@keyframes evapri{from{opacity:0;transform:translateY(-4px)}}
+.evaltro textarea{font:400 14px system-ui;color:var(--ink);background:var(--soft);border:1px solid var(--line);border-radius:11px;padding:9px 11px;resize:none}
+.evaltro textarea:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 22%,transparent)}
+.evbtn{display:flex;gap:8px}.evbtn button{flex:1;height:40px;border-radius:11px;font:700 13.5px system-ui;cursor:pointer;white-space:nowrap}
+.evdopo{background:none;border:1px solid var(--line);color:var(--ink2)}.evdopo:hover{border-color:var(--mute);color:var(--ink)}
+.evinvia{background:var(--acc);border:1px solid var(--acc);color:#04211e}.evinvia:hover:not(:disabled){box-shadow:0 8px 22px rgba(46,196,182,.3)}
+.evinvia:disabled{opacity:.5;cursor:wait}
+.evesito{font-size:12.5px}.evesito:empty{display:none}.evesito.ko{color:var(--s)}
+.evgrazie{display:flex;align-items:center;gap:12px;text-align:left}.evgrazie>span{flex:none;width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
+ font:800 18px system-ui;color:var(--b);background:color-mix(in srgb,var(--b) 14%,transparent)}
+.evgrazie b{display:block;color:var(--ink);font-size:15px}.evgrazie small{color:var(--mute);font-size:13px}
+@media (max-width:600px){.ebvoto{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));width:auto}}
+@media (prefers-reduced-motion:reduce){.ebvoto,.evstelle button,.evstelle svg{transition:none}}
 /* ---------- BILANCIO nel dettaglio di un titolo (web/js/22_azioni.js, dati fondamentali.py) ---------- */
 .azbil{margin-top:20px}
 .bgiu{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-radius:12px;margin-bottom:12px;font-size:13.5px;border:1px solid}

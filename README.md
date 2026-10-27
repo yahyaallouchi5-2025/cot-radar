@@ -232,6 +232,12 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+## v6.36: voto a stelle
+- `web/js/27_voto.js`: dopo un po' di utilizzo (25 clic in totale e 2 minuti nella visita) compare in basso a destra
+  una scheda discreta "Ti sta piacendo BoardEdge?" con 1-5 stelle e un commento facoltativo. Il voto arriva via email
+  con la stessa chiave Web3Forms del Feedback (Secret `WEB3FORMS_KEY`). Una volta votato non torna piu';
+  se chiusa torna dopo 21 giorni, al massimo 2 volte. Non compare mai sopra altre finestre o mentre si scrive.
+
 ## v6.35: ordine nel codice e nuove funzioni
 - **Codice della pagina diviso**: `web/app.js` (980 righe) e gli altri file JS sono ora in `web/js/`, un file per scheda
   (`01_base.js`, `04_dashboard.js`, `09_correlazioni.js`, `21_portafogli.js`...). `pagina.py` li unisce in ordine di
