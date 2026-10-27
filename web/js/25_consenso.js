@@ -17,16 +17,18 @@
  // (navigazione privata: vale finche' la finestra resta aperta). Basta che UNO dei tre abbia la versione giusta.
  const COOKIE="eb_consenso",GIORNI=365;
  const leggiCookie=()=>{try{const m=document.cookie.match(/(?:^|;\s*)eb_consenso=([^;]+)/);return m?decodeURIComponent(m[1]):null;}catch(e){return null;}};
- const salvato=()=>{
-  try{const v=JSON.parse(localStorage.getItem("eb_consenso")||"null");if(v&&v.versione==CONSENSO_VERSIONE)return true;}catch(e){}
-  if(leggiCookie()==CONSENSO_VERSIONE){try{localStorage.setItem("eb_consenso",JSON.stringify({versione:CONSENSO_VERSIONE,data:new Date().toISOString()}));}catch(e){}return true;}
-  try{if(sessionStorage.getItem("eb_consenso")==CONSENSO_VERSIONE)return true;}catch(e){}
-  return window.__ebConsenso===true;};
  function ricorda(){const ora=new Date().toISOString();
   try{localStorage.setItem("eb_consenso",JSON.stringify({versione:CONSENSO_VERSIONE,data:ora}));}catch(e){}
   try{document.cookie=`${COOKIE}=${encodeURIComponent(CONSENSO_VERSIONE)}; Max-Age=${GIORNI*86400}; Path=/; SameSite=Lax; Secure`;}catch(e){}
   try{sessionStorage.setItem("eb_consenso",CONSENSO_VERSIONE);}catch(e){}
   window.__ebConsenso=true;}
+ const salvato=()=>{
+  try{const v=JSON.parse(localStorage.getItem("eb_consenso")||"null");if(v&&v.versione==CONSENSO_VERSIONE){
+   if(leggiCookie()!=CONSENSO_VERSIONE)ricorda();          // chi ha accettato prima di v6.37: aggiunge il cookie di riserva
+   return true;}}catch(e){}
+  if(leggiCookie()==CONSENSO_VERSIONE){try{localStorage.setItem("eb_consenso",JSON.stringify({versione:CONSENSO_VERSIONE,data:new Date().toISOString()}));}catch(e){}return true;}
+  try{if(sessionStorage.getItem("eb_consenso")==CONSENSO_VERSIONE)return true;}catch(e){}
+  return window.__ebConsenso===true;};
  if(salvato())return;
  const TESTO=`
   <h4>1. Che cos'&egrave; BoardEdge</h4>
