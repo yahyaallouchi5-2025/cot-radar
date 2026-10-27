@@ -240,6 +240,9 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - Conto alla rovescia al prossimo ribilanciamento (09:00 ora italiana del primo giorno di borsa del mese).
 - Card "Rischio del mese" con metriche standard: max drawdown intra-mese, peggior rendimento, rendimento medio,
   win rate, max drawdown storico; tooltip sul grafico anno per anno.
+- Dashboard: "Prossimi eventi ad alto impatto" come banner a scorrimento lento (si ferma col mouse o col tocco;
+  fermo per chi ha "riduci animazioni" attivo).
+- Consenso legale ricordato in modo affidabile: archivio locale + cookie tecnico di 1 anno + sessione.
 - Test: `tests/test_strumenti_ue.py` (ogni mercato dei profili ha un ISIN valido, cifra di controllo inclusa).
 
 ## v6.36: voto a stelle

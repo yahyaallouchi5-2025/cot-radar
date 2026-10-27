@@ -2,7 +2,8 @@
 /* ---------- CONSENSO LEGALE prima di usare la dashboard ----------
    Al primo accesso (e a ogni nuova versione del testo) un popup a tutto schermo mostra le condizioni d'uso.
    - Il pulsante "Accetto" si attiva solo dopo aver fatto scorrere il testo FINO IN FONDO (barra di avanzamento).
-   - "Accetto": si salva nel browser {versione, data} (localStorage "eb_consenso") e il popup non torna piu',
+   - "Accetto": si salva nel browser (localStorage "eb_consenso" + cookie tecnico di 1 anno + sessione) e il popup
+     non torna piu' a ogni accesso,
      finche' non cambia CONSENSO_VERSIONE (cambiando il testo, alzare la versione: tutti devono riaccettare).
    - "Non accetto": la dashboard resta coperta con un messaggio e il pulsante "Rileggi le condizioni".
    - Se il browser non permette di salvare (navigazione privata) il consenso vale per la sessione aperta.
@@ -10,7 +11,22 @@
    Nelle statistiche anonime conta come evento "consenso" (accettato / rifiutato). */
 (function(){try{
  const CONSENSO_VERSIONE="2026-10-27";
- const salvato=()=>{try{const v=JSON.parse(localStorage.getItem("eb_consenso")||"null");return v&&v.versione==CONSENSO_VERSIONE;}catch(e){return window.__ebConsenso===true;}};
+ // Il consenso si ricorda in TRE posti (come fanno i grandi siti), cosi' non viene richiesto a ogni accesso anche
+ // se un browser ne cancella uno: archiviazione locale (principale), cookie tecnico di 1 anno (alcuni browser e le
+ // app tipo Telegram/Instagram svuotano l'archiviazione locale ma tengono i cookie) e archiviazione di sessione
+ // (navigazione privata: vale finche' la finestra resta aperta). Basta che UNO dei tre abbia la versione giusta.
+ const COOKIE="eb_consenso",GIORNI=365;
+ const leggiCookie=()=>{try{const m=document.cookie.match(/(?:^|;\s*)eb_consenso=([^;]+)/);return m?decodeURIComponent(m[1]):null;}catch(e){return null;}};
+ const salvato=()=>{
+  try{const v=JSON.parse(localStorage.getItem("eb_consenso")||"null");if(v&&v.versione==CONSENSO_VERSIONE)return true;}catch(e){}
+  if(leggiCookie()==CONSENSO_VERSIONE){try{localStorage.setItem("eb_consenso",JSON.stringify({versione:CONSENSO_VERSIONE,data:new Date().toISOString()}));}catch(e){}return true;}
+  try{if(sessionStorage.getItem("eb_consenso")==CONSENSO_VERSIONE)return true;}catch(e){}
+  return window.__ebConsenso===true;};
+ function ricorda(){const ora=new Date().toISOString();
+  try{localStorage.setItem("eb_consenso",JSON.stringify({versione:CONSENSO_VERSIONE,data:ora}));}catch(e){}
+  try{document.cookie=`${COOKIE}=${encodeURIComponent(CONSENSO_VERSIONE)}; Max-Age=${GIORNI*86400}; Path=/; SameSite=Lax; Secure`;}catch(e){}
+  try{sessionStorage.setItem("eb_consenso",CONSENSO_VERSIONE);}catch(e){}
+  window.__ebConsenso=true;}
  if(salvato())return;
  const TESTO=`
   <h4>1. Che cos'&egrave; BoardEdge</h4>
@@ -51,7 +67,7 @@
   if(p>=0.995||max-testo.scrollTop<=8){si.disabled=false;hint.textContent="Grazie per aver letto. Puoi accettare.";hint.classList.add("ok");}}
  testo.addEventListener("scroll",controlla,{passive:true});setTimeout(controlla,50);
  const stat=(esito)=>{try{window.ebStat&&ebStat.ev("consenso",{esito});}catch(e){}};
- si.onclick=()=>{try{localStorage.setItem("eb_consenso",JSON.stringify({versione:CONSENSO_VERSIONE,data:new Date().toISOString()}));}catch(e){window.__ebConsenso=true;}
+ si.onclick=()=>{ricorda();
   stat("accettato");box.classList.remove("on");setTimeout(()=>box.remove(),220);blocco.remove();document.documentElement.classList.remove("cbloccato");};
  box.querySelector(".cno").onclick=()=>{stat("rifiutato");box.classList.remove("on");setTimeout(()=>{box.hidden=true;blocco.hidden=false;requestAnimationFrame(()=>blocco.classList.add("on"));},200);};
  blocco.querySelector(".crileggi").onclick=()=>{blocco.classList.remove("on");blocco.hidden=true;box.hidden=false;requestAnimationFrame(()=>box.classList.add("on"));testo.focus({preventScroll:true});};

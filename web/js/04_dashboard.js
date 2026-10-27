@@ -13,21 +13,37 @@ try{
  <div class="card kpi clic" data-vai="port" title="Apri i Portafogli"><h3>Prossima rotazione</h3><div class="big" style="font-size:20px;margin-top:12px">${po&&po.prossima?fd(po.prossima):"n/d"}</div><div class="note">portafogli modello &middot; 5 azioni scelte</div></div>
  <div class="card kpi"><h3>Prossimo COT</h3><div class="big" style="font-size:20px;margin-top:12px">${cot.next}</div><div class="note">dati al ${cot.last}</div></div>`;})();
 
-/* PROSSIMI EVENTI ad alto impatto (motore notizie): mini card come i settori.
-   Colori: ambra = banca centrale (Fed, BCE), blu = dato macro (CPI, NFP); OGGI in rosso, DOMANI in ambra.
-   Oltre 6 eventi compare "Mostra tutti". La spiegazione sta nel tasto (i). */
-try{const ev=D.eventi||[],MAX=6;
+/* PROSSIMI EVENTI ad alto impatto (motore notizie): BANNER A SCORRIMENTO LENTO (ticker).
+   Ogni evento e' una "pillola": valuta, nome, giorno e ora, quanto manca. Colori: ambra = banca centrale (Fed, BCE),
+   blu = dato macro (CPI, NFP); OGGI in rosso, DOMANI in ambra.
+   - Scorre da destra a sinistra a velocita' costante (VEL px al secondo), all'infinito senza salti: la lista e'
+     ripetuta finche' riempie la larghezza e poi duplicata, l'animazione sposta il nastro di meta' della sua lunghezza.
+   - Si ferma passando il mouse o toccando (per leggere), riparte uscendo. Ai bordi sfuma.
+   - Chi ha chiesto "riduci animazioni" nel sistema operativo vede le pillole ferme, una accanto all'altra (a capo).
+   - Si ricalcola quando cambia la larghezza della finestra. La spiegazione sta nel tasto (i). */
+try{const ev=D.eventi||[],VEL=38;
  const GG=["dom","lun","mar","mer","gio","ven","sab"],oggi=new Date();oggi.setHours(0,0,0,0);
- const evc=e=>{const q=new Date(e.quando.replace(" ","T")),g=new Date(q);g.setHours(0,0,0,0);
+ const pill=e=>{const q=new Date(e.quando.replace(" ","T")),g=new Date(q);g.setHours(0,0,0,0);
   const diff=Math.round((g-oggi)/864e5),quando=diff<=0?"OGGI":diff==1?"DOMANI":`tra ${diff} giorni`;
-  return `<div class="evc ${e.tipo=="banca"?"banca":"dato"}${diff<=0?" oggi":diff==1?" domani":""}"><div class="evt"><b>${esc(e.nome)}</b><span class="evv">${esc(e.valuta)}</span></div>
-  <div class="evq">${GG[q.getDay()]} ${e.quando.slice(8,10)}/${e.quando.slice(5,7)} <b>${e.quando.slice(11)}</b></div><small>${quando} &middot; ${e.tipo=="banca"?"banca centrale":"dato macro"}</small></div>`;};
+  return `<span class="evp ${e.tipo=="banca"?"banca":"dato"}${diff<=0?" oggi":diff==1?" domani":""}" title="${e.tipo=="banca"?"Banca centrale":"Dato macro"}">
+   <span class="evv">${esc(e.valuta)}</span><b>${esc(e.nome)}</b><span class="evq">${GG[q.getDay()]} ${e.quando.slice(8,10)}/${e.quando.slice(5,7)} <b>${e.quando.slice(11)}</b></span><em>${quando}</em></span>`;};
  $("eventi").innerHTML=ev.length?`<div class="card eventi"><div class="evhead"><h3>Prossimi eventi ad alto impatto</h3>
-  <details class="info"><summary title="Come usarli" aria-label="Informazioni">i</summary><div>Il giorno del dato la volatilit&agrave; sale: per lo swing conviene valutare l'ingresso <b>dopo</b> l'uscita. Dopo il dato la riga "Notizie" delle card mostra se la sorpresa rafforza o penalizza il segnale.</div></details></div>
-  <div class="evgrid">${ev.map((e,k)=>k<MAX?evc(e):evc(e).replace('class="evc','class="evc extra')).join("")}</div>
-  ${ev.length>MAX?`<button class="tvbtn evtutti" id="evtutti">Mostra tutti (${ev.length})</button>`:""}
-  ${D.agenda&&String(D.agenda.fonte||"").startsWith("financecalendar")?`<div class="small" style="margin-top:10px">Calendario: <a href="https://www.financecalendar.com" target="_blank" rel="noopener">financecalendar.com</a></div>`:""}</div>`:"";
- const bt=$("evtutti");if(bt)bt.onclick=()=>{const c=$("eventi").querySelector(".card").classList.toggle("aperto");bt.textContent=c?"Mostra meno":`Mostra tutti (${ev.length})`;};
+  <details class="info"><summary title="Come usarli" aria-label="Informazioni">i</summary><div>Il giorno del dato la volatilit&agrave; sale: per lo swing conviene valutare l'ingresso <b>dopo</b> l'uscita. Dopo il dato la riga "Notizie" delle card mostra se la sorpresa rafforza o penalizza il segnale.</div></details>
+  ${D.agenda&&String(D.agenda.fonte||"").startsWith("financecalendar")?`<span class="small evfonte">Calendario: <a href="https://www.financecalendar.com" target="_blank" rel="noopener">financecalendar.com</a></span>`:""}</div>
+  <div class="evnastro" role="marquee" aria-label="Prossimi eventi"><div class="evtrack"></div></div></div>`:"";
+ const nastro=$("eventi").querySelector(".evnastro"),track=nastro&&nastro.querySelector(".evtrack");
+ const base=ev.map(pill).join("");
+ function monta(){if(!track)return;
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches){track.innerHTML=base;nastro.classList.add("fermo");return;}
+  track.style.animation="none";track.innerHTML=`<span class="evmeta">${base}</span>`;
+  const meta=track.firstChild,W=nastro.clientWidth||800;let n=1;
+  while(meta.scrollWidth<W&&n<30){meta.insertAdjacentHTML("beforeend",base);n++;}   // riempi la larghezza
+  track.insertAdjacentHTML("beforeend",`<span class="evmeta" aria-hidden="true">${meta.innerHTML}</span>`);
+  const L=meta.getBoundingClientRect().width;
+  track.style.setProperty("--evdur",Math.max(12,L/VEL).toFixed(1)+"s");void track.offsetWidth;track.style.animation="";}
+ monta();let rt=0;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(monta,250);});
+ // tocco su telefono: ferma / riparte
+ if(nastro)nastro.addEventListener("click",e=>{if(!e.target.closest("a"))nastro.classList.toggle("pausa");});
 }catch(e){fail("Prossimi eventi","eventi",e);}
 $("sectors").innerHTML=SEC.filter(g=>byS[g]).map(g=>{const l=byS[g],avg=l.reduce((x,a)=>x+a.score,0)/l.length;
  const up=l.filter(a=>a.score>=M.normal).length,dn=l.filter(a=>a.score<=-M.normal).length;
