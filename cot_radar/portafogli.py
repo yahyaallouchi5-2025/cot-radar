@@ -84,6 +84,22 @@ AZIONI_SCELTE = ("AZ", "SAT", "Azioni scelte", "5 azioni dell'Azionario a pari p
 EXTRA = ["XLK", "XLC", "XLY", "XLF", "XLI", "XLE", "XLB", "XLV", "XLP", "XLU", "XLRE", "UUP"]
 BENCH = (("SPY", 0.6), ("IEF", 0.4))          # confronto: classico 60% azioni USA + 40% Treasury, ribilanciato
 TUTTI = {u[0]: u for u in UNIVERSO + [LIQUIDITA, AZIONI_SCELTE]}
+# STRUMENTI DA COMPRARE IN EUROPA: gli ETF USA usati per i calcoli (SPY, QQQ, ...) non si possono comprare da un
+# conto europeo (manca il documento KID), quindi per ogni mercato si indica un equivalente UCITS / ETC / ETP con ISIN
+# (da cercare nell'app del broker). Verificati il 27/10/2026. Classe di accumulo (Acc) dove esiste.
+# chiave -> (nome del prodotto, ISIN, nota facoltativa)
+STRUMENTI_UE = {
+    "SP500": ("iShares Core S&P 500 UCITS ETF (Acc)", "IE00B5BMR087", None),
+    "NASDAQ": ("iShares Nasdaq 100 UCITS ETF (Acc)", "IE00B53SZB19", None),
+    "EAFE": ("Xtrackers MSCI World ex USA UCITS ETF 1C", "IE0006WW1TQ4",
+             "include anche il Canada: è l'equivalente UCITS più vicino all'MSCI EAFE"),
+    "EM": ("iShares Core MSCI EM IMI UCITS ETF (Acc)", "IE00BKM4GZ66", None),
+    "US10Y": ("iShares $ Treasury Bond 7-10yr UCITS ETF (Acc)", "IE00B3VWN518", None),
+    "GOLD": ("iShares Physical Gold ETC", "IE00B4ND3602", None),
+    "BTC": ("iShares Bitcoin ETP", "XS2940466316", None),
+    "CASH": ("Xtrackers II EUR Overnight Rate Swap UCITS ETF 1C", "LU0290358497",
+             "liquidità in euro al tasso BCE (il modello usa i Treasury USA 1-3 anni in dollari)"),
+}
 
 # I tre profili: BASE fissa (chiave -> peso) e drawdown di riferimento. La parte "CASH" e' liquidita' fissa.
 # I tre profili: stesso motore, rischio diverso. BASE fissa di ETF (chiave -> peso relativo, somma 1) e quota di
@@ -647,6 +663,7 @@ def calcola(righe_cot, px, cartella=CARTELLA, scrivi=True, oggi=None, sat=None):
     mese_rot = g.date[ultimo_rib][:7]
     satellite_n = (sat or {}).get("n") or 5
     reg = ((sat or {}).get("registro") or {}).get(mese_rot)
+    ante = (sat or {}).get("anteprima") or None       # anteprima dei titoli del mese prossimo (provvisoria)
     if reg:
         titoli_az = [{"t": x["t"], "n": x["n"], "s": x["s"]} for x in reg["titoli"]]
     else:
@@ -672,9 +689,14 @@ def calcola(righe_cot, px, cartella=CARTELLA, scrivi=True, oggi=None, sat=None):
                  "trend": info.get(k, {}).get("trend"), "vol": round(info[k]["vol"] * 100, 1) if k in info else None}
                 for k, w in sorted(pesi.items(), key=lambda x: (x[0] == "CASH", -x[1]))]
         for c in comp:
+            u = STRUMENTI_UE.get(c["k"])
+            if u:
+                c["ue"] = {"nome": u[0], "isin": u[1], "nota": u[2]}
             if c["k"] == "AZ":
                 c["titoli"] = titoli_az
                 c["peso_titolo"] = round(c["peso"] / satellite_n, 1)
+                if ante and ante.get("titoli"):
+                    c["anteprima"] = ante
         cambi = []
         for (d0, p0), (d1, p1) in zip(storia[-13:-1], storia[-12:]):
             a = set(k for k in p1 if k != "CASH")

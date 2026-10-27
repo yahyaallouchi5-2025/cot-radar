@@ -243,8 +243,15 @@ def calcola(cartella, oggi=None, titoli=None, anomalia=False):
     cur = _n(oggi.strftime("%Y-%m"))
     fino = min(cur - 1, _n(LIVE_DAL) - 1)          # solo mesi chiusi e prima del live
     st = storico(tt, fino) if tt else []
+    # ANTEPRIMA dei titoli del mese prossimo: la stessa regola applicata ai prezzi di OGGI (mese non ancora chiuso).
+    # Serve a chi vuole prepararsi: e' PROVVISORIA, la lista che conta e' quella registrata l'ultimo giorno di borsa.
+    ante = None
+    if tt and _ym(cur + 1) not in reg:
+        ante = {"mese": _ym(cur + 1), "al": oggi.isoformat(),
+                "titoli": [{"t": x["t"], "n": x["n"], "s": x["s"], "pt": x["pt"], "v1a": round(x["v1a"] * 100, 1)}
+                           for x in scelta(tt, cur)]}
     dati = {"aggiornato": oggi.isoformat(), "n": N, "costo": COSTO, "live_dal": LIVE_DAL, "titoli_universo": len(tt),
-            "storico": st, "live": live(cartella, reg), "registro": reg,
+            "storico": st, "live": live(cartella, reg), "registro": reg, "anteprima": ante,
             "nota": "Azioni scelte: storico simulato con i titoli che oggi stanno negli indici, quindi ottimistico "
                     "(le aziende fallite o uscite non ci sono). Da " + A.MESI_IT[int(LIVE_DAL[5:]) - 1] + " " + LIVE_DAL[:4]
                     + " contano solo le scelte registrate dal vivo."}

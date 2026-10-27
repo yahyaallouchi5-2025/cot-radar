@@ -232,6 +232,16 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+## v6.37: portafoglio pronto da eseguire
+- Scheda Portafogli: "Portafoglio di <mese>" del profilo scelto, righe raggruppate per classe di attivo, per ogni
+  mercato lo strumento acquistabile in Europa (UCITS / ETC / ETP, `portafogli.STRUMENTI_UE`) con ISIN da copiare,
+  importi in euro sul capitale indicato, le 5 azioni scelte elencate (anteprima provvisoria del mese prossimo da
+  `satellite.json` -> `anteprima`, finche' la lista non e' registrata l'ultimo giorno di borsa).
+- Conto alla rovescia al prossimo ribilanciamento (09:00 ora italiana del primo giorno di borsa del mese).
+- Card "Rischio del mese" con metriche standard: max drawdown intra-mese, peggior rendimento, rendimento medio,
+  win rate, max drawdown storico; tooltip sul grafico anno per anno.
+- Test: `tests/test_strumenti_ue.py` (ogni mercato dei profili ha un ISIN valido, cifra di controllo inclusa).
+
 ## v6.36: voto a stelle
 - `web/js/27_voto.js`: dopo un po' di utilizzo (25 clic in totale e 2 minuti nella visita) compare in basso a destra
   una scheda discreta "Ti sta piacendo BoardEdge?" con 1-5 stelle e un commento facoltativo. Il voto arriva via email
