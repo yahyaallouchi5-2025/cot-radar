@@ -129,6 +129,11 @@ def scarica(ticker, intervallo="1d", periodo="2y", timeout=20, tentativi=TENTATI
             if pts:
                 return {"nome": m.get("longName") or m.get("shortName"), "valuta": m.get("currency"),
                         "borsa": m.get("fullExchangeName") or m.get("exchangeName")}, pts
+            # Risposta arrivata ma inutilizzabile: per lo storico MENSILE e' sempre la stessa (titolo quotato da poco o con
+            # buchi), quindi riprovare e' solo tempo perso -> ci si ferma subito e aggiorna() usa i prezzi giornalieri.
+            if intervallo == "1mo":
+                log.info("Yahoo %s: storico mensile non utilizzabile, uso i prezzi giornalieri", ticker)
+                return None
             log.warning("Yahoo %s (%s): risposta incompleta o anomala (tentativo %d/%d)", ticker, intervallo, n + 1, tentativi)
         except Exception as e:
             log.warning("Yahoo %s (%s): %s (tentativo %d/%d)", ticker, intervallo, getattr(e, "code", type(e).__name__),
@@ -141,6 +146,15 @@ def scarica(ticker, intervallo="1d", periodo="2y", timeout=20, tentativi=TENTATI
 def _mesi(x):
     """'AAAA-MM' -> numero progressivo del mese (per misurare la distanza tra due barre)."""
     return int(x[:4]) * 12 + int(x[5:7])
+
+
+def mensile_da_giornaliero(d):
+    """[(AAAA-MM-GG, prezzo)] -> [(AAAA-MM, ultimo prezzo del mese)]: storico mensile di riserva (copre solo gli anni
+    dei prezzi giornalieri, ma basta per i titoli quotati da poco, che uno storico lungo non ce l'hanno comunque)."""
+    m = {}
+    for g, v in d or []:
+        m[g[:7]] = v
+    return sorted(m.items())
 
 
 def mensile_ok(m):
@@ -201,15 +215,21 @@ def aggiorna(cartella, titoli=None, oggi=None, scarica=scarica, pausa=PAUSA):
             meta, d = nuovo
             rec = dict(vecchio, t=t, agg=oggi.isoformat(), agg_ora=datetime.now(timezone.utc).strftime("%H:%M"), d=d,
                        **{k: v for k, v in meta.items() if v})
-            # storico mensile: se manca o nel giorno del titolo (al massimo una volta a settimana)
+            # storico mensile: nel giorno del titolo (al massimo una volta a settimana) o se e' vecchio di oltre 10 giorni.
+            # Se Yahoo non da' uno storico mensile valido, si ricava dai prezzi giornalieri (ultimo prezzo di ogni mese)
+            # e si segna la data lo stesso: cosi' NON si richiede di nuovo ogni sera (prima ~3 tentativi a vuoto al giorno).
             vecchio_m = vecchio.get("agg_m", "")
-            if not mensile_ok(vecchio.get("m")) or (oggi.weekday() == giorno_mensile(t) and vecchio_m < (oggi - timedelta(days=3)).isoformat()) \
+            if (oggi.weekday() == giorno_mensile(t) and vecchio_m < (oggi - timedelta(days=3)).isoformat()) \
                     or vecchio_m < (oggi - timedelta(days=10)).isoformat():
                 mm = scarica(t, "1mo", "max")
                 if pausa:
                     time.sleep(pausa)
                 if mm:
                     rec["m"], rec["agg_m"] = mm[1], oggi.isoformat()
+                else:
+                    if not mensile_ok(vecchio.get("m")):
+                        rec["m"] = mensile_da_giornaliero(d)
+                    rec["agg_m"] = oggi.isoformat()
             _scrivi(f, rec)
             stato["ok"] += 1
         else:

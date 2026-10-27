@@ -129,3 +129,43 @@ class TestMensile(unittest.TestCase):
         st = A.stagionalita(m)
         self.assertEqual(st["mesi"][2]["n"], 3)        # marzo: 2010, 2011, 2012 (NON il salto dic 2012 -> mar 2013)
         self.assertLess(st["mesi"][2]["media"], 2)
+
+
+class TestMensileRiserva(unittest.TestCase):
+    """Titoli senza storico mensile valido su Yahoo (quotati da poco, buchi): niente tentativi a vuoto ogni sera,
+    lo storico mensile si ricava dai prezzi giornalieri."""
+
+    def test_da_giornaliero(self):
+        d = [("2026-01-30", 10.0), ("2026-02-02", 11.0), ("2026-02-27", 12.0), ("2026-03-02", 13.0)]
+        self.assertEqual(A.mensile_da_giornaliero(d), [("2026-01", 10.0), ("2026-02", 12.0), ("2026-03", 13.0)])
+
+    def test_niente_tentativi_ripetuti(self):
+        chiamate = []
+
+        def yahoo(t, intervallo="1d", periodo="2y"):
+            chiamate.append(intervallo)
+            return finto(t)[0], finto(t)[1] if intervallo == "1d" else None
+        sca = lambda t, intervallo="1d", periodo="2y": None if intervallo == "1mo" else yahoo(t, intervallo, periodo)
+        cart = tempfile.mkdtemp()
+        try:
+            oggi = date(2026, 10, 26)
+            A.aggiorna(cart, titoli=["NUOVO"], oggi=oggi, scarica=sca, pausa=0)
+            rec = json.load(open(os.path.join(cart, "grezzi", "NUOVO.json")))
+            self.assertTrue(A.mensile_ok(rec["m"]))           # mensile ricavato dai giornalieri
+            self.assertEqual(rec["agg_m"], oggi.isoformat())   # segnato: domani NON si richiede di nuovo
+            n = len(chiamate)
+            A.aggiorna(cart, titoli=["NUOVO"], oggi=oggi + timedelta(days=1), scarica=lambda *a, **k: (
+                chiamate.append(k.get("intervallo", a[1] if len(a) > 1 else "1d")) or finto(a[0])), pausa=0)
+            self.assertNotIn("1mo", chiamate[n:])
+        finally:
+            shutil.rmtree(cart)
+
+    def test_scarica_mensile_anomalo_un_solo_tentativo(self):
+        class R:
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+            def read(self): return json.dumps({"chart": {"result": [{"meta": {}, "timestamp": [], "indicators": {"quote": [{"close": []}]}}]}}).encode()
+        with mock.patch("urllib.request.urlopen", return_value=R()) as u, mock.patch("time.sleep") as s:
+            self.assertIsNone(A.scarica("X", "1mo", "max", attesa=2))
+            self.assertEqual(u.call_count, 1)
+            s.assert_not_called()
