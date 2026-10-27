@@ -41,6 +41,15 @@ class Bilanci(unittest.TestCase):
         self.assertEqual(s["anni"][-1]["dn"], 50)
         self.assertAlmostEqual(s["crescita"], 8.8, places=1)
 
+    def test_solida_senza_debito_dichiarato(self):
+        # bug del primo giro live: debito e cassa assenti (dn = None) facevano crollare tutto il giro dei bilanci
+        a = azienda([50, 60, 70, 80, 90])
+        for k in ("LongTermDebt", "CashAndCashEquivalentsAtCarryingValue"):
+            del a["facts"]["us-gaap"][k]
+        s = F.estrai(a)
+        self.assertEqual(s["giudizio"], "SOLIDA")
+        self.assertIn("non indicato", s["motivo"])
+
     def test_perdite_e_indebitata(self):
         s = F.estrai(azienda([50, -20, 10, -5, 5], debito=2000, cassa=10))
         self.assertEqual(s["perdite"], 2)

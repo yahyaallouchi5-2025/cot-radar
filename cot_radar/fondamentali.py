@@ -63,7 +63,8 @@ def _ua():
     return f"BoardEdge (analisi di mercato) {c}" if "@" in c else None
 
 
-def _get(url, ua, timeout=40, tentativi=3):
+def _get(url, ua, timeout=40, tentativi=2):
+    """JSON dalla SEC. 404 = azienda senza dati: nessun nuovo tentativo. Altri errori: 1 solo nuovo tentativo."""
     for n in range(tentativi):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": ua, "Accept-Encoding": "identity"})
@@ -75,7 +76,8 @@ def _get(url, ua, timeout=40, tentativi=3):
             log.warning("SEC %s: HTTP %s (tentativo %d/%d)", url.rsplit("/", 1)[-1], e.code, n + 1, tentativi)
         except Exception as e:
             log.warning("SEC %s: %s (tentativo %d/%d)", url.rsplit("/", 1)[-1], type(e).__name__, n + 1, tentativi)
-        time.sleep(2 * (3 ** n))
+        if n + 1 < tentativi:                            # niente attesa inutile dopo l'ultimo tentativo
+            time.sleep(3)
     return None
 
 
@@ -147,8 +149,10 @@ def _giudizio(anni, perdite, settore):
     if perdite == 0 and len(anni) >= 3 and (finanza or dn is None or dn <= 3 * medio):
         if finanza:
             return "SOLIDA", "utile in tutti gli anni (banca/assicurazione: il debito fa parte dell'attivita')"
-        return "SOLIDA", "utile in tutti gli anni e " + ("piu' liquidita' che debiti" if dn is not None and dn <= 0
-                                                          else f"debito netto ripagabile in {max(dn, 0) / medio:.1f} anni di utile")
+        if dn is None:                                  # debito e cassa non dichiarati nel formato standard XBRL
+            return "SOLIDA", "utile in tutti gli anni (debito non indicato nel bilancio)"
+        return "SOLIDA", "utile in tutti gli anni e " + ("piu' liquidita' che debiti" if dn <= 0
+                                                          else f"debito netto ripagabile in {dn / medio:.1f} anni di utile")
     return "NELLA MEDIA", ((f"{perdite} anno" if perdite == 1 else f"{perdite} anni") + f" in perdita su {len(anni)}" if perdite else "utile costante ma debito netto superiore a 3 anni di utile")
 
 
@@ -192,7 +196,11 @@ def aggiorna(cartella, oggi=None, el=None, scarica=None, pausa=PAUSA):
             fatti = get(URL_FATTI.format(cik=cik)) if cik else None
             if pausa and cik:
                 time.sleep(pausa)
-            sintesi = estrai(fatti, x.get("s")) if fatti else None
+            try:                                         # un'azienda con dati strani NON deve fermare le altre
+                sintesi = estrai(fatti, x.get("s")) if fatti else None
+            except Exception as e:
+                log.warning("bilanci SEC: %s non elaborato (%s: %s)", t, type(e).__name__, e)
+                sintesi = None
             if sintesi:
                 vecchio = dict(sintesi, t=t, agg=oggi.isoformat(), fonte="SEC EDGAR (10-K)")
                 A._scrivi(f, vecchio)
