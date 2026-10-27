@@ -3,7 +3,7 @@ paracadute.py - il sito non deve MAI peggiorare.
 
 Dopo ogni aggiornamento confrontiamo il risultato nuovo con l'ultimo risultato BUONO (dati/stato.json):
 
-  * se mancano pezzi rispetto all'ultima volta (strumenti o coppie spariti, sezione mercati/mutui vuota)
+  * se mancano pezzi rispetto all'ultima volta (strumenti o coppie spariti, sezione mercati vuota)
     -> NON pubblichiamo: resta online l'ultima versione buona  (livello CRITICAL nel registro)
   * se una fonte non e' online (server giu', manutenzione...) la pagina si pubblica lo stesso con gli
     ultimi dati salvati, ma l'esito diventa "critico"  (livello CRITICAL nel registro)
@@ -48,7 +48,7 @@ def valuta(nuovo, vecchio):
             if v and n < v * TOLLERANZA:
                 pubblica = False
                 critici.append(f"{nome}: {n} invece di {v} -> pagina NON pubblicata, resta la versione precedente")
-        for chiave, nome in (("mercato", "modello di mercato"), ("mutui", "sezione mutui")):
+        for chiave, nome in (("mercato", "modello di mercato"),):          # mutui tolti in v6.35
             if vecchio.get(chiave) and not nuovo.get(chiave):
                 pubblica = False
                 critici.append(f"{nome}: assente (prima c'era) -> pagina NON pubblicata, resta la versione precedente")

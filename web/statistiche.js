@@ -65,7 +65,7 @@
   ["#gapri",             function(){return ["guida"];}],
   ["#evtutti",           function(){return ["eventi_tutti"];}],
   ["button.info",        function(el){return ["info",{voce:(el.getAttribute("aria-label")||el.title||"").slice(0,40)}];}],
-  // card cliccabile = grafico a candele (come app.js: non se il click e' su un pulsante o link dentro la card)
+  // card cliccabile = grafico a candele (come web/js: non se il click e' su un pulsante o link dentro la card)
   ["[data-tv]",          function(el,t){return t.closest("button,a,input")?null:["grafico",{strumento:el.dataset.tv.slice(2),tipo:el.dataset.tv[0]=="p"?"coppia":"mercato"}];}]
  ];
  document.addEventListener("click",function(ev){var t=ev.target;if(!t||!t.closest)return;

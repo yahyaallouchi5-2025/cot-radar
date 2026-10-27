@@ -423,6 +423,13 @@ def main(argv):
     except Exception:
         import traceback
         log.error("satellite non calcolato:\n%s", traceback.format_exc())
+    # bilanci delle aziende USA dalla SEC (fondamentali.py): una volta a settimana per titolo, mai bloccante
+    try:
+        from . import fondamentali
+        fondamentali.aggiorna(cartella, el=titoli)
+    except Exception:
+        import traceback
+        log.error("bilanci SEC non aggiornati:\n%s", traceback.format_exc())
     print(json.dumps({k: (v if not isinstance(v, list) else len(v)) for k, v in stato.items()}, ensure_ascii=False))
     return 1 if stato.get("anomalia") else 0
 

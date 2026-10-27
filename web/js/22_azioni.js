@@ -131,9 +131,37 @@ try{(function(){const el=$("azioni");if(!el)return;
    <div class="azgraf">${grafico(serie(),ST.per=="max",t.val)}</div>
    <div class="azmini"><div><span>1 mese</span>${pc(t.v1m)}</div><div><span>3 mesi</span>${pc(t.v3m)}</div><div><span>Da inizio anno</span>${pc(t.vytd)}</div>
     <div><span>1 anno</span>${pc(t.v1a)}</div><div><span>Dal massimo 52 sett.</span>${pc(t.dmax)}</div><div><span>Rispetto media 200g</span>${pc(t.t200)}</div></div>
+   <div class="azbil">${sk("40%",16)}${sk("100%",140,"border-radius:14px;margin-top:10px")}</div>
    ${stag}<p class="small azfonte">${esc(x.borsa||"")}${x.val?" &middot; prezzi in "+esc(x.val):""}</p>`;
   c.querySelectorAll(".azper button").forEach(b=>b.onclick=()=>{ST.per=b.dataset.p;corpo(ov,t,x);});
+  bilancio(c.querySelector(".azbil"),t);
   tooltip(c.querySelector(".azgraf"),serie(),t.val,ST.per=="max");}
+
+ // --- BILANCIO (aziende USA, fonte SEC: vedi cot_radar/fondamentali.py): ricavi, utile, anni in perdita, debito netto
+ //     e giudizio SOLIDA / NELLA MEDIA / INDEBITATA. File pubblico/bilanci/<T>.json; assente = azienda non USA.
+ const GIU={"SOLIDA":["ok","Solida"],"NELLA MEDIA":["med","Nella media"],"INDEBITATA":["ko","Indebitata"]};
+ function dollari(v){if(v==null)return "n/d";const a=Math.abs(v),s=v<0?"&minus;":"";
+  return a>=1e9?s+fx(a/1e9,a>=1e11?0:1)+" mld $":a>=1e6?s+fx(a/1e6,0)+" mln $":s+fx(a,0)+" $";}
+ function bilancio(box,t){if(!box)return;
+  fetch(BASE+"bilanci/"+encodeURIComponent(t.t.replace("^","_"))+".json",{cache:"no-cache"}).then(r=>r.ok?r.json():null).catch(()=>null).then(b=>{
+   if(!box.isConnected)return;
+   if(!b||!b.anni||!b.anni.length){box.innerHTML=`<h4 class="aztit">Bilancio</h4><p class="small">I bilanci sono disponibili per le aziende USA (S&amp;P 500 e Nasdaq-100), fonte SEC.</p>`;return;}
+   const A=b.anni,u=A[A.length-1],g=GIU[b.giudizio]||["med",b.giudizio];
+   const mx=Math.max(1,...A.map(y=>Math.abs(y.ricavi||0))),W=440,H=150,T=10,B=22,bw=(W/A.length);
+   const Y0=T+(H-T-B)*0.78,Ys=v=>Math.min(Y0-T,(Math.abs(v)/mx)*(Y0-T)),Yn=v=>Math.min(H-B-Y0-4,(Math.abs(v)/mx)*(Y0-T));   // zero al 78%: le perdite scendono sotto
+   const barre=A.map((y,i)=>{const x=i*bw,r=Ys(y.ricavi||0),uu=y.utile>=0?Ys(y.utile):Yn(y.utile);
+    return `<rect x="${(x+bw*.16).toFixed(1)}" y="${(Y0-r).toFixed(1)}" width="${(bw*.32).toFixed(1)}" height="${r.toFixed(1)}" rx="3" class="bric"><title>${y.a}: ricavi ${dollari(y.ricavi).replace("&minus;","-")}</title></rect>
+     <rect x="${(x+bw*.52).toFixed(1)}" y="${(y.utile>=0?Y0-uu:Y0).toFixed(1)}" width="${(bw*.32).toFixed(1)}" height="${Math.max(1,uu).toFixed(1)}" rx="3" class="${y.utile>=0?"butu":"bper"}"><title>${y.a}: utile ${dollari(y.utile).replace("&minus;","-")}</title></rect>
+     <text x="${(x+bw/2).toFixed(1)}" y="${H-6}" text-anchor="middle" class="pax">${y.a}</text>`;}).join("");
+   box.innerHTML=`<h4 class="aztit">Bilancio <span class="small">(ultimi ${A.length} anni fiscali, fonte SEC)</span></h4>
+    <div class="bgiu ${g[0]}"><b>${g[1]}</b><span>${esc(b.motivo||"")}</span></div>
+    <div class="azmini bmini"><div><span>Ricavi ${u.a}</span><b>${dollari(u.ricavi)}</b>${b.crescita!=null?`<em class="${b.crescita>=0?"up":"down"}">${b.crescita>0?"+":""}${fx(b.crescita,1)}% l'anno</em>`:""}</div>
+     <div><span>Utile netto ${u.a}</span><b class="${u.utile>=0?"up":"down"}">${dollari(u.utile)}</b><em>margine ${u.ricavi?fx(u.utile/u.ricavi*100,1)+"%":"n/d"}</em></div>
+     <div><span>Anni in perdita</span><b class="${b.perdite?"down":"up"}">${b.perdite} su ${A.length}</b></div>
+     <div><span>${u.dn!=null&&u.dn<0?"Liquidit&agrave; netta":"Debito netto"}</span><b>${u.dn==null?"n/d":dollari(Math.abs(u.dn))}</b><em>${u.dn!=null&&u.utile>0&&u.dn>0?fx(u.dn/u.utile,1)+" anni di utile":""}</em></div></div>
+    <svg viewBox="0 0 ${W} ${H}" class="bsvg" preserveAspectRatio="none" role="img" aria-label="Ricavi e utile per anno"><line x1="0" x2="${W}" y1="${Y0}" y2="${Y0}" class="pm0"/>${barre}</svg>
+    <div class="pmasse bleg"><span><i class="bric"></i>ricavi</span><span><i class="butu"></i>utile</span><span><i class="bper"></i>perdita</span></div>
+    <p class="small">Bilanci annuali (10-K) depositati alla SEC: arrivano 2-3 mesi dopo la chiusura dell'anno fiscale e qui si aggiornano ogni settimana. Giudizio automatico e semplificato, non una valutazione di investimento.</p>`;});}
 
  function grafico(s,logar,val){if(s.length<2)return `<div class="small" style="padding:40px;text-align:center">Dati insufficienti.</div>`;
   const W=640,H=240,L=8,R=58,T=12,B=26,v=s.map(p=>p[1]),f=logar?Math.log:(z=>z),lo=f(Math.min(...v)),hi=f(Math.max(...v));

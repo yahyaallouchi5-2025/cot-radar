@@ -97,8 +97,7 @@ def sources_status(cache, status, errors, assets, mort, fred):
                     "msg": f"Il bilancio Fed del {fd(f['expected'])} non e' ancora su FRED." if f["late"] else ""})
 
     # serie giornaliere/settimanali: "in ritardo" se l'ultimo dato e' piu' vecchio di `tol` giorni
-    for name, s, tol, nxt in (("Mercati USA (FRED)", fred.get("DGS2"), 5, "giornaliero"),
-                              ("Mutui USA 30a", fred.get("MORTGAGE30US"), 9, "ogni giovedi'")):
+    for name, s, tol, nxt in (("Mercati USA (FRED)", fred.get("DGS2"), 5, "giornaliero"),):
         if s:
             late = s[-1][0] < (today - timedelta(days=tol)).isoformat()
             out.append({"name": name, "last": fd(s[-1][0]), "next": nxt,

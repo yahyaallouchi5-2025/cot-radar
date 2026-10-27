@@ -2,7 +2,7 @@
 <!--
   index.html - struttura della dashboard.
   Python (cot_radar/pagina.py) sostituisce i segnaposto CSS, JS e DATA (tra doppie graffe)
-  con web/stile.css, web/app.js e i dati in formato JSON. Ogni id (es. id="kpis") viene riempito da app.js.
+  con web/stile.css, web/js/*.js e i dati in formato JSON. Ogni id (es. id="kpis") viene riempito da web/js.
 -->
 <html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>BoardEdge</title>
@@ -21,7 +21,7 @@
 </style></head><body><div class="app">
 <!-- SIDEBAR (collassabile): stato dei dati, guida e, in futuro, account utente e impostazioni.
      Su PC: freccia per ridurla a una colonna di icone (la scelta resta salvata nel browser).
-     Su telefono: si apre dal pulsante con le tre linee e si chiude toccando fuori. Vedi app.js, sezione "sidebar". -->
+     Su telefono: si apre dal pulsante con le tre linee e si chiude toccando fuori. Vedi web/js, sezione "sidebar". -->
 <aside id="side" class="side">
  <div class="sbrand"><span class="blogo" aria-label="BoardEdge"><i></i><b>BOARD<br><em>EDGE</em></b></span><span class="snome"></span>
   <button id="scomprimi" class="sbtn" title="Riduci / espandi la barra laterale" aria-label="Riduci o espandi"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button></div>
@@ -31,7 +31,8 @@
   <svg viewBox="0 0 24 24"><path d="M21.5 3.5L2.8 10.7c-.9.4-.9 1.6.1 1.9l4.6 1.5 1.8 5.6c.3.8 1.3 1 1.9.4l2.6-2.5 4.7 3.5c.7.5 1.7.1 1.9-.7l3.1-15c.2-1.1-.9-1.9-2-1.4z"/><path d="M8 14l10-7.5"/></svg>
   <span><b>Segnali gratis su Telegram</b><small>Riepilogo ogni venerdì · iscriviti</small></span></a>
  <div class="sgruppo"><div class="stit"><svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg><span>Stato dati</span></div><div id="status" class="sstato"></div></div>
- <div class="sgruppo"><button id="gapri" class="sitem" title="Come funziona"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg><span>Guida</span></button></div>
+ <div class="sgruppo"><button id="fbapri" class="sitem" title="Scrivici: suggerimenti, errori, domande"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/></svg><span>Feedback</span></button>
+ <button id="gapri" class="sitem" title="Come funziona"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg><span>Guida</span></button></div>
  <div class="sgruppo sfondo"><div class="stit"><span>Account</span></div>
   <button class="sitem" disabled title="In arrivo"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>Accedi <small>presto</small></span></button>
   <button class="sitem" disabled title="In arrivo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span>Impostazioni <small>presto</small></span></button></div>
@@ -44,7 +45,7 @@
 <nav id="nav">
 <!-- ordine delle schede: Dashboard, poi gli approfondimenti piu' usati (stagionalita', macro, strumenti, correlazioni), poi il resto -->
 <button data-t="sig" class="on">Dashboard</button><button data-t="port">Portafogli</button><button data-t="azioni">Azionario</button><button data-t="pattern">Pattern Detector</button><button data-t="stag">Stagionalit&agrave;</button><button data-t="mkt">Mercato e macro</button><button data-t="assets">Strumenti</button><button data-t="corr">Correlazioni</button>
-<button data-t="pairs">Forex</button><button data-t="verifica">Backtest storico</button><button data-t="mortg">Mutui</button><button data-t="registro">Registro</button>
+<button data-t="pairs">Forex</button><button data-t="verifica">Backtest storico</button><button data-t="registro">Registro</button>
 </nav>
 
 <section id="sig" class="on">
@@ -59,10 +60,15 @@
 <section id="pairs"><h2>Forex: tutte le coppie di valute</h2><p class="sub">Ordinate per punteggio. "COT" e "Mercato" sono le due componenti del punteggio finale.</p><div class="filters" id="filters"></div><div class="tablewrap"><table id="ptable"></table></div></section>
 <section id="assets"><h2>Forza di ogni strumento</h2><p class="sub">Barra verde = spinta in acquisto, rossa = in vendita. Il testo sotto riassume cosa hanno fatto gli speculatori e cosa dice il mercato.</p><div class="filters" id="sfilters"></div><div id="alist"></div></section>
 <section id="mkt"><div id="mtop"></div></section>
-<section id="mortg"><div id="mortgage"></div></section>
-<section id="corr"><h2>Correlazioni dei flussi speculativi</h2><p class="sub">Quanto gli speculatori comprano e vendono due strumenti insieme (+1) o in modo opposto (-1), ultime 52 settimane.</p>
+<!-- CORRELAZIONI: due viste. "Prezzi" (correlazioni.py, ogni giorno: chi sale e scende insieme e chi al contrario,
+     per gruppo e per strumento) e "Flussi COT" (analisi.py, ogni settimana: cosa comprano/vendono gli speculatori).
+     Vedi web/js/09_correlazioni.js -->
+<section id="corr"><h2>Correlazioni</h2><p class="sub">Chi si muove insieme (+1), chi al contrario (&minus;1) e chi non ha legami (0).</p>
+<div class="vfswitch cvista" role="tablist"><button data-cv="px" class="on" role="tab">Prezzi <small>ogni giorno</small></button><button data-cv="cot" role="tab">Flussi COT <small>ogni settimana</small></button></div>
+<div id="cpx"></div>
+<div id="ccot" hidden><p class="sub">Quanto gli speculatori comprano e vendono due strumenti insieme (+1) o in modo opposto (-1), ultime 52 settimane.</p>
 <div class="filters" id="cfilters"></div><div class="grid k2" style="margin-bottom:20px"><div class="card" id="together"></div><div class="card" id="opposite"></div></div>
-<div class="tablewrap" style="padding:16px"><table class="heat" id="heat"></table></div></section>
+<div class="tablewrap" style="padding:16px"><table class="heat" id="heat"></table></div></div></section>
 <section id="port"></section>
 <section id="azioni"></section>
 <section id="pattern"></section>
@@ -71,16 +77,16 @@
 <section id="registro"></section>
 <div class="foot" id="foot"></div>
 </div></div>
-<!-- guida laterale: si apre dal pulsante "Guida" in alto (vedi app.js, sezione "guida laterale") -->
+<!-- guida laterale: si apre dal pulsante "Guida" in alto (vedi web/js, sezione "guida laterale") -->
 <aside id="guida" class="guida" hidden><div class="gpannello"><div class="gtop"><div class="gtesta"><b>Come funziona</b><button id="gchiudi" class="tvbtn" title="Chiudi (Esc)">&#x2715;</button></div>
 <nav id="gindice" class="gindice"></nav></div><div id="guide" class="guide"></div></div></aside>
-<!-- pannello del grafico a candele (si apre al clic su una scheda: vedi app.js, sezione "grafico") -->
+<!-- pannello del grafico a candele (si apre al clic su una scheda: vedi web/js, sezione "grafico") -->
 <div id="tvmodal" class="tvmodal" hidden><div id="tvpannello" class="tvpannello">
  <div class="tvtesta"><div><div id="tvtitolo"></div><div id="tvsotto" class="small"></div></div>
   <div class="tvcomandi"><!-- H1/H4/D/W tolti: l'intervallo si sceglie dalla barra di TradingView dentro il grafico -->
   <button id="tvfull" class="tvbtn" title="Schermo intero">&#x26F6;<span class="lungo"> Schermo intero</span></button><a id="tvlink" class="tvbtn" target="_blank" rel="noopener"><span class="lungo">TradingView</span><span class="corto">TV</span> &#x2197;</a><button id="tvchiudi" class="tvbtn" title="Chiudi (Esc)">&#x2715;</button></div></div>
  <div id="tvchart" class="tvchart"></div>
- <!-- pannello COT sotto il grafico: flussi settimanali dei Non Commercial (vedi app.js, disegnaCOT) -->
+ <!-- pannello COT sotto il grafico: flussi settimanali dei Non Commercial (vedi web/js, disegnaCOT) -->
  <div id="tvmaniglia" class="tvmaniglia" title="Trascina per allargare o stringere il pannello COT (doppio clic: misura iniziale)"><i></i></div>
  <div id="tvcot" class="tvcot"></div></div></div>
 <script>

@@ -5,13 +5,14 @@ COT Radar - pacchetto Python.
 Mappa dei moduli (in ordine di "viaggio" dei dati):
   config.py      impostazioni, strumenti, indirizzi delle fonti
   azioni.py      scheda Azioni: ~630 titoli per settore da Yahoo (ramo git "azioni", workflow serale)
+  correlazioni.py chi si muove insieme e chi al contrario (prezzi giornalieri: indici, settori, materie prime...)
+  fondamentali.py bilanci delle aziende USA dalla SEC (ricavi, utile, anni in perdita, debito netto)
   satellite.py   le 5 azioni scelte dei portafogli (storico simulato + registro live, ramo "azioni")
   pattern.py     Pattern Detector: inversione a 3 candele su forex e materie prime (H4, Daily)
   fonti.py       download da CFTC / FRED / BCE + copia locale (cache)
   calcoli.py     matematica di base (z-score, COT Index, regressione)
   cot.py         punteggio COT di ogni strumento
   mercato.py     punteggio "Mercato": cosa e' gia' scontato nei prezzi + liquidita' Fed
-  mutui.py       tassi mutui BCE e stima dei mesi non ancora pubblicati
   analisi.py     unisce tutto: strumenti, coppie, correlazioni
   calendario.py  orari di uscita, ritardi, stato delle fonti
   pagina.py      costruisce la pagina HTML (usa i file in web/)
@@ -39,4 +40,4 @@ Mappa dei moduli (in ordine di "viaggio" dei dati):
   vetrina.py     landing page del sito (radice) con i numeri veri; il terminale sta in /terminale/
   riepilogo.py   riepilogo settimanale dei segnali per categoria di asset (Telegram), dai dati della pagina online
 """
-__version__ = "6.34"
+__version__ = "6.35"

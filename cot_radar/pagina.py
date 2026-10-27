@@ -5,7 +5,7 @@ pagina.py - trasforma i risultati in UNA pagina HTML autonoma (si apre anche sen
 La grafica sta nella cartella web/:
   web/index.html  struttura della pagina (con i segnaposto {{CSS}} e {{JS}})
   web/stile.css   aspetto (colori, spazi, versione telefono, tema scuro)
-  web/app.js      disegna tabelle, schede e grafici a partire dai dati
+  web/js/*.js     disegnano tabelle, schede e grafici a partire dai dati (un file per scheda)
 Qui li uniamo in un solo file e ci inseriamo i dati in formato JSON (variabile D nel JavaScript).
 
 DEBUG: nel browser premi F12 -> scheda "Console" e scrivi  D  per vedere tutti i dati della pagina.
@@ -18,15 +18,15 @@ from datetime import datetime, timezone
 
 from .analisi import analyse
 from .calendario import sources_status
+from . import __version__
 from .config import (ARCHIVI_COT, ASSETS, DIVERGENCE_MIN, MACRO_WEIGHT, NORMAL, REG_WEEKS, SECTORS, STRONG,
-                     STATISTICHE_ID, TELEGRAM_CANALE, TV_PAIRS, TV_SYMBOLS, WEB_DIR, WEIGHTS)
+                     FEEDBACK_CHIAVE, STATISTICHE_ID, TELEGRAM_CANALE, TV_PAIRS, TV_SYMBOLS, WEB_DIR, WEIGHTS)
 from .controlli import controlla
 from .cot import cot_series
 from .fonti import get_cftc_tutto, get_fred, load_all, scarica_archivio
 from .log import log, raccoglitore
 from .mercato import fed_liquidity
-from .mutui import mortgages
-from . import agenda, backtest, notizie, portafogli, registro, stagionalita, storico, volatilita
+from . import agenda, backtest, correlazioni, notizie, portafogli, registro, stagionalita, storico, volatilita
 from .admin import pubblico
 
 
@@ -46,8 +46,14 @@ def template():
     def read(name):
         with open(os.path.join(WEB_DIR, name), encoding="utf-8") as f:
             return f.read()
-    return read("index.html").replace("{{CSS}}", read("stile.css")).replace("{{JS}}", read("app.js") + read("manutenzione.js") + read("portafogli.js") + read("azioni.js") + read("topaz.js") + read("pattern.js")) \
-        .replace("{{TELEGRAM}}", TELEGRAM_CANALE).replace("{{STATISTICHE}}", statistiche())
+    # CODICE DELLA PAGINA: un file per scheda in web/js/, uniti in ordine di nome (01_base.js per primo: aiuti comuni,
+    # protezione anti-crollo; poi una scheda per file). Lo script finale e' uno solo, come prima: le variabili
+    # globali definite in 01_base.js valgono per tutti. Per aggiungere una scheda: nuovo file con il numero giusto.
+    js = "".join(read(os.path.join("js", f)) for f in sorted(os.listdir(os.path.join(WEB_DIR, "js"))) if f.endswith(".js"))
+    return read("index.html").replace("{{CSS}}", read("stile.css")).replace("{{JS}}", js) \
+        .replace("{{TELEGRAM}}", TELEGRAM_CANALE).replace("{{STATISTICHE}}", statistiche()) \
+        .replace("__FEEDBACK_KEY__", "".join(c for c in (os.environ.get("WEB3FORMS_KEY") or FEEDBACK_CHIAVE)
+                                             if c.isalnum() or c == "-"))
 
 
 def statistiche():
@@ -76,12 +82,8 @@ def build(data_source=load_all, demo=False, sito=False):
     assets, pairs, corr, market = analyse(cache["cot"]["data"], fred, ecb)
     if not assets:
         raise RuntimeError("nessun dato COT utilizzabile")
-    # mutui e liquidita' Fed sono "extra": se falliscono la dashboard si crea lo stesso
-    try:
-        mort = mortgages(ecb, fred)
-    except Exception:
-        log.warning("mutui non calcolati:\n%s", traceback.format_exc())
-        mort = None
+    # la liquidita' Fed e' un "extra": se fallisce la dashboard si crea lo stesso (scheda Mutui tolta in v6.35)
+    mort = None
     try:
         fed = fed_liquidity(fred)
     except Exception:
@@ -162,7 +164,7 @@ def build(data_source=load_all, demo=False, sito=False):
         log.warning("volatilita' non calcolata:\n%s", traceback.format_exc())
     # PORTAFOGLI MODELLO a rotazione mensile (portafogli.py): conservativo, moderato, aggressivo.
     # Isolati come il resto: se Yahoo o il calcolo falliscono manca solo la scheda "Portafogli".
-    port = None
+    port, px = None, None
     try:
         righe = righe_cot or cache["cot"]["data"]
         px = portafogli.prezzi_demo() if demo else portafogli.prezzi()
@@ -188,6 +190,12 @@ def build(data_source=load_all, demo=False, sito=False):
         port = portafogli.di_riserva()
         if port:
             log.error("portafogli: mostrata l'ultima scheda salvata (%s) con avviso di manutenzione", port.get("aggiornato"))
+    # CORRELAZIONI DEI PREZZI (correlazioni.py): stessi prezzi dei portafogli + settori USA e dollaro. Isolate.
+    corr_px = None
+    try:
+        corr_px = correlazioni.calcola(px)
+    except Exception:
+        log.warning("correlazioni dei prezzi non calcolate:\n%s", traceback.format_exc())
     # punteggio corretto = COT/mercato + notizie + stagionalita' (il punteggio originale resta quello mostrato nell'anello)
     for p in pairs:
         extra = ((p.get("news") or {}).get("adj") or 0) + ((p.get("stag") or {}).get("adj") or 0)
@@ -198,8 +206,7 @@ def build(data_source=load_all, demo=False, sito=False):
         log.exception("stato delle fonti non calcolato")
         sources = []
     controlli = controlla(assets, pairs, fred, ecb, mort)        # qualita' dei dati (errori "invisibili")
-    log.info("Calcolo fatto: %d strumenti, %d coppie, mercato %s, mutui %s",
-             len(assets), len(pairs), "si" if market else "no", "si" if mort else "no")
+    log.info("Calcolo fatto: %d strumenti, %d coppie, mercato %s", len(assets), len(pairs), "si" if market else "no")
 
     n_err = raccoglitore.conta("ERROR") + raccoglitore.conta("CRITICAL")
     n_warn = raccoglitore.conta("WARNING")
@@ -208,24 +215,31 @@ def build(data_source=load_all, demo=False, sito=False):
         "durata_s": round((datetime.now() - t0).total_seconds(), 1),
         "esito": "errori" if n_err else ("avvisi" if n_warn else "ok"),
         "errori": n_err, "avvisi": n_warn, "fonti": status,
-        "strumenti": len(assets), "coppie": len(pairs), "mercato": bool(market), "mutui": bool(mort),
+        "strumenti": len(assets), "coppie": len(pairs), "mercato": bool(market),
         "voci": raccoglitore.voci[-200:],             # ultimi avvisi/errori di questa esecuzione
         "controlli": controlli, "demo": demo, "storico": rie_storico, "archivio_cot": rie_cot, "archivi_extra": rie_extra,
     }
     meta = {"now": datetime.now().strftime("%d/%m/%Y %H:%M"), "w": WEIGHTS, "strong": STRONG, "normal": NORMAL,
-            "divmin": DIVERGENCE_MIN, "mw": MACRO_WEIGHT, "regw": REG_WEEKS, "demo": demo}
+            "divmin": DIVERGENCE_MIN, "mw": MACRO_WEIGHT, "regw": REG_WEEKS, "demo": demo,
+            "version": __version__}
     data = {"meta": meta, "sources": sources,
-            "assets": assets, "pairs": pairs, "corr": corr, "market": market, "fed": fed, "mortgage": mort,
+            "assets": assets, "pairs": pairs, "corr": corr, "corr_px": corr_px, "market": market, "fed": fed,
             "order": [a[0] for a in ASSETS] + ["USD"], "sectors": SECTORS, "stato": pubblico(stato), "admin": "__ADMIN__", "eventi": news["prossimi"], "agenda": agenda_out,
             "stag": stag, "stag_meta": stag_meta, "reg": reg, "bt": bt, "vol": vol, "port": port,
             "tv": {k: {"s": v[0], "inv": v[1]} for k, v in TV_SYMBOLS.items()}, "tvp": TV_PAIRS}
     # "stato" pubblico = solo esito e fonti; "admin" = segnaposto che main.py sostituisce con il registro
     # completo (cifrato sul sito, in chiaro sul PC). Vedi cot_radar/admin.py
     # JSON compatto (senza spazi dopo virgole e due punti): stessa informazione, pagina piu' leggera
+    # SUL SITO registro live + backtest (oltre meta' della pagina) vanno in un file a parte, letto dalla scheda
+    # "Backtest storico" solo quando la si apre (web/js/13_verifica.js). main.py lo scrive accanto alla pagina.
+    verifica = None
+    if sito:
+        verifica = clean({"reg": data.pop("reg"), "bt": data.pop("bt")})
+        data["verifica"] = "verifica.json?v=" + datetime.now().strftime("%Y%m%d%H%M")
     payload = json.dumps(clean(data), ensure_ascii=False, separators=(",", ":"))
     ULTIMI.clear()
     ULTIMI.update(data=clean({"assets": assets, "pairs": pairs}), bt_dal=(bt or {}).get("dal"), bt_n=(bt or {}).get("n"),
-                  demo=demo)
+                  demo=demo, verifica=verifica)
     # "</" dentro <script> chiuderebbe il tag per errore: lo "spezziamo" in "<\/"
     return template().replace("{{DATA}}", payload.replace("</", "<\\/")), clean(stato)
 

@@ -282,7 +282,7 @@ def analizza(pts, oggi=None):
 
 
 # --------------------------------------------------------------------------- 5) backtest: decide il peso
-def backtest(hist, prezzi, pairs):
+def backtest(hist, prezzi, pairs, escludi=()):
     """Segnali COT passati divisi in: stagionalita' a favore / contraria / neutra (calcolata con i soli anni
     precedenti al segnale). Restituisce le % di successo in 4 settimane e il PESO da usare."""
     storici = {k: conferme.punteggi_storici(s) for k, s in hist.items()}
@@ -298,7 +298,7 @@ def backtest(hist, prezzi, pairs):
         storici["USD"] = usd
     casi = []                                              # (prezzi, {data: punteggio del segnale})
     for k, st in storici.items():
-        if k in prezzi and k != "USD":
+        if k in prezzi and k != "USD" and k not in escludi:
             casi.append((prezzi[k], {d: sc for d, sc in st.items() if abs(sc) >= NORMAL}))
     for p in pairs:
         b, q = p.get("base"), p.get("quote")
@@ -356,20 +356,17 @@ def calcola(hist, prezzi, pairs, assets, oggi=None):
     la sintesi "stag" (score, correzione, testo). Restituisce (dati per la scheda Stagionalita', meta).
     oggi = giorno di partenza delle finestre: di norma il venerdi' di uscita del COT (vedi ancora_cot)."""
     oggi = oggi or date.today()
+    # v6.35: NIENTE STAGIONALITA' SUL FOREX (valute, dollaro e coppie): sui cambi gli effetti calendario sono deboli e
+    # poco stabili. Resta per indici, materie prime, metalli, tassi e cripto.
+    fx = {k for k, a in assets.items() if (a or {}).get("group") == "Valute"} | {"DXY", "USD"}
     tab = {}
     for k in assets:
-        if k in prezzi:
+        if k in prezzi and k not in fx:
             r = analizza(prezzi[k], oggi)
             if r:
                 tab[k] = r
-    for p in pairs:
-        pts = prezzo_coppia(prezzi, p["base"], p["quote"])
-        if pts:
-            r = analizza(pts, oggi)
-            if r:
-                tab[p["pair"]] = r
-    meta = backtest(hist, prezzi, pairs)
-    for chiave, obj in [(p["pair"], p) for p in pairs] + list(assets.items()):
+    meta = backtest(hist, prezzi, [], escludi=fx)
+    for chiave, obj in [(k, a) for k, a in assets.items() if k not in fx]:
         obj["stag1s"] = (tab.get(chiave) or {}).get("sett")       # settimana dal venerdi' del COT (pannello grafico)
         f = (tab.get(chiave) or {}).get("finestra")
         if not f:

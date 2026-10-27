@@ -154,6 +154,11 @@ def main(argv):
     page = page.replace('"__ADMIN__"', json.dumps(blocco, ensure_ascii=False).replace("</", "<\\/"), 1)
     with open(out, "w", encoding="utf-8") as f:
         f.write(page)
+    # dati della scheda "Backtest storico" (registro live + backtest), caricati a richiesta: vedi pagina.build
+    from cot_radar.pagina import ULTIMI
+    if ULTIMI.get("verifica") is not None:
+        with open(os.path.join(os.path.dirname(out), "verifica.json"), "w", encoding="utf-8") as f:
+            json.dump(ULTIMI["verifica"], f, ensure_ascii=False, separators=(",", ":"))
     log.info("Pagina creata: %s  |  registro: %s", out, REGISTRO)
     if site:
         # LANDING PAGE (vetrina.py) con i numeri veri di questo giro. Isolata: se fallisce il terminale e' gia' salvo

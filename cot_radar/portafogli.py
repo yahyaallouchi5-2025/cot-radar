@@ -79,6 +79,9 @@ LIQUIDITA = ("CASH", "SHY", "Liquidità", "ETF Treasury USA 1-3 anni (parcheggio
 # Nei calcoli e' un mercato sintetico "SAT": prezzo costruito dai rendimenti mensili dello storico simulato e, dal
 # live, dai prezzi giornalieri dei titoli registrati (vedi serie_satellite()).
 AZIONI_SCELTE = ("AZ", "SAT", "Azioni scelte", "5 azioni dell'Azionario a pari peso (1 per settore)", "azioni singole")
+# Prezzi in piu' che NON entrano nei portafogli: servono alla scheda Correlazioni (correlazioni.py) -> settori USA
+# (ETF SPDR) e dollaro (UUP). Scaricati e salvati insieme agli altri, una volta al giorno.
+EXTRA = ["XLK", "XLC", "XLY", "XLF", "XLI", "XLE", "XLB", "XLV", "XLP", "XLU", "XLRE", "UUP"]
 BENCH = (("SPY", 0.6), ("IEF", 0.4))          # confronto: classico 60% azioni USA + 40% Treasury, ribilanciato
 TUTTI = {u[0]: u for u in UNIVERSO + [LIQUIDITA, AZIONI_SCELTE]}
 
@@ -199,7 +202,7 @@ def prezzi(scarica=scarica_yahoo, cartella=CARTELLA, oggi=None, pausa=0.8):
     ESITO.clear()
     ESITO.update({"falliti": [], "copia": []})
     di_fila = 0                                        # fallimenti consecutivi: a 3 Yahoo e' giu', si smette
-    for t in [u[1] for u in UNIVERSO] + [LIQUIDITA[1]]:
+    for t in [u[1] for u in UNIVERSO] + [LIQUIDITA[1]] + EXTRA:
         vecchi = _leggi(cartella, t)
         if meta.get(t) != oggi and scarica:
             # Yahoo fermo: niente altri tentativi in questo giro (il workflow non resta appeso per mezz'ora),
@@ -235,7 +238,7 @@ def prezzi_demo(inizio="2000-01-03", fine=None):
             giorni.append(d.isoformat())
         d += timedelta(days=1)
     out = {}
-    for t in [u[1] for u in UNIVERSO] + [LIQUIDITA[1]]:
+    for t in [u[1] for u in UNIVERSO] + [LIQUIDITA[1]] + EXTRA:
         v, pts = 100.0, []
         mu, sg = (0.0001, 0.001) if t == LIQUIDITA[1] else (0.0003, 0.011)
         for g in giorni:

@@ -6,7 +6,7 @@ Per questo il registro completo (avvisi, errori, allarmi critici) NON viene pubb
   - sul sito viene CIFRATO con una password (AES-GCM 256 bit, chiave ricavata con PBKDF2-SHA256);
   - la password sta solo nel Secret di GitHub  ADMIN_PASSWORD  (mai nel codice, mai nei log);
   - nel browser, aprendo  .../cot-radar/#admin  e scrivendo la password, la pagina lo decifra
-    (Web Crypto API, stessi parametri: vedi app.js, sezione "registro").
+    (Web Crypto API, stessi parametri: vedi web/js, sezione "registro").
 Sul PC (pagina locale, non pubblicata) il registro resta in chiaro: lo vede solo chi usa il PC.
 
 Senza password o senza la libreria "cryptography" il registro semplicemente NON viene pubblicato:
@@ -20,7 +20,7 @@ import os
 ITERAZIONI = 250_000          # PBKDF2: piu' alto = piu' lento indovinare la password (il browser ci mette ~0,2 s)
 
 # campi di stato.json che restano PUBBLICI (servono al sito e ai controlli automatici, nessun dettaglio interno)
-CAMPI_PUBBLICI = ("creato", "esito", "fonti", "strumenti", "coppie", "mercato", "mutui", "demo")
+CAMPI_PUBBLICI = ("creato", "esito", "fonti", "strumenti", "coppie", "mercato", "demo")
 
 
 def pubblico(stato):

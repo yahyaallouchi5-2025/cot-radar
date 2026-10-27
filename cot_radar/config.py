@@ -150,15 +150,14 @@ FRED_IDS = {
     "WTREGEN": 1,        # conto del Tesoro presso la Fed, TGA (milioni $)
     "RRPONTSYD": 1000,   # reverse repo overnight (miliardi $ -> milioni)
     "DGS2": 1, "DGS10": 1, "DFII10": 1, "T10YIE": 1, "VIXCLS": 1, "BAMLH0A0HYM2": 1,
-    "MORTGAGE30US": 1,   # mutuo USA 30 anni (Freddie Mac, settimanale)
     **{v[0]: 1 for v in PRICES.values()},
 }
 
-# --------------------------------------------------------------------------- serie BCE (mutui e tassi euro)
+# --------------------------------------------------------------------------- serie BCE (tassi euro)
+# v6.35: tolti i tassi dei mutui (MIR) e il mutuo USA 30 anni insieme alla scheda Mutui: non servono a chi fa trading.
 # Ogni richiesta e' (flusso, chiave SDMX). Il "+" chiede piu' valori in una volta sola
 # (es. IT+U2+DE = Italia, Eurozona, Germania).
 ECB_REQ = [
-    ("MIR", "M.IT+U2+DE+FR+ES.B.A2C.A+F+P.R.A.2250.EUR.N"),   # tassi mutui casa: A=media, F=variabile, P=fisso>10a
     ("FM", "M.U2.EUR.RT.MM.EURIBOR3MD_.HSTA"),                # Euribor 3 mesi (mensile)
     ("EST", "B.EU000A2X2A25.WT"),                              # ESTR (tasso overnight, giornaliero)
     ("YC", "B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y+SR_10Y"),          # curva titoli di Stato AAA: 2 e 10 anni
@@ -187,6 +186,11 @@ STATISTICHE_ID = "dbfc644a-1987-4769-9339-f231a41ecc8c"
 # NOTE LEGALI (pagina /legale/, vedi web/legale.html e vetrina.py). TITOLARE vuoto = descrizione generica del
 # servizio; prima di vendere abbonamenti va indicato chi gestisce il servizio (nome o ditta, P.IVA, sede).
 TITOLARE = ""
+# FEEDBACK DEGLI UTENTI (pulsante "Feedback" nella sidebar, web/js/26_feedback.js): "Access Key" di Web3Forms
+# (web3forms.com, gratuito: i messaggi arrivano all'email con cui si crea la chiave). E' una chiave PUBBLICA per
+# progetto (sta comunque nel codice della pagina), ma la si puo' anche mettere nel Secret WEB3FORMS_KEY: se c'e',
+# vince il Secret. Vuota = modulo visibile ma "in attivazione".
+FEEDBACK_CHIAVE = ""
 CONTATTO_EMAIL = ""      # e-mail pubblica per segnalazioni e richieste; vuota = contatto tramite il canale Telegram
 OUT = os.path.join(ROOT, "cot_radar.html")                             # dashboard creata in locale
 REGISTRO = os.path.join(ROOT, "dati", "registro.log")                  # file di registro (a rotazione)

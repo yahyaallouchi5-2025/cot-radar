@@ -137,7 +137,7 @@ def verso(etichetta):
 
 
 def affidabilita(storico, comm_acc, stag, score):
-    """Stessa regola del badge AFFIDABILITA' del sito (app.js, affidabilitaSegnale):
+    """Stessa regola del badge AFFIDABILITA' del sito (web/js, affidabilitaSegnale):
     storico >= 60% +1 / < 50% -1; Commercials a favore +1 / contrari -1; stagionalita' robusta a favore +1 /
     contraria -1. Totale >= 2 ALTA, <= -1 BASSA, altrimenti MEDIA. Restituisce (livello, motivi)."""
     v, perche = 0, []
@@ -435,7 +435,7 @@ def statistiche(misurati, orizzonti=("1s", "2s", "4s", "fine")):
 def giorni_stat(misurati):
     """Percorso medio giorno per giorno: per ogni seduta k (1..20) la lista compatta
     [segnali, vinti, somma risultati, somma guadagni massimi, somma drawdown massimi], al netto dei costi.
-    Compatta di proposito: medie, percentuali e intervallo di Wilson le calcola la pagina (app.js)."""
+    Compatta di proposito: medie, percentuali e intervallo di Wilson le calcola la pagina (web/js)."""
     acc = [[0, 0, 0.0, 0.0, 0.0] for _ in range(GIORNI_MAX)]
     for s, m, cst in misurati:
         if not m or m.get("stato") != "ok":
@@ -484,7 +484,7 @@ def profilo(pts, giorni=250):
 # --------------------------------------------------------------------------- DRAWDOWN (studio del rischio)
 # Obiettivo: capire QUANTO un segnale va contro prima di andare (o non andare) dove deve, rispetto a quanto si
 # muove di solito quel mercato e a quanto guadagna. Per ogni durata del trade (1..20 sedute e "al cambio segnale")
-# si calcola una riga compatta con i campi di DD_CAMPI (la pagina la legge per nome, vedi app.js "DD"):
+# si calcola una riga compatta con i campi di DD_CAMPI (la pagina la legge per nome, vedi web/js "DD"):
 #   n            segnali misurati
 #   mae50/mae90  drawdown ASSOLUTO (dal prezzo d'ingresso): mediano e al 90° percentile (P90: 1 trade su 10 va peggio), in % (negativi)
 #   mfe50/res50  guadagno massimo e risultato mediani, in %

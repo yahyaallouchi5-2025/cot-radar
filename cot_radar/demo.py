@@ -14,7 +14,7 @@ import random
 from datetime import date, timedelta
 
 from .calcoli import add_month, month_avg
-from .config import ASSETS, FRED_IDS, K_DFR, K_ESTR, K_EURIBOR, K_MIR, K_Y2, K_Y10, PRICES
+from .config import ASSETS, FRED_IDS, K_DFR, K_ESTR, K_EURIBOR, K_Y2, K_Y10, PRICES
 
 
 def demo_data(seed=7):
@@ -85,26 +85,13 @@ def demo_data(seed=7):
             fred[sid].append([ds, round(px[k] if sign > 0 else 1 / px[k], 6)])
         if d.weekday() == 2:
             fred["WALCL"].append([ds, 7e6 * (1 - 0.0003 * i)]); fred["WTREGEN"].append([ds, 750000 + rnd.gauss(0, 30000)])
-        if d.weekday() == 3:
-            fred["MORTGAGE30US"].append([ds, round(lv["DGS10"] + 2.4, 2)])
         fred["RRPONTSYD"].append([ds, max(0, 400 - i * 0.4) * 1000])
     fred = {k: v for k, v in fred.items() if v}
 
-    # ---- BCE: tassi mutui che inseguono (con ritardo) i tassi di mercato
+    # ---- BCE: tassi di mercato (i tassi dei mutui sono stati tolti in v6.35)
     ecb = {}
-    y10m, estm = month_avg(eu10), month_avg(estr)
+    estm = month_avg(estr)
     last_month = add_month(today.strftime("%Y-%m"), -2)        # come nella realta': ~2 mesi di ritardo
-    for cc, base in (("IT", 0), ("U2", -.1), ("DE", -.15), ("FR", -.25), ("ES", -.05)):
-        for mt in "AFP":
-            pts, val = [], None
-            for m in sorted(y10m):
-                pm = add_month(m, -1)
-                if m > last_month or pm not in y10m:
-                    continue
-                tgt = {"P": y10m[pm] + 1.2, "F": estm[pm], "A": (y10m[pm] + 1.2 + estm[pm]) / 2}[mt] + base
-                val = tgt if val is None else val + 0.5 * (tgt - val) + rnd.gauss(0, 0.03)
-                pts.append([m, round(val, 2)])
-            ecb[K_MIR.format(c=cc, m=mt)] = pts
     ecb[K_EURIBOR] = [[m, round(v + 0.15, 3)] for m, v in sorted(estm.items()) if m <= add_month(last_month, 1)]
     ecb[K_ESTR], ecb[K_Y2], ecb[K_Y10] = estr, eu2, eu10
     ecb[K_DFR] = [[d.isoformat(), 2.0] for d in days[-300:]]

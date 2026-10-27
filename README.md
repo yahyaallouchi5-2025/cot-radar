@@ -232,6 +232,31 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+## v6.35: ordine nel codice e nuove funzioni
+- **Codice della pagina diviso**: `web/app.js` (980 righe) e gli altri file JS sono ora in `web/js/`, un file per scheda
+  (`01_base.js`, `04_dashboard.js`, `09_correlazioni.js`, `21_portafogli.js`...). `pagina.py` li unisce in ordine di
+  nome in un solo script: comportamento identico, ma ogni scheda si modifica senza toccare le altre.
+- **Correlazioni dei prezzi** (`correlazioni.py`, vista predefinita della scheda Correlazioni, ogni giorno): indici,
+  11 settori USA (ETF SPDR, scaricati con i prezzi dei portafogli: `portafogli.EXTRA`), obbligazioni, metalli, energia,
+  agricole, cripto e dollaro. Finestre 3 mesi e 1 anno, liste "insieme / al contrario / stanno cambiando" (escluse le
+  coppie dello stesso mondo, es. S&P 500 e Tecnologia), legame con l'S&P 500 con mini linea mobile di ~3 anni, mappa
+  di calore per gruppo o per strumento. La vista dei flussi COT resta con il pulsante "Flussi COT".
+- **Stagionalità senza forex**: valute, dollaro e coppie non hanno più stagionalità né correzione del punteggio
+  (effetti deboli e instabili); resta per indici, materie prime, metalli, tassi e cripto.
+- **Scheda Mutui tolta** (e con lei i tassi dei mutui BCE e il mutuo USA 30 anni). Al suo posto, in Dashboard, il
+  riquadro "Prossima rotazione" dei portafogli. Il paracadute non controlla più la sezione mutui.
+- **Bilanci USA dalla SEC** (`fondamentali.py`, workflow Azioni, Secret `SEC_CONTATTO`): ultimi 5 anni fiscali,
+  ricavi, utile, anni in perdita, debito netto e giudizio SOLIDA / NELLA MEDIA / INDEBITATA nel dettaglio del titolo.
+  Una volta a settimana per titolo; i 10-K arrivano 60-90 giorni dopo la fine dell'anno fiscale.
+- **Consenso legale** (`web/js/25_consenso.js`): popup all'ingresso, "Accetto" attivo solo dopo aver letto fino in fondo,
+  "Non accetto" blocca la dashboard; salvato nel browser con la versione del testo (alzarla = tutti riaccettano).
+- **Feedback** (`web/js/26_feedback.js`): pulsante nella sidebar, modulo che arriva all'email dell'admin con Web3Forms
+  (chiave nel Secret `WEB3FORMS_KEY` o in `config.FEEDBACK_CHIAVE`); niente viene pubblicato.
+- **Flusso serale**: il Sito parte appena finisce il workflow Azioni (`workflow_run`); il giro delle 22:15 UTC si ferma
+  da solo se il sito è già stato aggiornato bene dopo le 21:40.
+- **Studio Pattern + COT** (non pubblicato): con il pattern preso solo nella direzione del COT nessun vantaggio
+  (2000-2015: 49,6% giusti a 5 giorni; dal 2016: 47,1%). Il Pattern Detector resta uno strumento di lettura grafica.
+
 ## Portafogli con Azioni scelte (v6.34: `satellite.py`, `portafogli.py`, `web/portafogli.js`)
 - **Quote**: conservativo 10%, moderato 20%, aggressivo 40% in 5 azioni dell'Azionario; il resto è la base di ETF
   di sempre (pesi della base riscalati). Decisione del 26/10/2026; live dal 2 novembre 2026.
