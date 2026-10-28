@@ -128,7 +128,7 @@ PROFILI = [
     {"id": "aggressivo", "nome": "Aggressivo", "rischio": "Alto", "dd": 20, "az": .15,
      "base": {"SP500": .40, "NASDAQ": .15, "EAFE": .10, "EM": .10, "US10Y": .05, "GOLD": .15, "BTC": .05},
      "descr": "Massima crescita: indici azionari con tecnologia, emergenti e una piccola quota di Bitcoin, più il 15% "
-              "in 5 azioni scelte. Cadute più ampie, ripagate da un rendimento più alto."},
+              "in 5 azioni scelte. Drawdown più ampi, ripagati da un rendimento più alto."},
 ]
 # Mercati SENZA filtro di trend: la difesa resta sempre in portafoglio (il filtro li faceva entrare e uscire di
 # continuo: tanti scambi, tasse e costi per un beneficio che nello studio non c'era).

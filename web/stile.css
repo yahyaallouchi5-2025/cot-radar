@@ -1038,3 +1038,46 @@ html.cbloccato,html.cbloccato body{overflow:hidden}
    sinistra (niente vuoto dentro la card); se lo schermo e' abbastanza alto resta visibile mentre scorri la composizione. */
 @media (min-width:1001px){.pgrid{align-items:start}}
 @media (min-width:1001px) and (min-height:1040px){.pcontro{position:sticky;top:104px}}
+
+/* ---------- RISCHIO DEL MESE v6.41: termometro + heat map (web/js/21_portafogli.js, contro()) ---------- */
+.pcontro{container-type:inline-size}
+.ptermo-t{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.ptermo-t>span{font-size:13px;color:var(--mute);font-weight:600}
+.ptermo-t em{font-style:normal;font-size:12.5px;font-weight:700;padding:4px 11px;border-radius:99px}
+.ptermo-t em.pko{color:var(--s);background:color-mix(in srgb,var(--s) 14%,transparent);border:1px solid color-mix(in srgb,var(--s) 40%,transparent)}
+.ptermo-t em.pok{color:var(--b);background:color-mix(in srgb,var(--b) 14%,transparent);border:1px solid color-mix(in srgb,var(--b) 40%,transparent)}
+/* barra da 0% (sinistra) verso il basso; tacca bianca = limite del profilo */
+.ptermo{position:relative;height:12px;border-radius:99px;margin:18px 4px 14px;background:linear-gradient(90deg,#1c3a33,#3a3a24 55%,#4a2328)}
+.ptermo-r{position:absolute;inset:0 auto 0 0;border-radius:99px;background:linear-gradient(90deg,var(--b),var(--warn) 60%,var(--s))}
+.ptermo-l{position:absolute;top:-7px;bottom:-7px;width:3px;border-radius:2px;background:var(--ink);transform:translateX(-50%)}
+.ptermo-e{position:absolute;transform:translateX(-50%);white-space:nowrap;font-size:11.5px;font-weight:700}
+.ptermo-e.su{top:-24px;color:var(--ink)}.ptermo-e.giu{top:17px;color:var(--mute);font-weight:600}
+/* testata della heat map + interruttore */
+.phmtesta{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:6px}
+.phmtesta>span{font-size:14px;font-weight:700;color:var(--ink2)}
+.phmsw{display:inline-flex;background:var(--soft);border:1px solid var(--line);border-radius:99px;padding:3px}
+.phmsw button{border:0;background:none;color:var(--mute);font:600 12.5px system-ui;padding:6px 12px;border-radius:99px;cursor:pointer;transition:background .2s,color .2s}
+.phmsw button:hover{color:var(--ink)}.phmsw button.on{background:color-mix(in srgb,var(--acc) 22%,var(--card));color:var(--ink)}
+/* griglia: card larga = etichetta del decennio + 10 anni; card media = 10 anni; card stretta/telefono = 5 per riga */
+.phmbox{position:relative}
+.phm{display:grid;grid-template-columns:72px repeat(10,minmax(0,1fr));gap:5px}
+.phmdec{display:flex;align-items:center;white-space:nowrap;font-size:12px;font-weight:700;color:var(--mute)}
+.phmc{position:relative;border-radius:9px;padding:6px 2px 5px;min-height:46px;text-align:center;display:flex;flex-direction:column;justify-content:center;
+ color:#fff;border:1px solid transparent;cursor:default;transition:transform .15s,box-shadow .15s,border-color .15s}
+.phmc span{font-size:10px;opacity:.8;line-height:1.1}
+.phmc b{font-size:12.5px;font-weight:800;line-height:1.25;font-variant-numeric:tabular-nums;text-shadow:0 1px 2px rgba(0,0,0,.45)}
+.phmc:not(.vuota):hover,.phmc:focus-visible{transform:scale(1.08);z-index:2;border-color:var(--ink);box-shadow:0 8px 20px rgba(0,0,0,.45);outline:none}
+.phmc.vuota{background:repeating-linear-gradient(135deg,transparent 0 5px,rgba(255,255,255,.03) 5px 10px);border:1px dashed rgba(255,255,255,.06)}
+.phmc.peg{border:2px solid #fff}
+.phmc.peg::after{content:"peggiore";position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-size:8.5px;font-weight:800;letter-spacing:.4px;
+ text-transform:uppercase;background:var(--ink);color:#2a0d0d;border-radius:4px;padding:0 4px;white-space:nowrap}
+@container (max-width:620px){.phm{grid-template-columns:repeat(10,minmax(0,1fr));gap:4px}.phmdec{display:none}.phmc{min-height:42px;padding:5px 1px 4px}.phmc b{font-size:11px}.phmc span{font-size:9px}}
+@container (max-width:430px){.phm{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}.phmc.vuota{display:none}.phmc{min-height:48px}.phmc b{font-size:13px}.phmc span{font-size:10px}}
+.phmleg{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--mute)}.phmleg i{flex:1;height:8px;border-radius:99px}
+.phmtip{position:absolute;z-index:5;pointer-events:none;display:flex;flex-direction:column;gap:2px;padding:8px 11px;border-radius:10px;white-space:nowrap;
+ background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);font-size:12.5px;color:var(--ink2)}
+.phmtip>b{color:var(--ink)}
+/* metriche: titolo, valore e nota sempre allineati tra le card vicine anche se un titolo va a capo */
+.pmini>div{display:grid;grid-template-rows:subgrid;grid-row:span 3;row-gap:3px;align-content:start}
+.pmini span{align-self:end}
+.phmtip[hidden]{display:none}

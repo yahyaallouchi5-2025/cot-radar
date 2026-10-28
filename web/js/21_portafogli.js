@@ -3,7 +3,7 @@
    Dati da D.port (vedi cot_radar/portafogli.py): tre profili (conservativo, moderato, aggressivo), solo acquisti,
    rotazione il primo giorno di borsa di ogni mese. In alto un selettore a segmenti (Conservativo / Moderato /
    Aggressivo: "stesso motore, rischio diverso") e la CARD PRINCIPALE del profilo: rischio, descrizione, rendimento
-   annuo, caduta massima, 10.000 euro dall'inizio dello storico, composizione per classe, le 5 azioni scelte del mese
+   annuo, max drawdown, 10.000 euro dall'inizio dello storico, composizione per classe, le 5 azioni scelte del mese
    e la spiegazione apribile della rotazione. Sotto, per il profilo scelto:
      1. "Portafoglio di <mese>" del profilo scelto: righe raggruppate per classe (Azionario, Obbligazionario,
         Materie prime, Cripto, Liquidita'), per ogni mercato lo strumento UCITS/ETC/ETP da comprare in Europa con
@@ -11,7 +11,7 @@
         una (o l'ANTEPRIMA provvisoria del mese prossimo); esposizione al dollaro stimata;
         in alto il CONTO ALLA ROVESCIA al prossimo ribilanciamento (giorno di rotazione, 09:00 ora italiana);
      2. il rischio del MESE della rotazione (es. ottobre): la composizione di oggi tenuta in ogni ottobre dello
-        storico, con rendimento e caduta massima dentro il mese anno per anno, esempio su 10.000 euro e
+        storico, con rendimento e max drawdown dentro il mese anno per anno, esempio su 10.000 euro e
         stagionalita' del mese per ogni mercato (nessuna statistica per anno solare);
      3. la curva del capitale: storico, fuori campione (dal 2016) e live (dalla prima rotazione pubblicata),
         con il confronto 60/40; passando il mouse si leggono data e valore;
@@ -106,29 +106,45 @@ try{(function(){const P=D.port,el=$("port");if(!el)return;
    <div class="pfx"><span>Valute: nessuna posizione diretta. Esposizione al dollaro stimata <b>${fx(usd,0)}%</b> (gli strumenti UCITS in euro seguono comunque il cambio EUR/USD).</span></div>
    <p class="small pnota-ue">Strumenti UCITS / ETC / ETP acquistabili da un conto europeo: cerca l'ISIN nell'app del tuo broker. Gli ETF USA usati nei calcoli (SPY, QQQ…) non sono acquistabili dai privati in Europa. Informazione, non consulenza.</p></div>`;}
 
- // --- RISCHIO DEL MESE della rotazione: la composizione di oggi tenuta nello stesso mese di ogni anno dello storico.
- //     Metriche con i termini standard: max drawdown intra-mese, peggior rendimento, rendimento medio, win rate.
+ // --- RISCHIO DEL MESE della rotazione (v6.41): la composizione di oggi tenuta nello stesso mese di ogni anno dello storico.
+ //     1) TERMOMETRO: drawdown peggiore del mese contro il limite del profilo (tacca bianca), verdetto in parole;
+ //     2) HEAT MAP: una casella per anno con la %, verde = guadagno, rosso = perdita (piu' intenso = piu' grande);
+ //        interruttore "Risultato del mese" / "Scenario peggiore" (drawdown dentro il mese); fumetto con i dettagli;
+ //     3) quattro numeri chiave allineati (titoli su piu' righe non spostano i valori: CSS subgrid).
+ let hmModo="r";                                         // modo della heat map, ricordato cambiando profilo
+ function hmCelle(m,modo){const peg=m.anni.reduce((a,x)=>x.dd<a.dd?x:a,m.anni[0]),per={};m.anni.forEach(x=>per[x.a]=x);
+  const d0=Math.floor(m.anni[0].a/10)*10,d1=Math.floor(m.anni[m.anni.length-1].a/10)*10;
+  const col=x=>{const t=Math.min(1,Math.abs(x)/(modo=="dd"?6:5));return modo=="dd"||x<0?`rgba(242,113,107,${(.12+.78*t).toFixed(2)})`:`rgba(79,214,163,${(.12+.78*t).toFixed(2)})`;};
+  let h="";
+  for(let d=d0;d<=d1;d+=10){h+=`<div class="phmdec">${d==1990?"anni '90":"anni "+d}</div>`;
+   for(let y=d;y<d+10;y++){const x=per[y];
+    if(!x){h+=`<div class="phmc vuota" aria-hidden="true"></div>`;continue;}
+    const v=modo=="r"?x.r:x.dd;
+    h+=`<div class="phmc${x.a==peg.a?" peg":""}" tabindex="0" data-a="${y}" style="background:${col(v)}"><span>${y}</span><b>${pc(v)}</b></div>`;}}
+  return h;}
+ function hmLeg(modo){return modo=="r"
+  ?`<span>perdita</span><i style="background:linear-gradient(90deg,rgba(242,113,107,.9),rgba(242,113,107,.12) 48%,rgba(79,214,163,.12) 52%,rgba(79,214,163,.9))"></i><span>guadagno</span>`
+  :`<span>drawdown piccolo</span><i style="background:linear-gradient(90deg,rgba(242,113,107,.12),rgba(242,113,107,.9))"></i><span>drawdown grande</span>`;}
  function contro(p){const m=p.mese,s=p.stat.totale||{},o=p.stat.oos||{},ddTot=Math.min(s.maxdd??0,o.maxdd??0);
   if(!m)return `<div class="card pcontro"><h3>Rischio del mese</h3><div class="small">Storico non ancora sufficiente.</div></div>`;
-  const Mese=m.mese[0].toUpperCase()+m.mese.slice(1),peg=m.anni.reduce((a,x)=>x.dd<a.dd?x:a,m.anni[0]);
-  const oltre=-m.dd_max>p.dd_rif,wr=Math.round(100*m.positivi/m.n);
-  // grafico: barra = rendimento del mese, trattino = max drawdown dentro il mese; asse con le percentuali
-  const W=440,H=150,L=34,mx=Math.max(4,...m.anni.map(x=>Math.max(Math.abs(x.r),Math.abs(x.dd)))),pas=mx>16?10:mx>8?5:2;
-  const Y=v=>H/2-v/mx*(H/2-10),bw=(W-L)/m.anni.length,X=i=>L+i*bw;
-  const tacche=[];for(let v=-Math.floor(mx/pas)*pas;v<=mx;v+=pas)tacche.push(v);
-  const asse=tacche.map(v=>`<line x1="${L}" x2="${W}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" class="${v?"pmg":"pm0"}"/><text x="${L-6}" y="${(Y(v)+3.5).toFixed(1)}" text-anchor="end" class="pmax">${v>0?"+":""}${v}%</text>`).join("");
-  const bar=m.anni.map((x,i)=>`<g class="pmb${x.a==peg.a?" peg":""}" data-i="${i}"><rect x="${(X(i)+bw*.18).toFixed(1)}" width="${Math.max(1.5,bw*.64).toFixed(1)}" y="${Math.min(Y(0),Y(x.r)).toFixed(1)}" height="${Math.max(1,Math.abs(Y(x.r)-Y(0))).toFixed(1)}" rx="1.5" class="${x.r>=0?"su":"giu"}"/>
-   <line x1="${(X(i)+bw*.12).toFixed(1)}" x2="${(X(i)+bw*.88).toFixed(1)}" y1="${Y(x.dd).toFixed(1)}" y2="${Y(x.dd).toFixed(1)}" class="pdd-t"/><rect x="${X(i).toFixed(1)}" width="${bw.toFixed(1)}" y="0" height="${H}" class="pmh"/></g>`).join("");
+  const peg=m.anni.reduce((a,x)=>x.dd<a.dd?x:a,m.anni[0]),lim=-p.dd_rif,oltre=m.dd_max<lim,wr=Math.round(100*m.positivi/m.n);
+  const altri=Math.min(...m.anni.filter(x=>x!==peg).map(x=>x.dd));
+  // termometro: 0% a sinistra, fondo scala poco oltre il peggiore tra drawdown e limite
+  const fondo=Math.min(m.dd_max,lim)*1.18,pos=v=>(v/fondo*100).toFixed(1);
   const k=(t,v,sub,cls="")=>`<div><span>${t}</span><b class="${cls}">${v}</b><em>${sub}</em></div>`;
   return `<div class="card pcontro"><div class="pctesta"><h3>Rischio di ${m.mese}</h3><span class="pbprof">${esc(p.nome)}</span></div>
-   <div class="small">Composizione di questo mese tenuta in ogni ${m.mese} dal ${m.anni[0].a} (${m.n} anni), dal primo giorno di borsa al primo del mese dopo.</div>
-   <div class="pdd"><div><span>Max drawdown intra-mese</span><b>${pc(m.dd_max)}</b></div>
-    <div class="pdd-badge ${oltre?"pko":"pok"}">${oltre?"Oltre":"Entro"} il limite del profilo<br><b>&minus;${p.dd_rif}%</b></div></div>
-   <div class="small pdd-quando">Peggior caso: ${m.mese} ${peg.a}. Con <b>10.000 €</b> il conto sarebbe sceso a <b>${eur(10000*(1+m.dd_max/100))}</b> nel corso del mese.</div>
-   <div class="pmwrap"><svg viewBox="0 0 ${W} ${H}" class="pmesi" role="img" aria-label="Rendimento di ${m.mese} anno per anno">${asse}${bar}</svg><div class="pmtip" hidden></div></div>
-   <div class="pmasse"><span>${m.anni[0].a}</span><span><i class="su"></i>rendimento del mese <i class="pt"></i>max drawdown nel mese</span><span>${m.anni[m.anni.length-1].a}</span></div>
-   <div class="pmini">${k("Peggior rendimento",pc(m.peggiore[1]),`${m.mese} ${m.peggiore[0]}`,"down")}${k("Rendimento medio",pc(m.media),`${Mese.toLowerCase()} su ${m.n} anni`,m.media>=0?"up":"down")}
-    ${k("Win rate",wr+"%",`${m.positivi} anni positivi su ${m.n}`)}${k("Max drawdown storico",pc(ddTot),"intero backtest del profilo","down")}</div>
+   <div class="small">Questo portafoglio tenuto in ogni ${m.mese} dal ${m.anni[0].a} (${m.n} anni), dal primo giorno di borsa al primo del mese dopo.</div>
+   <div class="ptermo-t"><span>Drawdown peggiore di ${m.mese}</span><em class="${oltre?"pko":"pok"}">${oltre?`Oltre il limite di ${fx(Math.abs(m.dd_max-lim),1)} punti`:"Dentro il limite del profilo"}</em></div>
+   <div class="ptermo"><div class="ptermo-r" style="width:${pos(m.dd_max)}%"></div><span class="ptermo-l" style="left:${pos(lim)}%"></span>
+    <span class="ptermo-e su" style="left:${pos(lim)}%">limite ${pc(lim,0)}</span><span class="ptermo-e giu" style="left:0;transform:none">0%</span>
+    <span class="ptermo-e giu" style="left:${pos(m.dd_max)}%">${pc(m.dd_max)}</span></div>
+   <div class="small pdd-quando">Peggior caso: ${m.mese} ${peg.a}. Con <b>10.000 €</b> il conto sarebbe sceso fino a <b>${eur(10000*(1+m.dd_max/100))}</b> durante il mese. Negli altri ${m.n-1} anni il drawdown non ha mai superato il ${pc(altri)}.</div>
+   <div class="phmtesta"><span>${m.mese[0].toUpperCase()+m.mese.slice(1)} anno per anno</span>
+    <div class="phmsw" role="tablist"><button type="button" data-m="r" class="${hmModo=="r"?"on":""}" role="tab" aria-selected="${hmModo=="r"}">Risultato del mese</button><button type="button" data-m="dd" class="${hmModo=="dd"?"on":""}" role="tab" aria-selected="${hmModo=="dd"}">Scenario peggiore</button></div></div>
+   <div class="phmbox"><div class="phm">${hmCelle(m,hmModo)}</div><div class="phmtip" hidden></div></div>
+   <div class="phmleg">${hmLeg(hmModo)}</div>
+   <div class="pmini">${k("Peggior "+m.mese,pc(m.peggiore[1]),String(m.peggiore[0]),"down")}${k(m.mese[0].toUpperCase()+m.mese.slice(1)+" medio",pc(m.media),`su ${m.n} anni`,m.media>=0?"up":"down")}
+    ${k("Anni positivi",`${m.positivi} su ${m.n}`,`win rate ${wr}%`)}${k("Max drawdown storico",pc(ddTot),"intero backtest del profilo","down")}</div>
    ${m.mercati.length?`<div class="pstag"><div class="pstag-t">Stagionalit&agrave; di ${m.mese} per mercato <span class="small">(informativa)</span></div>${m.mercati.map(x=>`<div class="pstag-r"><span>${esc(nomeK(x.k))}</span><i><s class="${x.media>=0?"su":"giu"}" style="width:${Math.min(100,Math.abs(x.media)*8)}%"></s></i><b class="${x.media>=0?"up":"down"}">${pc(x.media)}</b><em>${x.pos}% positivi</em></div>`).join("")}</div>`:""}</div>`;}
 
  function tabella(p){const st=p.stat,b=(P.bench||{}).stat||{};
@@ -174,7 +190,7 @@ try{(function(){const P=D.port,el=$("port");if(!el)return;
     <p class="small">${esc((P.azioni||{}).nota||"")} Storico fino al 2015, fuori campione dal 2016. Prezzi in dollari di ETF ed ETC equivalenti e azioni in valuta locale (cambi non inclusi).</p></details></div>`;}
 
  function disegna(){const p=P.profili.find(x=>x.id==sel);
-  el.innerHTML=`<h2>Portafogli modello</h2><p class="sub">Tre profili di rischio, solo acquisti, controllo ogni mese. Ogni profilo ha una base fissa di mercati e pesi; un mercato azionario resta in portafoglio finch&eacute; il prezzo &egrave; sopra la media a 200 giorni, altrimenti il suo peso va in pausa nella liquidit&agrave; fino a quando torna sopra; Treasury e oro restano sempre come difesa. Nei test sullo storico questo filtro di trend ha ridotto molto le cadute, mentre il posizionamento COT non migliorava i risultati: per questo il COT &egrave; mostrato accanto a ogni mercato solo come informazione. Regole di base decise sullo storico fino al 2015 e verificate dal 2016; la revisione di ottobre 2026 (meno azioni singole, difesa sempre presente, meno scambi) ha guardato tutto lo storico, quindi la prova davvero pulita &egrave; la linea live, che riparte dalla rotazione del 2 novembre 2026. Il rischio si legge mese per mese: a ogni rotazione la scheda mostra come si &egrave; comportata la composizione del mese nello stesso mese di tutti gli anni dello storico. Prezzi in dollari di ETF ed ETC equivalenti (il cambio euro/dollaro non &egrave; incluso), costi 0,10% a ogni rotazione.</p>
+  el.innerHTML=`<h2>Portafogli modello</h2><p class="sub">Tre profili di rischio, solo acquisti, controllo ogni mese. Ogni profilo ha una base fissa di mercati e pesi; un mercato azionario resta in portafoglio finch&eacute; il prezzo &egrave; sopra la media a 200 giorni, altrimenti il suo peso va in pausa nella liquidit&agrave; fino a quando torna sopra; Treasury e oro restano sempre come difesa. Nei test sullo storico questo filtro di trend ha ridotto molto i drawdown, mentre il posizionamento COT non migliorava i risultati: per questo il COT &egrave; mostrato accanto a ogni mercato solo come informazione. Regole di base decise sullo storico fino al 2015 e verificate dal 2016; la revisione di ottobre 2026 (meno azioni singole, difesa sempre presente, meno scambi) ha guardato tutto lo storico, quindi la prova davvero pulita &egrave; la linea live, che riparte dalla rotazione del 2 novembre 2026. Il rischio si legge mese per mese: a ogni rotazione la scheda mostra come si &egrave; comportata la composizione del mese nello stesso mese di tutti gli anni dello storico. Prezzi in dollari di ETF ed ETC equivalenti (il cambio euro/dollaro non &egrave; incluso), costi 0,10% a ogni rotazione.</p>
    <div class="pdate"><span><i></i>Rotazione del <b>${gg(P.rotazione)}</b></span><span class="pcount" data-t="${P.prossima||""}" title="Prossimo ribilanciamento: ${gg(P.prossima)} all'apertura delle borse europee (09:00 ora italiana)">Prossimo ribilanciamento <b class="pcd">${gg(P.prossima)}</b></span></div>
    <div class="pseg" role="tablist" aria-label="Scegli il portafoglio">${P.profili.map(x=>`<button role="tab" aria-selected="${x.id==sel}" class="${x.id==sel?"on":""}" data-p="${x.id}">${x.nome}</button>`).join("")}</div>
    ${hero(p)}
@@ -197,7 +213,7 @@ try{(function(){const P=D.port,el=$("port");if(!el)return;
   // capitale: ricalcola gli importi in euro mentre si scrive (solo cifre), salvato nel browser
   const ci=el.querySelector(".pcap input");if(ci){ci.oninput=()=>{const v=+ci.value.replace(/\D/g,"");capitale=v||0;
    aggiornaEuro(p);};ci.onblur=()=>{ci.value=capitale.toLocaleString("it-IT");try{localStorage.setItem("ebCapitale",capitale);}catch(e){}};}
-  tipMesi(el.querySelector(".pmwrap"),p);
+  tipMesi(el.querySelector(".pcontro"),p);
   conto();
   suggerimento(el.querySelector(".pgraf"),p);}
  // --- CONTO ALLA ROVESCIA al prossimo ribilanciamento: primo giorno di borsa del mese alle 09:00 ora italiana
@@ -222,11 +238,20 @@ try{(function(){const P=D.port,el=$("port");if(!el)return;
   el.querySelectorAll(".pcomp .peur").forEach((e,i)=>{e.textContent=eur(capitale*(pesi[i]||0)/100);});
   el.querySelectorAll(".paz-p em").forEach(e=>{e.textContent=eur(capitale*(+e.dataset.peso||0)/100);});}
  // tooltip del grafico del rischio del mese: anno, rendimento, max drawdown
- function tipMesi(box,p){if(!box)return;const tip=box.querySelector(".pmtip"),m=p.mese;
-  box.querySelectorAll(".pmb").forEach(g=>{g.addEventListener("mouseenter",()=>{const x=m.anni[+g.dataset.i],r=box.getBoundingClientRect(),gb=g.getBoundingClientRect();
-   tip.innerHTML=`<b>${m.mese} ${x.a}</b><span>Rendimento <b class="${x.r>=0?"up":"down"}">${pc(x.r)}</b></span><span>Max drawdown <b class="down">${pc(x.dd)}</b></span>`;
-   tip.hidden=false;tip.style.left=Math.min(r.width-174,Math.max(0,gb.left-r.left+gb.width/2-85))+"px";});
-   g.addEventListener("mouseleave",()=>{tip.hidden=true;});});}
+ function tipMesi(card,p){if(!card||!p.mese)return;const m=p.mese,box=card.querySelector(".phmbox"),tip=card.querySelector(".phmtip");if(!box)return;
+  // interruttore Risultato del mese / Scenario peggiore: ridisegna solo la griglia
+  card.querySelectorAll(".phmsw button").forEach(b=>b.onclick=()=>{hmModo=b.dataset.m;
+   card.querySelectorAll(".phmsw button").forEach(x=>{x.classList.toggle("on",x===b);x.setAttribute("aria-selected",x===b);});
+   box.querySelector(".phm").innerHTML=hmCelle(m,hmModo);card.querySelector(".phmleg").innerHTML=hmLeg(hmModo);tip.hidden=true;});
+  // fumetto: mouse, tastiera e tocco
+  const mostra=e=>{const c=e.target.closest(".phmc[data-a]");if(!c){tip.hidden=true;return;}
+   const x=m.anni.find(q=>q.a==c.dataset.a),r=box.getBoundingClientRect(),cb=c.getBoundingClientRect();
+   tip.innerHTML=`<b>${m.mese[0].toUpperCase()+m.mese.slice(1)} ${x.a}</b><span>Risultato del mese <b class="${x.r>=0?"up":"down"}">${pc(x.r)}</b></span><span>Scenario peggiore <b class="down">${pc(x.dd)}</b></span><span>10.000 € &rarr; ${eur(10000*(1+x.r/100))} a fine mese</span>`;
+   tip.hidden=false;const w=tip.offsetWidth,h=tip.offsetHeight;
+   tip.style.left=Math.max(0,Math.min(r.width-w,cb.left-r.left+cb.width/2-w/2))+"px";
+   tip.style.top=(cb.top-r.top-h-8<0?cb.bottom-r.top+8:cb.top-r.top-h-8)+"px";};
+  box.addEventListener("mouseover",mostra);box.addEventListener("focusin",mostra);box.addEventListener("click",mostra);
+  box.addEventListener("mouseleave",()=>tip.hidden=true);}
 
  // --- passando il mouse sulla curva: linea verticale, punto e valore della settimana
  function suggerimento(box,p){const svg=box&&box.querySelector("svg.pcurva");if(!svg)return;const tip=box.querySelector(".ptip");

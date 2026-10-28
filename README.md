@@ -232,6 +232,9 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+### v6.41
+- **Rischio del mese** ridisegnato: termometro del drawdown peggiore contro il limite del profilo (verdetto in parole), **heat map** anno per anno con le % (verde guadagno, rosso perdita) e interruttore "Risultato del mese" / "Scenario peggiore", fumetto con i dettagli; metriche allineate. Su PC la card non lascia più spazi vuoti. Tolta la parola "caduta" da tutte le scritte (si usa "drawdown").
+
 ### v6.40
 - **Riquadri in alto della Dashboard ridisegnati**: ognuno risponde a una domanda semplice. Segnali attivi con barra verde/rossa (rialzo/ribasso) ed etichetta ★ STRONG; clima del mercato con tachimetro PAURA → FIDUCIA; prossima rotazione e nuovi dati COT con conto alla rovescia e barra del tempo passato. Cliccabili (segnali, Mercato, Portafogli, Forza degli strumenti), effetti al passaggio del mouse, leggibili anche nei riquadri stretti.
 
