@@ -8,18 +8,23 @@ IDEA
   (volatilita' obiettivo -> drawdown storico atteso). Ogni ~30 giorni (primo giorno di borsa del mese) il
   portafoglio ruota: restano i mercati ancora favorevoli, escono gli altri, entrano i nuovi.
 
-REGOLE, VERSIONE 2 (scelte guardando SOLO lo storico 2006-2015, poi verificate una volta fuori campione)
+REGOLE, VERSIONE 3 (dal 28/10/2026; la base e' la versione 2, scelta guardando SOLO lo storico 2006-2015)
+  Cambi della v3: quota azioni scelte 5/10/15%, difesa con piu' liquidita' e oro, Treasury e oro SEMPRE presenti
+  (niente filtro di trend), ribilancio lento (scambi solo se cambia un mercato o a inizio trimestre).
+  ATTENZIONE, onesta': la v3 e' stata decisa guardando TUTTO lo storico 2006-2026, quindi per la v3 il periodo
+  "fuori campione" dal 2016 non e' piu' cieco. L'unica verifica davvero pulita e' la linea LIVE (dal 2/11/2026).
   1. Ogni profilo ha una BASE fissa di mercati e pesi (indici azionari, Treasury, oro; Nasdaq, emergenti e
      Bitcoin nell'aggressivo), comprabili a pronti con ETF/ETC. Prezzi rettificati (dividendi inclusi) Yahoo.
   2. FILTRO DI TREND a ogni rotazione mensile: se il prezzo di un mercato e' sotto la sua media a 200 giorni,
      il suo peso va "in pausa" in liquidita' (Treasury 1-3 anni) fino a quando torna sopra. Solo acquisti.
+     Dalla v3 il filtro vale per azioni e Bitcoin; Treasury e oro (SEMPRE) restano sempre in portafoglio.
   3. Il punteggio COT di ogni mercato e' mostrato accanto come informazione, ma NON decide i pesi: nello
      storico 2006-2015 il filtro COT (da solo, come conferma o come veto) peggiorava il rendimento a parita'
      di rischio, mentre il filtro di trend dimezzava le cadute (vedi README, "Portafogli modello").
   4. Costi: 0,10% sul capitale che cambia a ogni ribilanciamento.
   VERSIONE 1 (ritirata): ingresso solo con COT da BUY + trend e pesi a volatilita' obiettivo. Fuori campione
   rendeva 1-2% l'anno contro l'8% del 60/40, quasi sempre in liquidita'. Le sue rotazioni restano in
-  storico/portafogli/rotazioni.json; la versione 2 registra in rotazioni_v2.json.
+  storico/portafogli/rotazioni.json; la versione 2 in rotazioni_v2.json; la versione 3 registra in rotazioni_v3.json.
 
 VERIFICA ONESTA
   - STORICO: dal primo anno con dati sufficienti fino al 31/12/2015;
@@ -101,25 +106,37 @@ STRUMENTI_UE = {
              "liquidità in euro al tasso BCE (il modello usa i Treasury USA 1-3 anni in dollari)"),
 }
 
-# I tre profili: BASE fissa (chiave -> peso) e drawdown di riferimento. La parte "CASH" e' liquidita' fissa.
 # I tre profili: stesso motore, rischio diverso. BASE fissa di ETF (chiave -> peso relativo, somma 1) e quota di
 # AZIONI SCELTE ("az"): i pesi reali sono base x (1 - az) + az nelle 5 azioni. dd = caduta di riferimento del profilo.
-# Quote decise il 26/10/2026 dopo il test 2006-2026 con filtro di mercato (README, "Azioni scelte"): conservativo 10%,
-# moderato 20%, aggressivo 40%. La parte "CASH" della base e' liquidita' fissa.
+# VERSIONE 3 (28/10/2026, studio tools/backtest_varianti.py, variante "E"):
+#   - azioni scelte ridotte a 5/10/15% (prima 10/20/40%): meno rischio sul singolo titolo; lo storico simulato della
+#     quota azioni sottostima la sua volatilita', quindi pesi alti davano numeri troppo belli per essere veri;
+#   - difesa: meta' dei Treasury 7-10 anni in liquidita' e +5 punti di oro (meno legata ai tassi, dopo il 2022);
+#   - Treasury e oro SEMPRE in portafoglio (niente filtro di trend: vedi SEMPRE) e ribilancio LENTO (vedi TRIMESTRI):
+#     il turnover scende molto (conservativo da circa 150% a 56% l'anno) = meno costi e meno tasse.
+#   Rendimento/rischio 2006-2026 (dollari, senza tasse): conservativo 5,7%/5,0% caduta max -13,7%; moderato 7,4%/6,3%
+#   -16,9%; aggressivo 11,8%/9,0% -19,8%. La versione 2 (az 10/20/40%) resta nel registro rotazioni_v2.json.
 PROFILI = [
-    {"id": "conservativo", "nome": "Conservativo", "rischio": "Basso", "dd": 14, "az": .10,
-     "base": {"SP500": .20, "EAFE": .10, "US10Y": .45, "GOLD": .10, "CASH": .15},
-     "descr": "Protezione del capitale prima di tutto: Treasury, oro e liquidità come cuscinetto, azioni globali "
-              "e una piccola quota di 5 azioni scelte per dare spinta al rendimento."},
-    {"id": "moderato", "nome": "Moderato", "rischio": "Medio", "dd": 18, "az": .20,
-     "base": {"SP500": .35, "EAFE": .10, "EM": .05, "US10Y": .30, "GOLD": .10, "CASH": .10},
-     "descr": "Equilibrio tra crescita e difesa: azioni USA, Europa/Asia ed emergenti bilanciate da Treasury e oro, "
-              "più un quinto in 5 azioni scelte ogni mese."},
-    {"id": "aggressivo", "nome": "Aggressivo", "rischio": "Alto", "dd": 22, "az": .40,
-     "base": {"SP500": .40, "NASDAQ": .15, "EAFE": .10, "EM": .10, "US10Y": .10, "GOLD": .10, "BTC": .05},
-     "descr": "Massima crescita: indici azionari con tecnologia, emergenti e una quota di Bitcoin, più il 40% in "
-              "5 azioni scelte ogni mese. Cadute più ampie, ripagate da un rendimento nettamente più alto."},
+    {"id": "conservativo", "nome": "Conservativo", "rischio": "Basso", "dd": 14, "az": .05,
+     "base": {"SP500": .20, "EAFE": .10, "US10Y": .225, "GOLD": .15, "CASH": .325},
+     "descr": "Protezione del capitale prima di tutto: liquidità, Treasury e oro come cuscinetto sempre presente, "
+              "azioni globali e una piccola quota di 5 azioni scelte."},
+    {"id": "moderato", "nome": "Moderato", "rischio": "Medio", "dd": 17, "az": .10,
+     "base": {"SP500": .35, "EAFE": .10, "EM": .05, "US10Y": .15, "GOLD": .15, "CASH": .20},
+     "descr": "Equilibrio tra crescita e difesa: azioni USA, Europa/Asia ed emergenti bilanciate da Treasury, oro e "
+              "liquidità, più un 10% in 5 azioni scelte ogni mese."},
+    {"id": "aggressivo", "nome": "Aggressivo", "rischio": "Alto", "dd": 20, "az": .15,
+     "base": {"SP500": .40, "NASDAQ": .15, "EAFE": .10, "EM": .10, "US10Y": .05, "GOLD": .15, "BTC": .05},
+     "descr": "Massima crescita: indici azionari con tecnologia, emergenti e una piccola quota di Bitcoin, più il 15% "
+              "in 5 azioni scelte. Cadute più ampie, ripagate da un rendimento più alto."},
 ]
+# Mercati SENZA filtro di trend: la difesa resta sempre in portafoglio (il filtro li faceva entrare e uscire di
+# continuo: tanti scambi, tasse e costi per un beneficio che nello studio non c'era).
+SEMPRE = ("US10Y", "GOLD")
+# RIBILANCIO LENTO: ogni primo giorno di borsa del mese si CONTROLLA, ma si scambia solo se un mercato entra o esce
+# (cambia un trend) oppure a inizio trimestre (gennaio, aprile, luglio, ottobre) per riportare i pesi al loro valore.
+TRIMESTRI = ("01", "04", "07", "10")
+LIVE_V3_DAL = "2026-11-01"     # la linea live della versione 3 parte dalla prima rotazione con le nuove regole
 for _p in PROFILI:                                   # mercati ammessi = quelli della base (per la pagina)
     _p["ammessi"] = [k for k in _p["base"] if k != "CASH"] + (["AZ"] if _p.get("az") else [])
 INIZIO = "2006-01-01"          # primo ribilanciamento (prima i dati degli ETF sono troppo pochi)
@@ -381,7 +398,7 @@ def scegli(profilo, g, i, sc, regola=None):
         x = cot_al(sc.get(k), giorno)
         score = x[1] if x else None
         trend = round((col[i - 1] / sma - 1) * 100, 1) if sma else None
-        if sma and regola(score if score is not None else 0, col[i - 1] > sma):
+        if k in SEMPRE or (sma and regola(score if score is not None else 0, col[i - 1] > sma)):
             vol = _std([g.rend(t, j) for j in range(max(1, i - VOL_GIORNI), i)])
             pesi[k] = pesi.get(k, 0) + w
             info[k] = {"k": k, "vol": (vol or 0) * math.sqrt(252), "score": score, "trend": trend, "base": w}
@@ -520,7 +537,7 @@ def rischio_mese(g, pesi, mese, fino_a):
 
 # --------------------------------------------------------------------------- registro delle rotazioni live
 def _registro(cartella):
-    return os.path.join(cartella, "portafogli", "rotazioni_v2.json")
+    return os.path.join(cartella, "portafogli", "rotazioni_v3.json")
 
 
 def leggi_rotazioni(cartella=CARTELLA):
@@ -533,8 +550,8 @@ def leggi_rotazioni(cartella=CARTELLA):
 
 def registra(rotazioni, data, composizioni, cartella=CARTELLA, scrivi=True):
     """Aggiunge la rotazione del mese se non c'e' ancora. Le rotazioni gia' salvate non si toccano mai."""
-    if any(r["data"] == data for r in rotazioni):
-        return rotazioni
+    if any(r["data"] == data for r in rotazioni) or data < LIVE_V3_DAL:
+        return rotazioni                     # gia' salvata, oppure precedente all'avvio delle regole attuali
     rot = rotazioni + [{"data": data, "profili": {p: sorted(c.items()) for p, c in composizioni.items()}}]
     if scrivi:
         f = _registro(cartella)
@@ -670,10 +687,14 @@ def calcola(righe_cot, px, cartella=CARTELLA, scrivi=True, oggi=None, sat=None):
         ult = [x for x in (sat or {}).get("storico") or [] if x[0] == mese_rot]
         titoli_az = [{"t": t, "n": t, "s": None} for t in (ult[0][2] if ult and len(ult[0]) > 2 else [])]
     for prof in PROFILI:
-        piani, storia = {}, []
+        piani, storia, prec = {}, [], None
         for i in giorni:
             pesi, info, esclusi = scegli(prof, g, i, sc)
-            piani[i] = pesi
+            insieme = frozenset(k for k in pesi if k != "CASH")
+            # RIBILANCIO LENTO: si scambia solo se cambia l'insieme dei mercati o a inizio trimestre
+            if prec is None or insieme != prec or g.date[i][5:7] in TRIMESTRI:
+                piani[i] = pesi
+            prec = insieme
             storia.append((g.date[i], pesi))
         curva = simula(g, piani, giorni[0])
         pesi, info, esclusi = scegli(prof, g, ultimo_rib, sc)

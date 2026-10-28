@@ -55,15 +55,18 @@ class Portafogli(unittest.TestCase):
 
     def test_trend_negativo_peso_in_liquidita(self):
         px = dict(self.px)
-        giu = [(d, 100.0 * 0.999 ** n) for n, (d, _) in enumerate(px["IEF"])]      # Treasury sempre in discesa
-        px["IEF"] = giu
+        for t in ("EFA", "IEF"):                                                   # azioni estere E Treasury in discesa
+            px[t] = [(d, 100.0 * 0.999 ** n) for n, (d, _) in enumerate(px[t])]
         g = P.Griglia(px)
-        sc = P.segnali_cot(cot_finto(["US10Y"], {"US10Y"}))                       # COT da acquisto: non conta
-        pesi, _, esclusi = P.scegli(P.PROFILI[0], g, P.date_ribilancio(g)[-1], sc)
-        self.assertNotIn("US10Y", pesi)
-        self.assertGreaterEqual(pesi["CASH"], 0.45 + 0.15 - 1e-6)
-        self.assertEqual([e["k"] for e in esclusi if e["k"] == "US10Y"], ["US10Y"])
+        sc = P.segnali_cot(cot_finto(["EAFE"], {"EAFE"}))                         # COT da acquisto: non conta
+        prof = P.PROFILI[0]
+        pesi, _, esclusi = P.scegli(prof, g, P.date_ribilancio(g)[-1], sc)
+        self.assertNotIn("EAFE", pesi)                                             # azioni: filtro di trend
+        self.assertEqual([e["k"] for e in esclusi if e["k"] == "EAFE"], ["EAFE"])
+        self.assertIn("US10Y", pesi)                                               # v3: la difesa resta sempre
+        self.assertGreaterEqual(pesi["CASH"], (prof["base"]["CASH"] + prof["base"]["EAFE"]) * (1 - prof["az"]) - 1e-3)
 
+    @mock.patch.object(P, "LIVE_V3_DAL", "2000-01-01")     # nei dati finti la rotazione v3 e' gia' "live"
     def test_calcolo_completo_e_registro_mai_riscritto(self):
         righe = cot_finto([u[0] for u in P.UNIVERSO], {"SP500", "GOLD", "US10Y", "NASDAQ"})
         r = P.calcola(righe, self.px, cartella=self.dir, scrivi=True, oggi=date(2026, 10, 25))
@@ -148,3 +151,15 @@ class Portafogli(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AvvioV3(unittest.TestCase):
+    def test_nessuna_rotazione_live_prima_del_2_novembre(self):
+        d = tempfile.mkdtemp()
+        try:
+            rot = P.registra([], "2026-10-01", {"moderato": {"CASH": 1.0}}, d)
+            self.assertEqual(rot, [])                                              # niente live retroattivo
+            rot = P.registra([], "2026-11-02", {"moderato": {"CASH": 1.0}}, d)
+            self.assertEqual([r["data"] for r in rot], ["2026-11-02"])
+        finally:
+            shutil.rmtree(d)

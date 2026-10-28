@@ -960,13 +960,12 @@ html.cbloccato,html.cbloccato body{overflow:hidden}
 @media (max-width:600px){.pcomp h3{font-size:15px}.pbprof{margin:4px 0 0}.ptesta .ptorta{width:92px;height:92px}}
 /* ---------- BANNER EVENTI a scorrimento lento (web/js/04_dashboard.js) ---------- */
 .eventi .evhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.evfonte{margin-left:auto}.evfonte a{color:var(--acc)}
-.evnastro{position:relative;overflow:hidden;margin-top:14px;padding:4px 0;cursor:pointer;
+.evnastro{position:relative;overflow:hidden;margin-top:14px;padding:4px 0;cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none;outline:none;
  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 48px,#000 calc(100% - 48px),transparent 100%);
          mask-image:linear-gradient(90deg,transparent 0,#000 48px,#000 calc(100% - 48px),transparent 100%)}
-.evtrack{display:flex;width:max-content;animation:evscorri var(--evdur,30s) linear infinite;will-change:transform}
-.evnastro:hover .evtrack,.evnastro.pausa .evtrack,.evnastro:focus-within .evtrack{animation-play-state:paused}
+.evtrack{display:flex;width:max-content;will-change:transform}
+.evnastro.presa{cursor:grabbing}.evnastro:focus-visible{box-shadow:0 0 0 2px var(--acc);border-radius:12px}
 .evmeta{display:flex;gap:12px;padding-right:12px}
-@keyframes evscorri{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 .evp{--bc:var(--c1);display:inline-flex;align-items:center;gap:10px;white-space:nowrap;padding:9px 14px;border-radius:12px;font-size:13.5px;
  border:1px solid color-mix(in srgb,var(--bc) 45%,transparent);background:color-mix(in srgb,var(--bc) 12%,var(--card));transition:border-color .2s,transform .2s}
 .evp:hover{border-color:var(--bc);transform:translateY(-1px)}
@@ -974,5 +973,13 @@ html.cbloccato,html.cbloccato body{overflow:hidden}
 .evp .evv{font-size:11px;font-weight:800;padding:2px 7px;border-radius:6px;color:var(--bc);border:1px solid color-mix(in srgb,var(--bc) 55%,transparent)}
 .evp>b{font-size:14px;color:var(--ink)}.evp .evq{color:var(--ink2)}.evp .evq b{color:var(--ink)}
 .evp em{font-style:normal;font-size:12px;color:var(--mute)}.evp.oggi em,.evp.domani em{color:var(--bc);font-weight:800}
-.evnastro.fermo{-webkit-mask-image:none;mask-image:none;cursor:default}.evnastro.fermo .evtrack{animation:none;flex-wrap:wrap;gap:10px;width:auto}
+.evnastro.fermo{-webkit-mask-image:none;mask-image:none;cursor:default}.evnastro.fermo .evtrack{transform:none!important;flex-wrap:wrap;gap:10px;width:auto}
 @media (max-width:600px){.evfonte{margin-left:0;flex-basis:100%}.evp{font-size:12.5px;padding:8px 12px}}
+
+/* ---- tabella statistiche portafoglio su telefono: niente colonna "appiccicata" che copre i valori ---- */
+@media (max-width:600px){
+ .ptab{overflow-x:visible}.ptab table{table-layout:fixed;width:100%}
+ .ptab th:first-child{position:static;width:27%;white-space:normal;background:none;font-size:11px;line-height:1.25;overflow-wrap:normal;word-break:keep-all}
+ .ptab th,.ptab td{padding:9px 3px;font-size:12.5px;white-space:normal;word-break:normal;overflow-wrap:anywhere}
+ .ptab tr:first-child th{font-size:11px;line-height:1.2;overflow-wrap:normal;word-break:keep-all;letter-spacing:0}.ptab tr:first-child th span{font-size:10px;margin-top:2px}
+}

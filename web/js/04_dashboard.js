@@ -33,17 +33,43 @@ try{const ev=D.eventi||[],VEL=38;
   <div class="evnastro" role="marquee" aria-label="Prossimi eventi"><div class="evtrack"></div></div></div>`:"";
  const nastro=$("eventi").querySelector(".evnastro"),track=nastro&&nastro.querySelector(".evtrack");
  const base=ev.map(pill).join("");
+ // Nastro a scorrimento lento CONTROLLATO DA JS (non piu' da CSS): si puo' trascinare avanti e indietro con dito o mouse,
+ // al rilascio prosegue per inerzia e poi torna dolcemente alla velocita' di crociera (mai "inchiodato").
+ // x = spostamento corrente in px (0 .. -L, ciclico), vel = velocita' istantanea px/s, crociera = -VEL.
+ let x=0,vel=-VEL,L=1,trascina=false,sopra=false,ultimoT=0,rafId=0,mosso=0,px0=0,pt=0,vm=0;
+ const applica=()=>{track.style.transform=`translate3d(${x.toFixed(2)}px,0,0)`;};
+ const cicla=()=>{if(L>1){x=x%L;if(x>0)x-=L;}};
+ function giro(t){rafId=requestAnimationFrame(giro);
+  const dt=Math.min(0.05,(t-(ultimoT||t))/1000);ultimoT=t;if(trascina||!L)return;
+  const meta=sopra?0:-VEL;                          // col mouse sopra rallenta fino a fermarsi (si legge), senza scatti
+  vel+=(meta-vel)*Math.min(1,dt*(sopra?5:1.6));      // ritorno morbido alla crociera dopo il rilascio
+  x+=vel*dt;cicla();applica();}
  function monta(){if(!track)return;
-  if(matchMedia("(prefers-reduced-motion: reduce)").matches){track.innerHTML=base;nastro.classList.add("fermo");return;}
-  track.style.animation="none";track.innerHTML=`<span class="evmeta">${base}</span>`;
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches){track.innerHTML=base;nastro.classList.add("fermo");cancelAnimationFrame(rafId);return;}
+  nastro.classList.remove("fermo");track.innerHTML=`<span class="evmeta">${base}</span>`;
   const meta=track.firstChild,W=nastro.clientWidth||800;let n=1;
   while(meta.scrollWidth<W&&n<30){meta.insertAdjacentHTML("beforeend",base);n++;}   // riempi la larghezza
   track.insertAdjacentHTML("beforeend",`<span class="evmeta" aria-hidden="true">${meta.innerHTML}</span>`);
-  const L=meta.getBoundingClientRect().width;
-  track.style.setProperty("--evdur",Math.max(12,L/VEL).toFixed(1)+"s");void track.offsetWidth;track.style.animation="";}
+  L=meta.getBoundingClientRect().width;cicla();applica();
+  cancelAnimationFrame(rafId);ultimoT=0;rafId=requestAnimationFrame(giro);}
  monta();let rt=0;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(monta,250);});
- // tocco su telefono: ferma / riparte
- if(nastro)nastro.addEventListener("click",e=>{if(!e.target.closest("a"))nastro.classList.toggle("pausa");});
+ if(nastro&&track){
+  nastro.addEventListener("pointerdown",e=>{if(e.pointerType=="mouse"&&e.button!==0)return;
+   trascina=true;mosso=0;px0=e.clientX;pt=performance.now();vm=0;nastro.classList.add("presa");
+   try{nastro.setPointerCapture(e.pointerId);}catch(_){}});
+  nastro.addEventListener("pointermove",e=>{if(!trascina)return;
+   const dx=e.clientX-px0,now=performance.now(),dtm=Math.max(1,now-pt);px0=e.clientX;pt=now;
+   mosso+=Math.abs(dx);x+=dx;cicla();applica();
+   vm=vm*0.6+(dx/dtm*1000)*0.4;});                   // velocita' del gesto (media mobile) per l'inerzia
+  const rilascia=()=>{if(!trascina)return;trascina=false;nastro.classList.remove("presa");
+   vel=Math.max(-1400,Math.min(1400,vm));ultimoT=0;};
+  nastro.addEventListener("pointerup",rilascia);nastro.addEventListener("pointercancel",rilascia);
+  nastro.addEventListener("pointerenter",e=>{if(e.pointerType=="mouse")sopra=true;});
+  nastro.addEventListener("pointerleave",e=>{if(e.pointerType=="mouse")sopra=false;});
+  nastro.addEventListener("click",e=>{if(mosso>6){e.preventDefault();e.stopPropagation();}},true);   // un trascinamento non e' un clic
+  nastro.addEventListener("keydown",e=>{if(e.key=="ArrowLeft"||e.key=="ArrowRight"){x+=(e.key=="ArrowLeft"?1:-1)*140;cicla();applica();e.preventDefault();}});
+  nastro.tabIndex=0;
+  document.addEventListener("visibilitychange",()=>{ultimoT=0;});}
 }catch(e){fail("Prossimi eventi","eventi",e);}
 $("sectors").innerHTML=SEC.filter(g=>byS[g]).map(g=>{const l=byS[g],avg=l.reduce((x,a)=>x+a.score,0)/l.length;
  const up=l.filter(a=>a.score>=M.normal).length,dn=l.filter(a=>a.score<=-M.normal).length;

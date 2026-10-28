@@ -1,0 +1,31 @@
+Periodo 2006-01-03 - 2026-10-23, 250 ribilanciamenti, azioni scelte: si
+
+=== Conservativo ===
+                                 --- tutto il periodo ---       |  --- dal 2016 (fuori campione) ---   | turnover/anno
+                             CAGR    Vol   MaxDD  CAGR/Vol   |   CAGR    Vol   MaxDD  CAGR/Vol  |
+A attuale                     5.9    4.2   -13.8      1.40   |    5.5    4.1   -13.8      1.34  |   148%
+B azioni ridotte              5.0    4.4   -13.6      1.14   |    4.5    4.3   -13.6      1.05  |   148%
+C B + difesa                  5.0    4.5   -12.7      1.11   |    4.7    4.3   -12.7      1.09  |   115%
+D C + ribilancio lento        5.3    4.5   -12.7      1.18   |    4.9    4.4   -12.7      1.11  |   112%
+E D + difesa sempre accesa    5.7    5.0   -13.7      1.14   |    5.5    4.9   -13.7      1.12  |    56%
+Benchmark 30/70               5.3    6.1   -20.3      0.87   |    4.7    6.3   -20.3      0.75  | 
+
+=== Moderato ===
+                                 --- tutto il periodo ---       |  --- dal 2016 (fuori campione) ---   | turnover/anno
+                             CAGR    Vol   MaxDD  CAGR/Vol   |   CAGR    Vol   MaxDD  CAGR/Vol  |
+A attuale                     8.4    5.2   -17.3      1.62   |    8.3    5.1   -17.3      1.63  |   152%
+B azioni ridotte              6.7    5.8   -16.4      1.16   |    6.5    5.5   -16.4      1.18  |   151%
+C B + difesa                  6.8    6.0   -16.0      1.13   |    6.7    5.7   -16.0      1.18  |   133%
+D C + ribilancio lento        7.1    6.1   -16.2      1.16   |    6.7    5.8   -16.2      1.16  |   130%
+E D + difesa sempre accesa    7.4    6.3   -16.9      1.17   |    7.3    6.1   -16.9      1.20  |    90%
+Benchmark 60/40               7.2   10.5   -31.2      0.69   |    8.3   10.2   -22.8      0.81  | 
+
+=== Aggressivo ===
+                                 --- tutto il periodo ---       |  --- dal 2016 (fuori campione) ---   | turnover/anno
+                             CAGR    Vol   MaxDD  CAGR/Vol   |   CAGR    Vol   MaxDD  CAGR/Vol  |
+A attuale                    14.0    6.3   -21.0      2.22   |   15.7    6.4   -21.0      2.45  |   156%
+B azioni ridotte             10.4    8.4   -19.9      1.24   |   12.5    8.5   -19.9      1.47  |   156%
+C B + difesa                 10.6    8.7   -19.8      1.22   |   12.7    8.7   -19.8      1.46  |   155%
+D C + ribilancio lento       11.2    8.8   -19.9      1.27   |   13.0    8.8   -19.9      1.48  |   153%
+E D + difesa sempre accesa   11.8    9.0   -19.8      1.31   |   14.3    9.1   -19.8      1.57  |   129%
+Benchmark 80/20               8.4   14.4   -42.1      0.58   |   10.7   13.6   -28.7      0.79  | 

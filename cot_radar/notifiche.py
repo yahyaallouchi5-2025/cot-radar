@@ -17,6 +17,10 @@ RIEPILOGO SETTIMANALE (riepilogo.py): quando la dashboard online mostra un repor
 dopo l'uscita del COT) parte il riepilogo di tutti i segnali attivi divisi per categoria di asset, al posto del
 messaggio sugli eventi. Il cursore ricorda la data COT dell'ultimo riepilogo ("riepilogo_cot"): uno a settimana.
 
+BRIEFING DEL LUNEDI' (briefing.py, v6.38): ogni lunedi' dalle 05:30 UTC (martedi' se il giro e' saltato) un messaggio
+lungo con portafoglio, forex, banche centrali e altri mercati, tutto ricavato dai dati del sito. Il cursore ricorda
+il lunedi' dell'ultimo briefing ("briefing"): uno a settimana, mai doppioni. Al primo avvio parte dal lunedi' dopo.
+
 Negli altri giri (un solo messaggio per giro, diviso solo se supera il limite di Telegram) si avvisa di:
   - NUOVO SEGNALE (apertura): direzione e punteggio (l'affidabilita' NON si mostra su Telegram);
   - RAFFORZAMENTO a STRONG (apertura "figlio") e INDEBOLIMENTO da STRONG;
@@ -176,13 +180,14 @@ def leggi_cursore(cartella):
         return json.load(fh)
 
 
-def scrivi_cursore(cartella, ultimo_n, ultimo_hash, adesso, riepilogo_cot=None, agenda=None):
+def scrivi_cursore(cartella, ultimo_n, ultimo_hash, adesso, riepilogo_cot=None, agenda=None, briefing=None):
     """ultimo_n = ultimo evento avvisato; riepilogo_cot = data COT dell'ultimo riepilogo settimanale inviato;
-    agenda = stato degli avvisi sulle notizie (avvisi.py): {"arrivo": {id: data}, "esito": {valuta-data: data}}."""
+    agenda = stato degli avvisi sulle notizie (avvisi.py): {"arrivo": {id: data}, "esito": {valuta-data: data}};
+    briefing = data (lunedi') dell'ultimo briefing settimanale inviato (briefing.py)."""
     f = os.path.join(cartella, CURSORE)
     tmp = f + ".tmp"
     with open(tmp, "w", encoding="utf-8", newline="\n") as fh:
-        json.dump({"ultimo_n": ultimo_n, "hash": ultimo_hash, "riepilogo_cot": riepilogo_cot, "agenda": agenda,
+        json.dump({"ultimo_n": ultimo_n, "hash": ultimo_hash, "riepilogo_cot": riepilogo_cot, "agenda": agenda, "briefing": briefing,
                    "aggiornato": adesso.strftime("%Y-%m-%dT%H:%MZ")}, fh, ensure_ascii=False, indent=1)
         fh.write("\n")
     os.replace(tmp, f)
@@ -266,8 +271,9 @@ def esegui(cartella, sito, env=None, adesso=None, invia=True, dati_sito=None):
     adesso_utc = adesso.astimezone(timezone.utc).replace(tzinfo=None) if adesso.tzinfo else adesso
     if cursore is None:
         if invia:
+            lun0 = (adesso_utc.date() - timedelta(days=adesso_utc.weekday())).isoformat()
             scrivi_cursore(cartella, ultimo_n, ultimo_hash, adesso, cot_sito,
-                           avvisi.stato_iniziale(agenda_sito, adesso_utc) if agenda_sito else None)
+                           avvisi.stato_iniziale(agenda_sito, adesso_utc) if agenda_sito else None, lun0)
         log.info("notifiche: primo avvio, cursore all'evento %d e al COT %s (nessun arretrato inviato)",
                  ultimo_n, cot_sito)
         return {"esito": "primo_avvio", "inviati": 0, "ultimo_n": ultimo_n}
@@ -276,7 +282,7 @@ def esegui(cartella, sito, env=None, adesso=None, invia=True, dati_sito=None):
     if cot_sito and not gia_cot:
         gia_cot = cot_sito             # cursore di una versione precedente: il primo riepilogo sara' il prossimo
     if settimanale:
-        testi = riepilogo.testi(dati, sito)
+        testi = riepilogo.testi(dati, sito, verifica=riepilogo.scarica_verifica(sito, dati))
         log.info("notifiche: nuovo report COT online (%s): riepilogo settimanale", cot_sito)
     else:
         nuovi, vecchi = da_avvisare(eventi, cursore, adesso)
@@ -298,9 +304,19 @@ def esegui(cartella, sito, env=None, adesso=None, invia=True, dati_sito=None):
         t = avvisi.testo_settimana(agenda_sito, lunedi)
         settimana = [t] if t else []
         nuovo_ag = dict(nuovo_ag or {}, settimana=lunedi.isoformat())    # segnata anche se vuota: niente ripetizioni
+    # BRIEFING DEL LUNEDI' (briefing.py): una volta a settimana, il lunedi' (o il martedi' se il giro e' saltato)
+    # dalle 05:30 UTC; segnato nel cursore con la data del lunedi' della settimana. Dopo l'agenda, prima delle notizie.
+    briefing, lun_brief = [], cursore.get("briefing")
+    if dati and dati.get("assets"):
+        lun = adesso_utc.date() - timedelta(days=adesso_utc.weekday())
+        if cursore.get("briefing") != lun.isoformat() and adesso_utc.weekday() in (0, 1) and \
+                (adesso_utc.hour, adesso_utc.minute) >= (5, 30):
+            from . import briefing as _br
+            briefing = _br.testi(dati, sito, adesso_utc)
+            lun_brief = lun.isoformat()
     testi_notizie = settimana + [avvisi.testo_arrivo(arrivo[i:i + 5], credito) for i in range(0, len(arrivo), 5)] + \
                     [avvisi.testo_esito(gruppi[i:i + 4], credito) for i in range(0, len(gruppi), 4)]
-    esito = {"esito": "niente_di_nuovo", "inviati": 0, "ultimo_n": ultimo_n, "testi": testi,
+    esito = {"esito": "niente_di_nuovo", "inviati": 0, "ultimo_n": ultimo_n, "testi": testi, "briefing": briefing,
              "tipo": "settimanale" if settimanale else "eventi", "testi_notizie": testi_notizie}
     if not invia:
         return dict(esito, esito="anteprima")
@@ -318,6 +334,17 @@ def esegui(cartella, sito, env=None, adesso=None, invia=True, dati_sito=None):
         log.info("notifiche: Telegram non configurato (Secrets TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID)")
         esito["esito"] = "non_configurato"
     nuovo_cot = cot_sito if settimanale else gia_cot
+    # briefing del lunedi': se Telegram lo rifiuta il cursore NON avanza e si riprova al giro dopo
+    nuovo_brief = cursore.get("briefing")
+    if briefing and configurato:
+        if all(invia_telegram(token, chat, t) for t in briefing):
+            nuovo_brief = lun_brief
+            esito["inviati"] += len(briefing)
+            esito["esito"] = "inviato"
+        else:
+            esito["esito"] = "telegram_errore"
+    elif briefing:
+        nuovo_brief = lun_brief                          # Telegram non configurato: nessun arretrato quando lo si attiva
     notizie_ok = True
     if testi_notizie and configurato:
         for t in testi_notizie:
@@ -330,8 +357,8 @@ def esegui(cartella, sito, env=None, adesso=None, invia=True, dati_sito=None):
             esito["esito"] = "inviato"
     stato_finale = nuovo_ag if notizie_ok else stato_ag
     if (ultimo_n != cursore.get("ultimo_n") or nuovo_cot != cursore.get("riepilogo_cot")
-            or stato_finale != cursore.get("agenda")):
-        scrivi_cursore(cartella, ultimo_n, ultimo_hash, adesso, nuovo_cot, stato_finale)
+            or stato_finale != cursore.get("agenda") or nuovo_brief != cursore.get("briefing")):
+        scrivi_cursore(cartella, ultimo_n, ultimo_hash, adesso, nuovo_cot, stato_finale, nuovo_brief)
     return esito
 
 
@@ -343,14 +370,21 @@ def prova_notizie(sito, env=None, dati_sito=None, adesso=None):
     env = os.environ if env is None else env
     token, chat = env.get("TELEGRAM_BOT_TOKEN"), env.get("TELEGRAM_CHAT_ID")
     dati = dati_sito if dati_sito is not None else riepilogo.scarica(sito)
+    adesso = adesso or datetime.now(timezone.utc).replace(tzinfo=None)
+    testi = []
+    if dati and dati.get("assets"):                       # esempi del riepilogo del venerdi' e del briefing del lunedi'
+        from . import briefing as _br
+        testi += riepilogo.testi(dati, sito, test=True, verifica=riepilogo.scarica_verifica(sito, dati))
+        testi += _br.testi(dati, sito, adesso, test=True)
     agenda = (dati or {}).get("agenda")
     if not agenda or not agenda.get("eventi"):
-        log.error("prova notizie: il sito non ha l'agenda delle notizie")
-        return {"telegram": None, "messaggi": 0}
-    adesso = adesso or datetime.now(timezone.utc).replace(tzinfo=None)
+        if not testi:
+            log.error("prova notizie: il sito non ha dati ne' agenda delle notizie")
+            return {"telegram": None, "messaggi": 0}
+        agenda = {"eventi": [], "credito": ""}
+        log.warning("prova notizie: agenda delle notizie non disponibile, partono solo riepilogo e briefing")
     g = adesso.weekday()
     lunedi = adesso.date() + timedelta(days=(7 - g) if g else 7)        # lunedi' della settimana PROSSIMA
-    testi = []
     t = avvisi.testo_settimana(agenda, lunedi, prova=True)
     if t:
         testi.append(t)
@@ -392,8 +426,8 @@ def prova(sito, env=None, dati_sito=None):
 def main(argv):
     if len(argv) >= 2 and argv[0] == "anteprima":
         r = esegui(os.path.join(argv[1], "segnali"), argv[2] if len(argv) > 2 else "", invia=False)
-        print(json.dumps({k: v for k, v in r.items() if k != "testi"}, ensure_ascii=False))
-        for t in r.get("testi") or []:
+        print(json.dumps({k: v for k, v in r.items() if k not in ("testi", "briefing")}, ensure_ascii=False))
+        for t in (r.get("testi") or []) + (r.get("briefing") or []):
             print("-" * 40 + "\n" + t)
         return 0
     if len(argv) >= 1 and argv[0] == "prova":
@@ -410,7 +444,7 @@ def main(argv):
         print(__doc__)
         return 2
     r = esegui(os.path.join(argv[0], "segnali"), argv[1] if len(argv) > 1 else "")
-    print("esito notifiche:", {k: v for k, v in r.items() if k != "testi"})
+    print("esito notifiche:", {k: v for k, v in r.items() if k not in ("testi", "briefing")})
     return 1 if r["esito"] in ("telegram_errore", "registro_non_integro") else 0
 
 

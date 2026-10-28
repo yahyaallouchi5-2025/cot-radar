@@ -232,6 +232,17 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+### v6.39
+- **Briefing del lunedì su Telegram** (`cot_radar/briefing.py`): messaggio lungo con 📌 portafoglio (semaforo 🟢🟡🔴 sul trend), 🎯 messaggio chiave, ✍️ Forex update (una scheda per valuta), 🏦 banche centrali e dati, 🧭 altri mercati. Ogni frase nasce da un dato della dashboard (COT, driver FRED/BCE, trend dei portafogli, eventi): niente testi di terzi né previsioni; i "livelli" sono l'ampiezza tipica della settimana (prezzo ± movimento medio storico), dichiarata come tale. Parte una volta a settimana, il lunedì dalle 05:30 UTC (martedì se il giro salta); il cursore `briefing` in `notificati.json` evita i doppioni.
+- **Riepilogo del venerdì sera** con racconto breve in testa ("🎯 In breve": segnali attivi/nuovi/chiusi, i più forti, quanti segnali aperti sono in guadagno dal registro pubblico, prossima rotazione).
+- *Prova notifiche* ora manda anche un esempio di riepilogo e di briefing marcati [TEST].
+- **Portafogli versione 3** (variante "E" dello studio): azioni scelte 5/10/15%, difesa con più liquidità e oro, Treasury e oro sempre in portafoglio (filtro di trend solo su azioni e Bitcoin), scambi solo se un mercato entra/esce o a inizio trimestre. Turnover molto più basso (conservativo da ~150% a ~56% l'anno). La v3 è stata decisa guardando tutto lo storico: la prova pulita è la linea live, che riparte dalla rotazione del 2/11/2026 (`rotazioni_v3.json`; v2 conservata).
+- **Studio sui portafogli** (`tools/backtest_varianti.py`, risultati in `tools/risultati_varianti.txt`): confronto di quattro varianti (azioni scelte ridotte, difesa diversa, ribilancio lento, difesa sempre accesa) con benchmark 30/70, 60/40 e 80/20. Solo studio, nulla è cambiato sul sito. Limiti: ETF in dollari (niente effetto cambio/copertura), tasse non simulate (si misura il turnover) e storico delle azioni scelte simulato con volatilità sottostimata.
+
+### v6.38
+- Banner eventi: ora si trascina avanti e indietro con dito o mouse, con inerzia e ripartenza dolce (non si blocca piu' al tocco).
+- Portafogli su telefono: tabella delle statistiche sempre leggibile (niente colonna che copre i valori).
+
 ## v6.37: portafoglio pronto da eseguire
 - Scheda Portafogli: "Portafoglio di <mese>" del profilo scelto, righe raggruppate per classe di attivo, per ogni
   mercato lo strumento acquistabile in Europa (UCITS / ETC / ETP, `portafogli.STRUMENTI_UE`) con ISIN da copiare,
