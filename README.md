@@ -232,6 +232,9 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+### v6.40
+- **Riquadri in alto della Dashboard ridisegnati**: ognuno risponde a una domanda semplice. Segnali attivi con barra verde/rossa (rialzo/ribasso) ed etichetta ★ STRONG; clima del mercato con tachimetro PAURA → FIDUCIA; prossima rotazione e nuovi dati COT con conto alla rovescia e barra del tempo passato. Cliccabili (segnali, Mercato, Portafogli, Forza degli strumenti), effetti al passaggio del mouse, leggibili anche nei riquadri stretti.
+
 ### v6.39
 - **Briefing del lunedì su Telegram** (`cot_radar/briefing.py`): messaggio lungo con 📌 portafoglio (semaforo 🟢🟡🔴 sul trend), 🎯 messaggio chiave, ✍️ Forex update (una scheda per valuta), 🏦 banche centrali e dati, 🧭 altri mercati. Ogni frase nasce da un dato della dashboard (COT, driver FRED/BCE, trend dei portafogli, eventi): niente testi di terzi né previsioni; i "livelli" sono l'ampiezza tipica della settimana (prezzo ± movimento medio storico), dichiarata come tale. Parte una volta a settimana, il lunedì dalle 05:30 UTC (martedì se il giro salta); il cursore `briefing` in `notificati.json` evita i doppioni.
 - **Riepilogo del venerdì sera** con racconto breve in testa ("🎯 In breve": segnali attivi/nuovi/chiusi, i più forti, quanti segnali aperti sono in guadagno dal registro pubblico, prossima rotazione).

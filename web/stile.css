@@ -983,3 +983,53 @@ html.cbloccato,html.cbloccato body{overflow:hidden}
  .ptab th,.ptab td{padding:9px 3px;font-size:12.5px;white-space:normal;word-break:normal;overflow-wrap:anywhere}
  .ptab tr:first-child th{font-size:11px;line-height:1.2;overflow-wrap:normal;word-break:keep-all;letter-spacing:0}.ptab tr:first-child th span{font-size:10px;margin-top:2px}
 }
+
+/* ---------- RIQUADRI IN ALTO della Dashboard (v6.40, web/js/04_dashboard.js) ----------
+   4 riquadri cliccabili: ognuno con colore e icona propri (--c), domanda semplice, disegno al posto del solo numero. */
+.kzg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-bottom:28px}
+.kz{--c:var(--acc);position:relative;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:18px 20px 16px;border-radius:18px;
+ background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);text-decoration:none;color:inherit;
+ box-shadow:var(--shadow);transition:transform .25s cubic-bezier(.2,.8,.2,1),border-color .25s,box-shadow .25s}
+.kz::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--c),transparent)}
+.kz::after{content:"";position:absolute;width:180px;height:180px;right:-60px;top:-80px;border-radius:50%;pointer-events:none;
+ background:radial-gradient(circle,color-mix(in srgb,var(--c) 22%,transparent),transparent 70%);opacity:.55;transition:opacity .3s}
+.kz:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--c) 65%,var(--line));box-shadow:0 16px 40px rgba(2,8,20,.5),0 0 0 1px color-mix(in srgb,var(--c) 25%,transparent)}
+.kz:hover::after{opacity:1}.kz:focus-visible{outline:2px solid var(--c);outline-offset:3px}
+.kz1{--c:var(--c1)}.kz2{--c:var(--clima,var(--warn))}.kz3{--c:var(--acc)}.kz4{--c:var(--c5)}
+.kzt{display:flex;align-items:center;gap:10px}
+.kzico{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--c);
+ background:color-mix(in srgb,var(--c) 14%,transparent);border:1px solid color-mix(in srgb,var(--c) 35%,transparent)}
+.kzico svg{width:18px;height:18px}
+.kzt h3{margin:0;font-size:13px;font-weight:700;letter-spacing:.2px;color:var(--ink2);text-transform:none}
+.kzvai{margin-left:auto;color:var(--mute);font-size:20px;line-height:1;transition:transform .25s,color .25s}
+.kz:hover .kzvai{transform:translateX(4px);color:var(--c)}
+.kzq{margin:-6px 0 0 44px;font-size:12.5px;color:var(--mute)}
+.kzb{display:flex;align-items:flex-end;gap:12px;min-height:64px}.kzbc{align-items:center;gap:18px}
+.kzbig{font-size:40px;font-weight:800;line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.kzchip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;margin-bottom:4px;
+ color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent);border:1px solid color-mix(in srgb,var(--warn) 40%,transparent)}
+.kzsplit{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--soft);gap:3px}
+.kzsplit i{display:block;height:100%;border-radius:99px}
+.kzsplit .su{background:linear-gradient(90deg,#2fbf8f,var(--b))}.kzsplit .giu{background:linear-gradient(90deg,var(--s),#ff8f6b)}
+.kzleg{display:flex;justify-content:space-between;font-size:13px;color:var(--ink2)}.kzleg .up{color:var(--b)}.kzleg .dn{color:var(--s)}
+.kzgauge{width:132px;flex:none}.kzgauge svg{display:block;width:100%;height:auto;overflow:visible}
+.kzago{transform-origin:66px 66px;transition:transform 1s cubic-bezier(.3,1.4,.5,1)}
+.kzestremi{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;font-weight:800;letter-spacing:.8px}
+.kzestremi .p{color:var(--s)}.kzestremi .f{color:var(--b)}
+.kzstato{font-size:28px;font-weight:800;line-height:1;letter-spacing:.3px;color:var(--clima)}
+.kzn{font-size:13px;color:var(--ink2)}
+.kzcd{display:flex;gap:6px;min-height:52px}
+.kzcd div{min-width:50px;padding:6px 6px 5px;border-radius:10px;text-align:center;background:var(--soft);border:1px solid var(--line)}
+.kzcd b{display:block;font-size:22px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums;color:var(--ink)}
+.kzcd small{font-size:10.5px;color:var(--mute);text-transform:uppercase;letter-spacing:.6px}
+.kzprog{height:6px;border-radius:99px;background:var(--soft);overflow:hidden}
+.kzprog i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,color-mix(in srgb,var(--c) 50%,transparent),var(--c));transition:width 1s}
+.kzquando{font-size:13px;color:var(--ink2)}.kzquando b{color:var(--ink)}
+@media (max-width:1100px){.kzg{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.kzg{grid-template-columns:1fr;gap:12px}.kz{padding:15px 16px 14px;gap:10px}.kzbig{font-size:34px}.kzgauge{width:112px}.kzcd div{min-width:44px}.kzcd b{font-size:19px}}
+@media (prefers-reduced-motion:reduce){.kz,.kzago,.kzprog i{transition:none}}
+/* riquadri stretti (colonna principale accanto al menu laterale): tachimetro e scritte si rimpiccioliscono, mai tagliati */
+.kz{container-type:inline-size}
+@container (max-width:300px){.kzbc{gap:12px}.kzgauge{width:100px}.kzstato{font-size:20px}.kzestremi{font-size:9.5px;letter-spacing:.4px}
+ .kzcd div{min-width:44px;padding:5px 4px 4px}.kzcd b{font-size:19px}.kzbig{font-size:34px}.kzq{margin-left:0;margin-top:-4px}}
+

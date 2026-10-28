@@ -3,15 +3,53 @@
    mtag() decide l'etichetta "Mercato conferma / contro / gia' scontato" confrontando i segni di COT e Mercato. */
 try{
 
-(function kpis(){const strong=D.pairs.filter(p=>p.label.startsWith("STRONG")).length+Object.values(D.assets).filter(a=>a.key!="USD"&&a.group!="Valute"&&a.label.startsWith("STRONG")).length;
- const act=D.pairs.filter(p=>p.label!="NEUTRO").length+Object.values(D.assets).filter(a=>a.key!="USD"&&a.group!="Valute"&&a.label!="NEUTRO").length;
- const r=D.market?D.market.risk:null,rl=r==null?"n/d":r>=30?"FAVOREVOLE":r<=-30?"SFAVOREVOLE":"NEUTRO";   // in maiuscolo, come i verdetti delle card
- const po=D.port;                                        // portafogli modello (al posto del vecchio riquadro mutui)
- const cot=D.sources[0];
- $("kpis").innerHTML=`<div class="card kpi"><h3>Segnali attivi</h3><div class="big">${act}</div><div class="note">di cui <b>${strong}</b> STRONG</div></div>
- <div class="card kpi"><h3>Clima di rischio</h3><div class="big" style="color:${r>=30?'var(--b)':r<=-30?'var(--s)':'var(--ink)'}">${rl}</div><div class="note">VIX, spread e rendimenti reali, 4 settimane</div></div>
- <div class="card kpi clic" data-vai="port" title="Apri i Portafogli"><h3>Prossima rotazione</h3><div class="big" style="font-size:20px;margin-top:12px">${po&&po.prossima?fd(po.prossima):"n/d"}</div><div class="note">portafogli modello &middot; 5 azioni scelte</div></div>
- <div class="card kpi"><h3>Prossimo COT</h3><div class="big" style="font-size:20px;margin-top:12px">${cot.next}</div><div class="note">dati al ${cot.last}</div></div>`;})();
+/* RIQUADRI IN ALTO (v6.40): ognuno risponde a UNA domanda semplice con un disegno che si capisce a colpo d'occhio:
+   1) segnali attivi = barra verde/rossa rialzo-ribasso + etichetta STRONG;  2) clima = tachimetro PAURA -> FIDUCIA;
+   3) prossima rotazione e 4) nuovi dati COT = conto alla rovescia (giorni/ore/min) + barra del tempo gia' passato.
+   Il conto alla rovescia si aggiorna ogni 30 s e si ferma da solo se i riquadri spariscono dalla pagina. */
+(function kpis(){
+ const altri=Object.values(D.assets).filter(a=>a.key!="USD"&&a.group!="Valute");
+ const tutti=D.pairs.map(p=>p.label).concat(altri.map(a=>a.label));
+ const su=tutti.filter(l=>l.includes("BUY")).length,giu=tutti.filter(l=>l.includes("SELL")).length,strong=tutti.filter(l=>l.startsWith("STRONG")).length;
+ const r=D.market?D.market.risk:null;                       // -100 (paura) ... +100 (fiducia)
+ const [rl,rc]=r==null?["n/d","var(--mute)"]:r>=30?["FIDUCIA","var(--b)"]:r<=-30?["PAURA","var(--s)"]:["NEUTRO","var(--warn)"];
+ const po=D.port,cot=D.sources[0]||{};
+ const GG=["domenica","lunedì","martedì","mercoledì","giovedì","venerdì","sabato"],MM=["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
+ const roma=(ymd,h)=>{const [y,m,d]=ymd.split("-").map(Number),g=Date.UTC(y,m-1,d,h);   // "ymd hh:00" a Roma (ora legale/solare)
+  const hr=+new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Rome",hour:"2-digit",hourCycle:"h23"}).formatToParts(new Date(g)).find(x=>x.type=="hour").value;
+  return new Date(g-((hr-h+24)%24)*3600e3);};
+ let rotA=null,rotDa=null;try{if(po&&po.prossima){rotA=roma(po.prossima,9);rotDa=po.rotazione?roma(po.rotazione,9):new Date(rotA-30*864e5);}}catch(e){}
+ const cotA=cot.next_ms?new Date(cot.next_ms):null,cotDa=cotA?new Date(cotA-7*864e5):null;
+ const ico={seg:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',clima:'<path d="M12 3v2M5.6 5.6l1.4 1.4M3 12h2M19 12h2M17 7l1.4-1.4"/><circle cx="12" cy="14" r="5"/>',
+  rot:'<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/>',cot:'<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>'};
+ const testa=(k,t,q)=>`<div class="kzt"><span class="kzico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ico[k]}</svg></span><h3>${t}</h3><span class="kzvai" aria-hidden="true">&rsaquo;</span></div><p class="kzq">${q}</p>`;
+ const tot=su+giu||1,ang=r==null?0:Math.max(-1,Math.min(1,r/100))*80;
+ const rd=rotA?`${GG[rotA.getDay()]} ${rotA.getDate()} ${MM[rotA.getMonth()]}`:"n/d";
+ $("kpis").className="kzg";
+ $("kpis").innerHTML=`<a class="kz kz1" href="#cards" data-scorri="cards" title="Vai ai segnali">${testa("seg","Segnali attivi","Quante occasioni vede oggi il radar?")}
+   <div class="kzb"><div class="kzbig">${su+giu}</div>${strong?`<span class="kzchip" title="I segnali più forti">&#9733; ${strong} STRONG</span>`:""}</div>
+   <div class="kzsplit"><i class="su" style="width:${su/tot*100}%"></i><i class="giu" style="width:${giu/tot*100}%"></i></div>
+   <div class="kzleg"><span><b class="up">&#9650; ${su}</b> al rialzo</span><span>al ribasso <b class="dn">&#9660; ${giu}</b></span></div></a>
+  <a class="kz kz2" href="#mkt" data-vai="mkt" title="Vai al clima di mercato" style="--clima:${rc}">${testa("clima","Clima del mercato","Gli investitori hanno paura o fiducia?")}
+   <div class="kzb kzbc"><div class="kzgauge" aria-hidden="true"><svg viewBox="0 0 132 74"><defs><linearGradient id="kzarco" x1="0" x2="1"><stop offset="0" stop-color="#f2716b"/><stop offset=".5" stop-color="#e9b44c"/><stop offset="1" stop-color="#4fd6a3"/></linearGradient></defs>
+     <path d="M12 66 A54 54 0 0 1 120 66" fill="none" stroke="#121d31" stroke-width="12" stroke-linecap="round"/><path d="M12 66 A54 54 0 0 1 120 66" fill="none" stroke="url(#kzarco)" stroke-width="12" stroke-linecap="round" opacity=".9"/>
+     <g class="kzago" style="transform:rotate(${ang}deg)"><line x1="66" y1="66" x2="66" y2="22" stroke="#f1f5fb" stroke-width="3.5" stroke-linecap="round"/></g><circle cx="66" cy="66" r="6" fill="#f1f5fb"/></svg>
+     <div class="kzestremi"><span class="p">PAURA</span><span class="f">FIDUCIA</span></div></div><div class="kzstato">${rl}</div></div>
+   <div class="kzn">Misurato su paura (VIX), rischio delle obbligazioni e tassi, ultime 4 settimane</div></a>
+  <a class="kz kz3" href="#port" data-vai="port" title="Apri i Portafogli">${testa("rot","Prossima rotazione","Quando si aggiornano i portafogli?")}
+   <div class="kzcd" data-cd="rot"></div><div class="kzprog"><i data-pr="rot"></i></div><div class="kzquando"><b>${rd}</b>${rotA?" &middot; ore 9:00":""}</div></a>
+  <a class="kz kz4" href="#assets" data-vai="assets" title="Vedi la forza di ogni strumento">${testa("cot","Nuovi dati COT","Quando arrivano i dati nuovi?")}
+   <div class="kzcd" data-cd="cot"></div><div class="kzprog"><i data-pr="cot"></i></div><div class="kzquando"><b>${esc(cot.next||"n/d")}</b>${cot.last?` &middot; ora i dati sono del ${esc(String(cot.last).replace(/^\w+ /,"").slice(0,5))}`:""}</div></a>`;
+ // clic su "Segnali attivi": scorre alle card dei segnali nella stessa scheda
+ const s1=$("kpis").querySelector("[data-scorri]");if(s1)s1.onclick=e=>{e.preventDefault();const t=$("cards");if(t)t.scrollIntoView({behavior:"smooth",block:"start"});};
+ const z=n=>String(n).padStart(2,"0");
+ function cd(k,da,a){const box=$("kpis").querySelector(`[data-cd=${k}]`),bar=$("kpis").querySelector(`[data-pr=${k}]`);if(!box)return false;
+  if(!a){box.innerHTML='<span class="small">data non disponibile</span>';return true;}
+  const ms=Math.max(0,a-Date.now()),g=Math.floor(ms/864e5),h=Math.floor(ms/36e5)%24,m=Math.floor(ms/6e4)%60;
+  box.innerHTML=[[g,"giorni"],[h,"ore"],[m,"min"]].map(([v,l])=>`<div><b>${z(v)}</b><small>${l}</small></div>`).join("");
+  bar.style.width=Math.min(100,Math.max(0,(Date.now()-da)/(a-da)*100))+"%";return true;}
+ const giro=()=>{if(!cd("rot",rotDa,rotA)||!cd("cot",cotDa,cotA))clearInterval(t);};
+ const t=setInterval(giro,30000);giro();})();
 
 /* PROSSIMI EVENTI ad alto impatto (motore notizie): BANNER A SCORRIMENTO LENTO (ticker).
    Ogni evento e' una "pillola": valuta, nome, giorno e ora, quanto manca. Colori: ambra = banca centrale (Fed, BCE),
