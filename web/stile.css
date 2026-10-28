@@ -1033,3 +1033,8 @@ html.cbloccato,html.cbloccato body{overflow:hidden}
 @container (max-width:300px){.kzbc{gap:12px}.kzgauge{width:100px}.kzstato{font-size:20px}.kzestremi{font-size:9.5px;letter-spacing:.4px}
  .kzcd div{min-width:44px;padding:5px 4px 4px}.kzcd b{font-size:19px}.kzbig{font-size:34px}.kzq{margin-left:0;margin-top:-4px}}
 
+
+/* "Rischio del mese" accanto alla composizione (solo PC): la card NON si allunga fino all'altezza della colonna di
+   sinistra (niente vuoto dentro la card); se lo schermo e' abbastanza alto resta visibile mentre scorri la composizione. */
+@media (min-width:1001px){.pgrid{align-items:start}}
+@media (min-width:1001px) and (min-height:1040px){.pcontro{position:sticky;top:104px}}
