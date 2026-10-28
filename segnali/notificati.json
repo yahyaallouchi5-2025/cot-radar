@@ -9,7 +9,10 @@
    "australia-cpi-october-2026": "2026-10-28",
    "rbnz-rate-decision-october-2026": "2026-10-28",
    "bank-of-canada-rate-decision-october-2026": "2026-10-28",
-   "fomc-rate-decision-october-2026": "2026-10-28"
+   "fomc-rate-decision-october-2026": "2026-10-28",
+   "us-gross-domestic-product-october-2026": "2026-10-29",
+   "us-personal-income-and-outlays-pce-october-2026": "2026-10-29",
+   "ecb-rate-decision-october-2026": "2026-10-29"
   },
   "esito": {
    "CAD-2026-10-19": "2026-10-19",
@@ -17,5 +20,5 @@
   },
   "settimana": "2026-10-26"
  },
- "aggiornato": "2026-10-28T00:58Z"
+ "aggiornato": "2026-10-28T07:23Z"
 }
