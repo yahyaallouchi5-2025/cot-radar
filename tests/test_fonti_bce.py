@@ -55,3 +55,13 @@ class Riprova(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Paracadute(unittest.TestCase):
+    def test_parziale_non_critico_cache_si(self):
+        from cot_radar import paracadute
+        ok, critici = paracadute.valuta({"fonti": {"cot": "online", "fred": "online", "ecb": "parziale"}}, None)
+        self.assertEqual((ok, critici), (True, []))
+        ok, critici = paracadute.valuta({"fonti": {"cot": "online", "fred": "online", "ecb": "cache"}}, None)
+        self.assertTrue(ok)
+        self.assertEqual(len(critici), 1)

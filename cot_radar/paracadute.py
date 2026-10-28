@@ -34,9 +34,15 @@ def valuta(nuovo, vecchio):
     """Restituisce (pubblica, critici): pubblica=False se il nuovo risultato e' peggiore dell'ultimo buono."""
     critici, pubblica = [], True
 
-    # 1) fonti non online: si pubblica con i dati salvati, ma e' CRITICO
+    # 1) fonti non online: si pubblica con i dati salvati, ma e' CRITICO.
+    #    Eccezione (v6.42): "parziale" = la fonte ha risposto ma e' mancata QUALCHE serie (es. un 504 della BCE su una
+    #    sola serie, gia' riprovata una volta): si usano i dati salvati di quella serie, NON e' critico (niente mail,
+    #    registro segnali e notifiche Telegram continuano). Resta un WARNING nel registro admin.
     for fonte, st in (nuovo.get("fonti") or {}).items():
         if fonte == "fred_riserva":
+            continue
+        if st == "parziale":
+            log.warning("PARACADUTE: fonte %s parziale (qualche serie dai dati salvati): non critico", fonte.upper())
             continue
         if st != "online":
             critici.append(f"fonte {fonte.upper()} non disponibile ({st}): pubblicati gli ultimi dati validi")
