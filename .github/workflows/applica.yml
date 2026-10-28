@@ -1,0 +1,21 @@
+# Workflow usa-e-getta: ricompone la patch da aggiornamento/parte*.b64 (in ordine), la applica e pulisce.
+name: Applica aggiornamento
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  applica:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          set -e
+          cat $(ls aggiornamento/parte*.b64 | sort -V) | tr -d '\n\r ' | base64 -d | xz -d > /tmp/p.diff
+          sha256sum /tmp/p.diff
+          git apply /tmp/p.diff
+          git rm -rq aggiornamento
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "v6.40: card Rischio del mese senza vuoto su PC"
+          git push
