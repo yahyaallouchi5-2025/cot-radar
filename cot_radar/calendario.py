@@ -7,6 +7,7 @@ l'ora legale di ENTRAMBI i paesi, che cambiano in date diverse: per circa una se
 una a fine ottobre/novembre il COT esce alle 20:30 italiane invece che alle 21:30.
 Calcoliamo tutto a mano (niente librerie di fusi orari, che su Windows spesso mancano).
 """
+import re
 from datetime import date, datetime, timedelta, timezone
 
 from .calcoli import add_month
@@ -134,6 +135,12 @@ def sources_status(cache, status, errors, assets, mort, fred):
             why = (lst[0].split(": ", 1)[-1] if not isinstance(e, str) else e).replace("<urlopen error ", "").rstrip(">")[:140]
             n = f" per {len(lst)} serie" if not isinstance(e, str) else ""
             saved = "uso i dati salvati" if status[grp] != "assente" else "nessun dato salvato"
+            # GRAVE = l'intera fonte non ha risposto (nessun dato nuovo): solo allora la pagina mostra il popup di
+            # manutenzione con il codice d'errore. Una sola serie mancante (stato "parziale") resta silenziosa per gli
+            # utenti: il dettaglio tecnico rimane in "msg" (registro admin, log del workflow).
+            cod = re.search(r"\b([45]\d\d)\b", why)
             out.append({"name": f"Download {nm}", "last": "", "next": "", "st": "err",
-                        "msg": f"non riuscito{n} ({saved}). Motivo: {why}"})
+                        "msg": f"non riuscito{n} ({saved}). Motivo: {why}",
+                        "grave": status[grp] in ("cache", "assente"),
+                        "codice": cod.group(1) if cod else "503"})
     return out

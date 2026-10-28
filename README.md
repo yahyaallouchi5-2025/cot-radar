@@ -232,6 +232,10 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+### v6.42
+- **BCE più robusta**: se il servizio dati della BCE risponde con un errore temporaneo (5xx, es. "504 Gateway Time-out", o tempo scaduto) si riprova **una sola volta** dopo 4 secondi; errori 4xx non si riprovano. Poi si usano i dati salvati.
+- **Niente barre rosse tecniche per gli utenti**: gli errori di download restano nel registro admin. Solo se un'intera fonte è ferma compare il popup di manutenzione con il codice d'errore (es. "Errore server 504").
+
 ### v6.41
 - **Rischio del mese** ridisegnato: termometro del drawdown peggiore contro il limite del profilo (verdetto in parole), **heat map** anno per anno con le % (verde guadagno, rosso perdita) e interruttore "Risultato del mese" / "Scenario peggiore", fumetto con i dettagli; metriche allineate. Su PC la card non lascia più spazi vuoti. Tolta la parola "caduta" da tutte le scritte (si usa "drawdown").
 

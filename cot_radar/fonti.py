@@ -136,9 +136,34 @@ def get_fred(sid, since):
     return sorted(out)
 
 
+ECB_RIPROVA = 4                 # secondi di attesa prima dell'UNICO nuovo tentativo verso la BCE
+
+
+def _temporaneo(e):
+    """True se l'errore e' passeggero: risposta 5xx del server (es. 504 Gateway Time-out) o tempo scaduto.
+    Errori 4xx (serie sbagliata, richiesta rifiutata) NON si riprovano: ripetere non servirebbe."""
+    import socket
+    import urllib.error
+    if isinstance(e, urllib.error.HTTPError):
+        return 500 <= e.code < 600
+    if isinstance(e, urllib.error.URLError):
+        return isinstance(e.reason, (socket.timeout, TimeoutError)) or "timed out" in str(e.reason)
+    return isinstance(e, (socket.timeout, TimeoutError))
+
+
 def get_ecb(flow, key, since):
-    """Una richiesta BCE -> {chiave_serie: [[periodo, valore], ...]} (una richiesta puo' contenere piu' serie)."""
-    text = http(ECB_URL.format(flow=flow, key=key, since=since))
+    """Una richiesta BCE -> {chiave_serie: [[periodo, valore], ...]} (una richiesta puo' contenere piu' serie).
+    Il servizio dati della BCE ogni tanto risponde "504 Gateway Time-out" quando e' carico: in quel caso (e solo per
+    errori temporanei) si riprova UNA volta dopo ECB_RIPROVA secondi, poi si rinuncia e si usano i dati salvati."""
+    url = ECB_URL.format(flow=flow, key=key, since=since)
+    try:
+        text = http(url)
+    except Exception as e:                           # noqa: BLE001 - si decide qui se vale la pena riprovare
+        if not _temporaneo(e):
+            raise
+        log.info("BCE %s.%s: errore temporaneo (%s), riprovo una volta tra %d s", flow, key, e, ECB_RIPROVA)
+        time.sleep(ECB_RIPROVA)
+        text = http(url)
     out = {}
     for r in csv.DictReader(io.StringIO(text)):
         try:
