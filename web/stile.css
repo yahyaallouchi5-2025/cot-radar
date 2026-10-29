@@ -1131,3 +1131,8 @@ html.cbloccato,html.cbloccato body{overflow:hidden}
 .pcount .pcd u{color:var(--gi);font-weight:800}
 .pcount.ora{border-color:var(--acc)}.pcount.ora .pcd{background:var(--acc);color:#04211e}
 @media (max-width:520px){.pcount{padding:4px 4px 4px 11px;gap:8px;font-size:12.5px}.pcount .pcd{font-size:14.5px;padding:3px 9px}}
+
+/* card Telegram nella barra laterale (v6.46): il testo non esce piu' dalla card; "ISCRIVITI" in evidenza */
+.stg span{overflow:hidden}.stg b{overflow:hidden;text-overflow:ellipsis}
+.stg small{font-size:12px;font-weight:800;letter-spacing:.8px;color:#7fe3d8;transition:letter-spacing .2s}
+.stg:hover small{letter-spacing:1.4px}
