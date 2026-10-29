@@ -232,6 +232,9 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+### v6.47
+Sottotitolo sotto il titolo: "Benvenuto su BoardEdge" al posto della descrizione lunga.
+
 ### v6.46
 Card Telegram nella barra laterale: il testo non esce piu' dalla card (anche da telefono); nuovo testo "Analisi su Telegram" con "ISCRIVITI" in evidenza.
 
