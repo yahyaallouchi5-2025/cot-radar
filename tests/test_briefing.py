@@ -102,3 +102,28 @@ class Venerdi(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TolleranzaFed(unittest.TestCase):
+    """v6.49: subito dopo le 16:30 di New York del giovedi' il bilancio Fed non ancora su FRED NON e' un ritardo."""
+    def _con_ora(self, ora):
+        from datetime import datetime
+        from cot_radar import calendario as c
+        vecchio = c.utcnow
+        c.utcnow = lambda: ora
+        try:
+            return c.weekly_schedule("2026-10-21", 3, 16, 30, 1, tolleranza_ore=18)
+        finally:
+            c.utcnow = vecchio
+
+    def test_appena_uscito_non_e_ritardo(self):
+        from datetime import datetime
+        r = self._con_ora(datetime(2026, 10, 29, 21, 0))        # 30 minuti dopo l'uscita
+        self.assertFalse(r["late"])
+        self.assertEqual(r["expected"], "2026-10-21")
+
+    def test_il_giorno_dopo_e_ritardo(self):
+        from datetime import datetime
+        r = self._con_ora(datetime(2026, 10, 30, 16, 0))        # oltre 18 ore dopo
+        self.assertTrue(r["late"])
+        self.assertEqual(r["expected"], "2026-10-28")

@@ -46,9 +46,13 @@ def utcnow():
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
-def weekly_schedule(last_date, weekday, hh, mm, offset):
+def weekly_schedule(last_date, weekday, hh, mm, offset, tolleranza_ore=0):
     """Per un dato settimanale pubblicato il giorno `weekday` (0=lunedi') alle hh:mm di New York,
     riferito a `offset` giorni prima della pubblicazione (COT: venerdi', dati del martedi' -> offset 3).
+
+    tolleranza_ore (v6.49): per qualche ora dopo l'orario ufficiale il dato mancante NON e' ancora un ritardo
+    (es. la Fed pubblica il giovedi' alle 16:30 di New York ma FRED lo carica anche ore dopo): in quella finestra
+    si considera ancora l'uscita precedente e "prossimo" indica l'uscita di oggi, senza avvisi rossi.
 
     Restituisce: data attesa dell'ultimo dato, se siamo in ritardo, ultima e prossima uscita (ora italiana)."""
     now = utcnow()
@@ -56,6 +60,9 @@ def weekly_schedule(last_date, weekday, hh, mm, offset):
     while d.weekday() != weekday or et_to_utc(d, hh, mm) > now:   # torna indietro fino all'ultima uscita passata
         d -= timedelta(days=1)
     exp = (d - timedelta(days=offset)).isoformat()
+    if (last_date or "") < exp and now < et_to_utc(d, hh, mm) + timedelta(hours=tolleranza_ore):
+        d -= timedelta(days=7)                                      # dentro la tolleranza: vale ancora l'uscita precedente
+        exp = (d - timedelta(days=offset)).isoformat()
     nxt = d + timedelta(days=7)
     ms = int((et_to_utc(nxt, hh, mm) - datetime(1970, 1, 1)).total_seconds() * 1000)   # per il JavaScript
     return {"expected": exp, "late": (last_date or "") < exp, "last_pub": utc_to_it(et_to_utc(d, hh, mm)),
@@ -84,7 +91,7 @@ def sources_status(cache, status, errors, assets, mort, fred):
     today = date.today()
 
     last_cot = max(a["date"] for a in assets.values() if a.get("date"))
-    c = weekly_schedule(last_cot, 4, 15, 30, 3)                        # venerdi' 15:30 NY, dati del martedi'
+    c = weekly_schedule(last_cot, 4, 15, 30, 3, tolleranza_ore=3)     # venerdi' 15:30 NY, dati del martedi'
     out.append({"name": "COT (CFTC)", "last": fd(last_cot), "next": fdt(c["next"]), "next_ms": c["next_ms"],
                 "st": "late" if c["late"] else ("ok" if status["cot"] == "online" else "cache"),
                 "msg": (f"Il report con i dati al {fd(c['expected'])} doveva uscire {fdt(c['last_pub'])} ma la CFTC "
@@ -92,7 +99,7 @@ def sources_status(cache, status, errors, assets, mort, fred):
 
     if "WALCL" in fred:
         lf = fred["WALCL"][-1][0]
-        f = weekly_schedule(lf, 3, 16, 30, 1)                          # giovedi' 16:30 NY, dati del mercoledi'
+        f = weekly_schedule(lf, 3, 16, 30, 1, tolleranza_ore=18)       # giovedi' 16:30 NY, dati del mercoledi'; FRED entro la mattina dopo
         out.append({"name": "Bilancio Fed", "last": fd(lf), "next": fdt(f["next"]), "next_ms": f["next_ms"],
                     "st": "late" if f["late"] else ("ok" if status["fred"] == "online" else "cache"),
                     "msg": f"Il bilancio Fed del {fd(f['expected'])} non e' ancora su FRED." if f["late"] else ""})

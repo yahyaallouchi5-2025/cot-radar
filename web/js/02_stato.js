@@ -17,6 +17,13 @@ if(gravi.length)setTimeout(()=>{try{window.ebManutenzione&&ebManutenzione({sched
 var al=[];D.sources.forEach(s=>{if(s.msg&&!/^Download /.test(s.name))al.push(`<div class="alert ${s.st=='late'||s.st=='err'?'red':''}"><b>${s.name}:</b> ${esc(s.msg)}</div>`);
  if(s.next_ms&&Date.now()>s.next_ms&&!/^https?:/.test(location.protocol))al.push(`<div class="alert red"><b>${s.name}:</b> sono usciti dati nuovi (${s.next}) dopo questo aggiornamento. ${/^https?:/.test(location.protocol)?"Il sito si aggiorna in automatico a breve.":"Riapri cot_radar.py per scaricarli."}</div>`);});
 if(M.demo)al.unshift(`<div class="alert red"><b>DATI DIMOSTRATIVI:</b> pagina creata con --demo, i numeri sono finti.</div>`);
+/* X per chiudere un avviso (v6.49): lo stato resta comunque visibile nella barra laterale (pallino rosso).
+   L'avviso chiuso non torna finche' il testo e' lo stesso; se cambia (nuovo problema) ricompare. */
+var chiusi=[];try{chiusi=JSON.parse(localStorage.getItem("ebAvvisiChiusi")||"[]");}catch(e){}
+al=al.filter(h=>!chiusi.includes(h)).map(h=>h.replace(/<\/div>$/,`<button type="button" class="alx" aria-label="Chiudi avviso" title="Chiudi">&times;</button></div>`));
 $("alerts").innerHTML=al.join("");
+$("alerts").querySelectorAll(".alx").forEach(b=>b.onclick=()=>{const box=b.parentElement;b.remove();
+ try{const l=JSON.parse(localStorage.getItem("ebAvvisiChiusi")||"[]");l.push(box.outerHTML.replace(/ class="alert( red)?( alchiuso)?"/,' class="alert$1"'));localStorage.setItem("ebAvvisiChiusi",JSON.stringify(l.slice(-20)));}catch(e){}
+ box.classList.add("alchiuso");setTimeout(()=>box.remove(),250);});
 }catch(e){fail('Stato fonti e avvisi','alerts',e);}
 
