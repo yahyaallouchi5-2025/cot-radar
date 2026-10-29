@@ -37,6 +37,12 @@ function ebVerifica(){try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!
     h+=`<div class="small vfnota">${s.chiuso?"Chiuso il "+esc(quando):"Misura conclusa"} &middot; ${esc(MOT[fm.motivo]||MOT[(s.chiuso||{}).motivo]||"")}</div>`;}
    const b=m.B||{};const bt=b.esito=="eseguito"?`eseguito a ${prezzo(b.limite)} il ${fd(b.data)}`:b.esito=="non eseguito"?`non eseguito (limite ${prezzo(b.limite)})`:b.esito=="in attesa"?`limite a ${prezzo(b.limite)} in attesa`:"n/d";
    h+=`<div class="small vfnota">Ingresso B (ritracciamento): ${bt}</div>`;}
+  else{// v6.51: senza prezzo d'ingresso la scheda ha comunque la STESSA struttura (tabella "in attesa"),
+   // cosi' tutte le schede di una riga hanno la stessa altezza e la griglia resta ordinata
+   const att='<td class="num small" colspan="4">in attesa</td>';
+   h+=`<table class="vftab vfattesa"><tr><th></th><th class="num">Risultato</th><th class="num">Max</th><th class="num">Min</th><th></th></tr>
+    <tr><td>1 settimana</td>${att}</tr><tr><td>2 settimane</td>${att}</tr><tr><td>4 settimane</td>${att}</tr>
+    <tr class="vffine"><td>Finora</td>${att}</tr></table><div class="small vfnota">Ingresso B (ritracciamento): in attesa del primo prezzo</div>`;}
   return `<div class="card vfcard${sim?" vfsim":""}">${testa}<div class="vfrighe">${h}</div></div>`;}
 
  /* ---- VOLATILITA' PER ASSET (D.vol, calcolata da cot_radar/volatilita.py) ----

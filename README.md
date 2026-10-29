@@ -232,6 +232,9 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+### v6.51
+Backtest storico: le schede dei segnali di una riga hanno tutte la stessa altezza (prima erano "a scalini"); le schede senza prezzo d'ingresso mostrano la stessa tabella "in attesa" delle altre e la nota dell'ingresso B resta allineata in fondo.
+
 ### v6.50
 - **Avvisi in cima con la X**: si chiudono e restano chiusi finche' il testo e' lo stesso (localStorage "ebAvvisiChiusi"); lo stato resta visibile nella barra laterale, dove i pallini verde/giallo/rosso ora "respirano" lentamente.
 - **Bilancio Fed senza falsi ritardi**: la Fed pubblica il giovedi' alle 16:30 di New York ma FRED lo carica anche ore dopo; per 18 ore dopo l'uscita il dato mancante non e' piu' segnalato come IN RITARDO (COT: 3 ore). Nuovo parametro `tolleranza_ore` in `calendario.weekly_schedule`, con test.
