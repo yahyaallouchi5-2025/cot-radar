@@ -163,3 +163,35 @@ class AvvioV3(unittest.TestCase):
             self.assertEqual([r["data"] for r in rot], ["2026-11-02"])
         finally:
             shutil.rmtree(d)
+
+
+class MeseInCorso(unittest.TestCase):
+    def test_rendimento_e_drawdown_dal_giorno_di_ingresso(self):
+        # curva da 100: sale a 110, scende a 99, chiude a 105 -> rendimento +5%, drawdown peggiore -10% dal picco
+        curva = [("2026-11-02", 100.0), ("2026-11-03", 110.0), ("2026-11-04", 99.0), ("2026-11-05", 105.0)]
+        r, dd = P.mese_tratto(curva, 0, 0, 3)
+        self.assertAlmostEqual(r, 5.0)
+        self.assertAlmostEqual(dd, -10.0)
+
+    def test_ingresso_non_dal_primo_giorno_della_curva(self):
+        curva = [("a", 50.0), ("b", 100.0), ("c", 90.0)]
+        r, dd = P.mese_tratto(curva, 0, 1, 2)                  # parte dal secondo giorno: base 100
+        self.assertAlmostEqual(r, -10.0)
+        self.assertAlmostEqual(dd, -10.0)
+
+    def test_giorni_feriali(self):
+        self.assertEqual(P.giorni_feriali("2026-11"), 21)
+
+    def test_chiusure_non_si_riscrivono_e_solo_dal_live(self):
+        d = tempfile.mkdtemp()
+        try:
+            vecchio = {"mese": "2026-10", "dal": "2026-10-01", "al": "2026-10-30", "profili": {}}
+            nov = {"mese": "2026-11", "dal": "2026-11-02", "al": "2026-11-30", "profili": {"moderato": {"r": 1.0, "dd": -1.0}}}
+            c = P.registra_chiusure([], [vecchio, nov], d)
+            self.assertEqual([x["dal"] for x in c], ["2026-11-02"])           # ottobre e' precedente al live
+            nov2 = dict(nov, profili={"moderato": {"r": 9.9, "dd": -9.9}})
+            c = P.registra_chiusure(c, [nov2], d)
+            self.assertEqual(c[0]["profili"]["moderato"]["r"], 1.0)           # il mese salvato non cambia
+            self.assertEqual(P.leggi_chiusure(d)[0]["dal"], "2026-11-02")
+        finally:
+            shutil.rmtree(d)

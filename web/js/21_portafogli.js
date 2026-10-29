@@ -147,6 +147,28 @@ try{(function(){const P=D.port,el=$("port");if(!el)return;
     ${k("Anni positivi",`${m.positivi} su ${m.n}`,`win rate ${wr}%`)}${k("Max drawdown storico",pc(ddTot),"intero backtest del profilo","down")}</div>
    ${m.mercati.length?`<div class="pstag"><div class="pstag-t">Stagionalit&agrave; di ${m.mese} per mercato <span class="small">(informativa)</span></div>${m.mercati.map(x=>`<div class="pstag-r"><span>${esc(nomeK(x.k))}</span><i><s class="${x.media>=0?"su":"giu"}" style="width:${Math.min(100,Math.abs(x.media)*8)}%"></s></i><b class="${x.media>=0?"up":"down"}">${pc(x.media)}</b><em>${x.pos}% positivi</em></div>`).join("")}</div>`:""}</div>`;}
 
+
+ // --- MESE IN CORSO (v6.43): come sta andando adesso il portafoglio del profilo scelto, dalla rotazione a oggi.
+ //     Prezzi a fine giornata (EOD), ingresso alla chiusura del giorno di rotazione (come nello storico e nel registro).
+ //     Il risultato e' provvisorio fino a fine mese; i mesi chiusi dal live restano nel registro (chiusure_v3.json).
+ function corso(p){const c=p.corrente;if(!c)return "";
+  const m=p.mese,cl=c.r>=0?"up":"down",MES=x=>x[0].toUpperCase()+x.slice(1);
+  const chiusi=(P.chiusure||[]).filter(x=>x.profili&&x.profili[p.id]).slice(-6).reverse();
+  let termo="";
+  if(m&&m.anni&&m.anni.length){const rs=m.anni.map(x=>x.r),lo=Math.min(...rs,c.r),hi=Math.max(...rs,c.r),sp=(hi-lo)||1,pos=v=>Math.max(3,Math.min(97,(v-lo)/sp*100)).toFixed(1);
+   termo=`<div class="pmc-f"><span class="pmc-pt" style="left:${pos(c.r)}%"></span><span class="pmc-e" style="left:3%;transform:none">${pc(lo)}</span><span class="pmc-e" style="left:${pos(m.media)}%">media ${pc(m.media)}</span><span class="pmc-e" style="left:97%;transform:translateX(-100%)">${pc(hi)}</span></div>
+    <p class="pmc-fr">Rispetto ai <b>${m.n}</b> ${m.mese} passati con questa composizione, il mese va <b>${c.r>=m.media?"sopra":"sotto"}</b> la media storica.</p>`;}
+  const wr=m&&m.n?Math.round(100*m.positivi/m.n):null;
+  const k=(t,v,cls="")=>`<div><small>${t}</small><b class="${cls}">${v}</b></div>`;
+  return `<div class="card pmc"><div class="pmc-t"><h3>${MES(c.mese)} in corso <span class="pbprof">${esc(p.nome)}</span></h3>
+    <span class="pmc-b${c.live?"":" sim"}">${c.live?"Provvisorio &middot; si chiude a fine mese":"Simulazione &middot; il live parte il "+gg(P.prossima)}</span></div>
+   <div class="pmc-g"><b class="${cl}">${pc(c.r)}</b><span>da inizio mese &middot; ingresso alla chiusura del ${gg(c.dal)}</span></div>
+   <div><div class="pmc-bar"><i style="width:${Math.min(100,c.gg/c.tot*100).toFixed(0)}%"></i></div><div class="pmc-bl"><span>Giorno ${c.gg} di ${c.tot} di borsa</span><span>fine mese</span></div></div>
+   <div class="pmc-k">${k("Drawdown peggiore",pc(c.dd),"down")}${k("Rendimento / rischio",c.rr==null?"n/d":fx(c.rr,1))}${k("Mesi storici in positivo",wr==null?"n/d":wr+"%")}</div>
+   ${termo}
+   ${chiusi.length?`<div class="pmc-h"><div class="pmc-ht">Mesi chiusi (live)</div>${chiusi.map(x=>{const r=x.profili[p.id];return `<div class="pmc-hr"><span>${MES(MESI[+x.mese.slice(5)-1])} ${x.mese.slice(0,4)}</span><b class="${r.r>=0?"up":"down"}">${pc(r.r)}</b><em>drawdown ${pc(r.dd)}</em></div>`;}).join("")}</div>`:""}
+   <p class="pmc-n">Prezzi a fine giornata (EOD), ingresso alla chiusura del giorno di rotazione.</p></div>`;}
+
  function tabella(p){const st=p.stat,b=(P.bench||{}).stat||{};
   const col=[["Storico",st.storico,`fino al 2015`],["Fuori campione",st.oos,`dal 2016`],["Live",st.live,p.live_dal?`dal ${gg(p.live_dal)}`:"dall'avvio"],["60/40",b.oos,"dal 2016"]];
   const r=(t,f)=>`<tr><th>${t}</th>${col.map(c=>`<td>${c[1]?f(c[1]):'<span class="small">in arrivo</span>'}</td>`).join("")}</tr>`;
@@ -194,6 +216,7 @@ try{(function(){const P=D.port,el=$("port");if(!el)return;
    <div class="pdate"><span><i></i>Rotazione del <b>${gg(P.rotazione)}</b></span><span class="pcount" data-t="${P.prossima||""}" title="Prossimo ribilanciamento: ${gg(P.prossima)} all'apertura delle borse europee (09:00 ora italiana)">Prossimo ribilanciamento <b class="pcd">${gg(P.prossima)}</b></span></div>
    <div class="pseg" role="tablist" aria-label="Scegli il portafoglio">${P.profili.map(x=>`<button role="tab" aria-selected="${x.id==sel}" class="${x.id==sel?"on":""}" data-p="${x.id}">${x.nome}</button>`).join("")}</div>
    ${hero(p)}
+   ${corso(p)}
    <div class="pgrid">${composizione(p)}${contro(p)}</div>
    <h3 class="vft">Andamento del capitale <span class="small">(base 100, scala logaritmica: la stessa percentuale ha la stessa altezza in ogni periodo. Linea turchese = portafoglio, tratteggio = 60/40 di confronto, linea luminosa = live dalla prima rotazione pubblicata)</span></h3>
    <div class="vfswitch pper">${[["tutto","Tutto"],["oos","Fuori campione"],["live","Live"]].map(x=>`<button data-per="${x[0]}" class="${per==x[0]?"on":""}">${x[1]}</button>`).join("")}</div>

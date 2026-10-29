@@ -232,6 +232,10 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+### v6.44
+- **Ricerca con suggerimenti nell'Azionario**: scrivendo (da 1 lettera) compare sotto il campo una tendina con massimo 6 titoli per nome o ticker (senza maiuscole/accenti), con settore, indici, borsa di quotazione, prezzo e variazione. Tocco o Invio apre direttamente la scheda del titolo; frecce, Invio ed Esc da tastiera; l'ultima riga "Mostra tutti" filtra la tabella. Su telefono il campo sale in alto e la tendina resta sopra la tastiera.
+- **Card "Mese in corso" nei portafogli**: rendimento da inizio mese, drawdown peggiore, rendimento/rischio, confronto con lo stesso mese degli anni passati. Prezzi a fine giornata (EOD), ingresso alla chiusura del giorno di rotazione. Prima del 2 novembre 2026 e' una simulazione (badge); dal live, a fine mese il risultato resta nel registro `storico/portafogli/chiusure_v3.json` (non si riscrive) e compare in "Mesi chiusi (live)".
+
 ### v6.43
 Eventi ad alto impatto: la pillola confronta ora anche l'**ora di Roma**. Dall'ora del dato diventa "IN CORSO" (punto che pulsa) e sparisce dopo 60 minuti (dato macro) o 90 (banca centrale, conferenza stampa). La lista si aggiorna da sola ogni minuto; se non resta nulla la card scompare.
 

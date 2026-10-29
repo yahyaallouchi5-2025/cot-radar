@@ -17,6 +17,9 @@ try{(function(){const el=$("azioni");if(!el)return;
  const pc=(v,d=1)=>v==null?'<span class="flat">n/d</span>':`<span class="${v>0?"up":v<0?"down":"flat"}">${v>0?"+":""}${fx(v,d)}%</span>`;
  const SIMB={USD:"$",EUR:"€",GBP:"£",CHF:"CHF ",JPY:"¥",HKD:"HK$",CNY:"CN¥",INR:"₹"};
  const prezzo=(v,val)=>v==null?"n/d":(SIMB[val]||"")+Number(v).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2});
+ // dove e' quotato il titolo, dal suffisso del ticker di Yahoo (senza suffisso = Stati Uniti)
+ const BORSE={MI:"Borsa italiana (Milano)",DE:"Borsa tedesca (Xetra)",PA:"Borsa di Parigi",AS:"Borsa di Amsterdam",MC:"Borsa di Madrid",BR:"Borsa di Bruxelles",HE:"Borsa di Helsinki",T:"Borsa di Tokyo",HK:"Borsa di Hong Kong",SS:"Borsa di Shanghai",SZ:"Borsa di Shenzhen",NS:"Borsa indiana (NSE)"};
+ const borsa=tk=>{const m=String(tk).match(/\.([A-Z]+)$/);return m?(BORSE[m[1]]||"Borsa estera"):"Borsa USA";};
  const nomeSet=id=>((ST.dati&&ST.dati.settori.find(s=>s.id==id))||{}).nome||id;
  const nomeList=id=>((ST.dati&&ST.dati.listini.find(s=>s.id==id))||{}).nome||id;
 
@@ -71,7 +74,7 @@ try{(function(){const el=$("azioni");if(!el)return;
   const vis=ord.slice((ST.pag-1)*PAG,ST.pag*PAG);
   el.innerHTML=`<h2>Azionario per settore</h2><p class="sub">${d.titoli.length} titoli di Stati Uniti, Europa, Giappone, Hong Kong, Cina e India nei 11 settori, in classifica per punteggio. Il punteggio (0-100) si ricalcola ogni sera: forza degli ultimi 12 e 3 mesi, posizione rispetto alla media a 200 giorni e stagionalit&agrave; di ${mese} (rendimento medio e anni positivi), confrontati tra tutti i titoli. Clicca un settore per filtrare la tabella, un titolo per grafico e stagionalit&agrave;.</p>
    <div class="azbar"><span class="azdata"><i></i>Dati al <b>${gg(d.aggiornato)}</b></span>
-    <label class="azcerca"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input type="search" placeholder="Cerca titolo o ticker" value="${esc(ST.cerca)}" aria-label="Cerca titolo o ticker"></label>
+    <div class="azcw"><label class="azcerca"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input type="search" placeholder="Cerca titolo o ticker" value="${esc(ST.cerca)}" aria-label="Cerca titolo o ticker" autocomplete="off" autocapitalize="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="azsg"></label><div class="azsg" id="azsg" role="listbox" hidden></div></div>
     <div class="filters azlist">${[["tutti","Tutti"]].concat(d.listini.map(l=>[l.id,l.nome])).map(x=>`<button data-l="${x[0]}" class="${ST.list==x[0]?"on":""}">${x[1]}</button>`).join("")}</div></div>
    <div class="azidx">${d.indici.map(i=>`<div class="card azi${ST.list==i.l?" on":""}" data-l="${i.l}" role="button" tabindex="0"><span>${esc(i.n)}</span><b>${Number(i.p).toLocaleString("it-IT",{maximumFractionDigits:0,useGrouping:"always"})}</b>
     <em><span>oggi ${pc(i.v1g,2)}</span><span>anno ${pc(i.vytd)}</span></em>${spark(i.sp,(i.v1a||0)>=0?"su":"giu")}</div>`).join("")}</div>
@@ -89,8 +92,37 @@ try{(function(){const el=$("azioni");if(!el)return;
     ${!righe.length?`<tr><td colspan="12" class="small" style="text-align:center;padding:28px">Nessun titolo con questi filtri.</td></tr>`:""}</table></div>
    ${pagine(ord.length)}`;
   // eventi
-  const inp=el.querySelector(".azcerca input");let tm;
-  inp.oninput=()=>{clearTimeout(tm);tm=setTimeout(()=>{ST.cerca=inp.value;ST.pag=1;const pos=inp.selectionStart;disegna();const n=el.querySelector(".azcerca input");n.focus();n.setSelectionRange(pos,pos);},180);};
+  /* SUGGERIMENTI MENTRE SCRIVI: da 1 lettera, per nome o ticker (senza maiuscole/accenti), massimo 6 righe.
+     Ordine: ticker esatto > ticker che inizia > nome che inizia > una parola del nome che inizia > contiene.
+     Tocco/Invio su una riga = si apre direttamente la scheda del titolo (la stessa del clic in tabella).
+     L'ultima riga "Mostra tutti" applica il filtro alla tabella. Frecce su/giu', Invio, Esc dalla tastiera. */
+  const inp=el.querySelector(".azcerca input"),sg=el.querySelector(".azsg");let lis=[],sel=-1,tot=0;
+  const nz=x=>String(x||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+  const evid=(x,k)=>{const i=nz(x).indexOf(k);return i<0?esc(x):esc(x.slice(0,i))+"<em>"+esc(x.slice(i,i+k.length))+"</em>"+esc(x.slice(i+k.length));};
+  const chiudiSg=()=>{sg.hidden=true;inp.setAttribute("aria-expanded","false");};
+  const trova=k=>{const r=[];for(const t of ST.dati.titoli){const n=nz(t.n),tk=nz(t.t),tb=tk.split(".")[0];let p=0;
+    if(tb==k||tk==k)p=100;else if(tk.startsWith(k))p=80;else if(n.startsWith(k))p=70;else if(n.split(/[\s,.()&-]+/).some(w=>w.startsWith(k)))p=60;else if(n.includes(k)||tk.includes(k))p=30;
+    if(p)r.push([p-(t.rk||0)/1e4,t]);}
+   r.sort((a,b)=>b[0]-a[0]);tot=r.length;return r.slice(0,6).map(x=>x[1]);};
+  const mostra=()=>{const k=nz(inp.value.trim());if(!k){chiudiSg();return;}lis=trova(k);sel=-1;
+   sg.innerHTML=lis.length?lis.map((t,i)=>`<div class="azsr" role="option" data-i="${i}"><span class="n">${evid(t.n,k)}<span class="t">${esc(t.t)}</span></span>
+     <span class="p">${prezzo(t.p,t.val)}<small class="${t.v1g>0?"up":t.v1g<0?"down":"flat"}">${t.v1g==null?"":(t.v1g>0?"+":"")+fx(t.v1g,2)+"%"}</small></span>
+     <span class="d">${esc(nomeSet(t.s))} &middot; ${t.l.map(nomeList).map(esc).join(", ")} &middot; ${esc(borsa(t.t))}</span></div>`).join("")
+     +(tot>lis.length?`<div class="azsr azpiu" role="option" data-i="tutti">Mostra tutti i ${tot} risultati in tabella</div>`:""):`<div class="aznulla">Nessun titolo trovato per &laquo;${esc(inp.value.trim())}&raquo;.</div>`;
+   sg.hidden=false;inp.setAttribute("aria-expanded","true");};
+  const scegli=i=>{if(i=="tutti"){chiudiSg();ST.cerca=inp.value;ST.pag=1;disegna();return;}
+   const t=lis[i];if(!t)return;chiudiSg();inp.value="";inp.blur();if(ST.cerca){ST.cerca="";ST.pag=1;disegna();}apri(t.t);};
+  inp.addEventListener("input",()=>{if(!inp.value&&ST.cerca){ST.cerca="";ST.pag=1;disegna();return;}mostra();});
+  inp.addEventListener("focus",()=>{if(inp.value.trim())mostra();
+   if(innerWidth<760)setTimeout(()=>{try{el.querySelector(".azcw").scrollIntoView({block:"start",behavior:"smooth"});}catch(e){}},300);});   // su telefono: il campo sale in alto, la tendina resta sopra la tastiera
+  inp.addEventListener("keydown",e=>{const n=lis.length+(tot>lis.length?1:0);
+   if(e.key=="Escape"){chiudiSg();return;}
+   if(sg.hidden||!n){if(e.key=="Enter"&&inp.value.trim()){ST.cerca=inp.value;ST.pag=1;disegna();}return;}
+   if(e.key=="ArrowDown"){sel=(sel+1)%n;e.preventDefault();}else if(e.key=="ArrowUp"){sel=(sel-1+n)%n;e.preventDefault();}
+   else if(e.key=="Enter"){scegli(sel<0?0:sel>=lis.length?"tutti":sel);e.preventDefault();return;}else return;
+   sg.querySelectorAll(".azsr").forEach((r,i)=>r.classList.toggle("on",i==sel));const o=sg.querySelector(".azsr.on");if(o)o.scrollIntoView({block:"nearest"});});
+  sg.addEventListener("mousedown",e=>{const r=e.target.closest(".azsr");if(r){e.preventDefault();scegli(r.dataset.i=="tutti"?"tutti":+r.dataset.i);}});   // mousedown: scatta prima che il campo perda il fuoco
+  document.addEventListener("click",e=>{if(!e.target.closest(".azcw"))chiudiSg();});
   el.querySelectorAll(".azlist button,.azi").forEach(b=>{const f=()=>{ST.list=ST.list==b.dataset.l&&b.classList.contains("azi")?"tutti":b.dataset.l;ST.pag=1;salva();disegna();};b.onclick=f;b.onkeydown=e=>{if(e.key=="Enter")f();};});
   el.querySelectorAll(".azsc").forEach(b=>b.onclick=()=>{ST.set=b.dataset.s;ST.pag=1;disegna();el.querySelector(".azcl").scrollIntoView({behavior:"smooth",block:"start"});});
   el.querySelectorAll("th.azo").forEach(h=>h.onclick=()=>{const k=h.dataset.o;if(ST.ord==k)ST.dir=-ST.dir;else{ST.ord=k;ST.dir=(k=="n"||k=="rk")?1:-1;}ST.pag=1;salva();disegna();});

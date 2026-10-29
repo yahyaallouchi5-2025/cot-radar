@@ -535,6 +535,57 @@ def rischio_mese(g, pesi, mese, fino_a):
             "positivi": sum(x > 0 for x in r), "dd_max": min(x["dd"] for x in anni), "mercati": mercati}
 
 
+# --------------------------------------------------------------------------- MESE IN CORSO e chiusure mensili
+def mese_tratto(curva, off, i0, i1):
+    """Rendimento % e drawdown peggiore % del portafoglio tra il giorno i0 (ingresso, alla chiusura) e il giorno i1
+    compreso. curva = simula() (parte dal giorno 'off'). Il drawdown e' misurato dal punto piu' alto raggiunto nel mese."""
+    base = curva[i0 - off][1]
+    picco, dd = base, 0.0
+    for j in range(i0 - off, i1 - off + 1):
+        v = curva[j][1]
+        picco = max(picco, v)
+        dd = min(dd, v / picco - 1)
+    return (curva[i1 - off][1] / base - 1) * 100, dd * 100
+
+
+def giorni_feriali(ym):
+    """Numero di giorni feriali (lun-ven) del mese 'AAAA-MM': stima dei giorni di borsa (le festivita' non contano)."""
+    a, m = int(ym[:4]), int(ym[5:])
+    d, n = date(a, m, 1), 0
+    while d.month == m:
+        n += d.weekday() < 5
+        d += timedelta(days=1)
+    return n
+
+
+def _file_chiusure(cartella):
+    return os.path.join(cartella, "portafogli", "chiusure_v3.json")
+
+
+def leggi_chiusure(cartella=CARTELLA):
+    try:
+        with open(_file_chiusure(cartella), encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return []
+
+
+def registra_chiusure(chiusure, nuove, cartella=CARTELLA, scrivi=True):
+    """Aggiunge i mesi CHIUSI dal live (rendimento e drawdown finali di ogni profilo). Come il registro delle rotazioni:
+    un mese gia' salvato non si tocca piu'. Solo mesi dal LIVE_V3_DAL in poi."""
+    out = list(chiusure)
+    for n in nuove:
+        if n["dal"] >= LIVE_V3_DAL and not any(c["dal"] == n["dal"] for c in out):
+            out.append(n)
+    if scrivi and len(out) != len(chiusure):
+        f = _file_chiusure(cartella)
+        os.makedirs(os.path.dirname(f), exist_ok=True)
+        with open(f + ".tmp", "w", encoding="utf-8") as fh:
+            json.dump(out, fh, indent=1)
+        os.replace(f + ".tmp", f)
+    return out
+
+
 # --------------------------------------------------------------------------- registro delle rotazioni live
 def _registro(cartella):
     return os.path.join(cartella, "portafogli", "rotazioni_v3.json")
@@ -676,6 +727,7 @@ def calcola(righe_cot, px, cartella=CARTELLA, scrivi=True, oggi=None, sat=None):
 
     rotazioni = leggi_rotazioni(cartella)
     out_prof, composizioni = [], {}
+    corrente, chiusi = [], {}
     # i 5 titoli del mese della rotazione (registrati dal vivo da satellite.py; prima del live: ultima scelta simulata)
     mese_rot = g.date[ultimo_rib][:7]
     satellite_n = (sat or {}).get("n") or 5
@@ -705,6 +757,16 @@ def calcola(righe_cot, px, cartella=CARTELLA, scrivi=True, oggi=None, sat=None):
             pl = {g.pos[r["data"]]: dict(r["profili"].get(prof["id"], [])) for r in rotazioni if r["data"] in g.pos}
             if pl:
                 live = simula(g, pl, min(pl))
+        # MESE IN CORSO: dal giorno di rotazione (ingresso alla chiusura) a oggi, con i prezzi a fine giornata (EOD)
+        r_m, dd_m = mese_tratto(curva, giorni[0], ultimo_rib, len(g.date) - 1)
+        corrente.append((prof["id"], {"r": round(r_m, 1), "dd": round(dd_m, 1),
+                                      "rr": round(r_m / abs(dd_m), 1) if dd_m <= -0.3 else None}))
+        # mesi CHIUSI: da una rotazione all'ultimo giorno di borsa prima della successiva
+        for a, b in zip(giorni[:-1], giorni[1:]):
+            if g.date[a] >= LIVE_V3_DAL:
+                r_c, dd_c = mese_tratto(curva, giorni[0], a, b - 1)
+                chiusi.setdefault(g.date[a], {"mese": g.date[a][:7], "dal": g.date[a], "al": g.date[b - 1],
+                                              "profili": {}})["profili"][prof["id"]] = {"r": round(r_c, 1), "dd": round(dd_c, 1)}
         comp = [{"k": k, "nome": TUTTI[k][2], "strumento": TUTTI[k][3], "classe": TUTTI[k][4],
                  "peso": round(w * 100, 1), "score": info.get(k, {}).get("score"),
                  "trend": info.get(k, {}).get("trend"), "vol": round(info[k]["vol"] * 100, 1) if k in info else None}
@@ -733,6 +795,9 @@ def calcola(righe_cot, px, cartella=CARTELLA, scrivi=True, oggi=None, sat=None):
             "ammessi": [{"k": k, "nome": TUTTI[k][2]} for k in prof["ammessi"]],
             "composizione": comp, "esclusi": esclusi,
             "mese": rischio_mese(g, pesi, g.date[ultimo_rib][5:7], g.date[ultimo_rib][:7]),
+            "corrente": {"mese": MESI[int(g.date[ultimo_rib][5:7]) - 1], "dal": g.date[ultimo_rib], "al": g.date[-1],
+                         "gg": len(g.date) - ultimo_rib, "tot": giorni_feriali(g.date[ultimo_rib][:7]),
+                         "live": g.date[ultimo_rib] >= LIVE_V3_DAL, **dict(corrente)[prof["id"]]},
             "stat": {"storico": statistiche(_tagli(curva, al=OOS_DAL)),
                      "oos": statistiche(_tagli(curva, dal=OOS_DAL)),
                      "totale": statistiche(curva),
@@ -741,6 +806,7 @@ def calcola(righe_cot, px, cartella=CARTELLA, scrivi=True, oggi=None, sat=None):
             "rotazioni": list(reversed(cambi)),
         })
     registra(rotazioni, g.date[ultimo_rib], composizioni, cartella, scrivi=scrivi)
+    chiusure = registra_chiusure(leggi_chiusure(cartella), list(chiusi.values()), cartella, scrivi=scrivi)
     avviso = controlla_prezzi(px, oggi)
     if avviso:          # ERRORE nel registro: l'admin riceve la mail (job "avviso-admin"), l'utente vede l'avviso
         log.error("portafogli: prezzi Yahoo non aggiornati dal %s (%s); falliti in questo giro: %s",
@@ -748,7 +814,7 @@ def calcola(righe_cot, px, cartella=CARTELLA, scrivi=True, oggi=None, sat=None):
     out = {
         "aggiornato": g.date[-1], "rotazione": g.date[ultimo_rib], "prossima": prossima,
         "dal": g.date[giorni[0]], "oos_dal": OOS_DAL, "fonte": "Yahoo Finance (prezzi rettificati)",
-        "profili": out_prof,
+        "profili": out_prof, "chiusure": chiusure,
         "bench": {"nome": "60/40 (S&P 500 + Treasury 10 anni)", "curva": _settimanale(bench),
                   "stat": {"storico": statistiche(_tagli(bench, al=OOS_DAL)),
                            "oos": statistiche(_tagli(bench, dal=OOS_DAL)), "totale": statistiche(bench)}} if bench else None,
