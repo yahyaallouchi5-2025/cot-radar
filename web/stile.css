@@ -1122,3 +1122,12 @@ html.cbloccato,html.cbloccato body{overflow:hidden}
 .pmc-hr{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:baseline;padding:6px 0;border-bottom:1px solid #121d31;font-size:14px}.pmc-hr em{font-style:normal;color:var(--mute);font-size:12.5px;min-width:110px;text-align:right}
 .pmc-n{margin:0;font-size:12.5px;color:var(--mute);border-top:1px solid #16233a;padding-top:12px}
 @media (max-width:520px){.pmc-k{gap:8px}.pmc-k div{padding:10px}.pmc-k b{font-size:17px}.pmc-g b{font-size:40px}}
+
+/* conto alla rovescia del ribilanciamento (v6.45): ne' ingombrante ne' piccolo; giallo caldo + bianco ben leggibile */
+.pcount{--gi:#ffd166;display:inline-flex;align-items:center;flex-wrap:nowrap;gap:10px;padding:4px 5px 4px 14px;border-radius:99px;border:1px solid color-mix(in srgb,var(--gi) 65%,transparent);
+ background:color-mix(in srgb,var(--gi) 9%,var(--card));font-size:14px;font-weight:600;color:#fff;white-space:nowrap;transition:border-color .2s,box-shadow .2s}
+.pcount:hover{border-color:var(--gi);box-shadow:0 0 14px color-mix(in srgb,var(--gi) 22%,transparent)}
+.pcount .pcd{padding:3px 12px;border-radius:99px;background:color-mix(in srgb,var(--gi) 18%,#0a1020);font:800 16px/1.3 system-ui;color:#fff;min-width:0;white-space:nowrap}
+.pcount .pcd u{color:var(--gi);font-weight:800}
+.pcount.ora{border-color:var(--acc)}.pcount.ora .pcd{background:var(--acc);color:#04211e}
+@media (max-width:520px){.pcount{padding:4px 4px 4px 11px;gap:8px;font-size:12.5px}.pcount .pcd{font-size:14.5px;padding:3px 9px}}
