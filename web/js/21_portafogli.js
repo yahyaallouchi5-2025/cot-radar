@@ -152,7 +152,8 @@ try{(function(){const P=D.port,el=$("port");if(!el)return;
  //     Prezzi a fine giornata (EOD), ingresso alla chiusura del giorno di rotazione (come nello storico e nel registro).
  //     Il risultato e' provvisorio fino a fine mese; i mesi chiusi dal live restano nel registro (chiusure_v3.json).
  function corso(p){const c=p.corrente;if(!c)return "";
-  const m=p.mese,cl=c.r>=0?"up":"down",MES=x=>x[0].toUpperCase()+x.slice(1);
+  const z=v=>v==null?v:(Math.abs(v)<0.05?0:v);                       // niente "-0,0%": sotto 0,05 punti e' zero
+  const r=z(c.r),rr=z(c.rr),m=p.mese,cl=r>0?"up":r<0?"down":"flat",MES=x=>x[0].toUpperCase()+x.slice(1);
   const chiusi=(P.chiusure||[]).filter(x=>x.profili&&x.profili[p.id]).slice(-6).reverse();
   let termo="";
   if(m&&m.anni&&m.anni.length){const rs=m.anni.map(x=>x.r),lo=Math.min(...rs,c.r),hi=Math.max(...rs,c.r),sp=(hi-lo)||1,pos=v=>Math.max(3,Math.min(97,(v-lo)/sp*100)).toFixed(1);
@@ -162,9 +163,9 @@ try{(function(){const P=D.port,el=$("port");if(!el)return;
   const k=(t,v,cls="")=>`<div><small>${t}</small><b class="${cls}">${v}</b></div>`;
   return `<div class="card pmc"><div class="pmc-t"><h3>${MES(c.mese)} in corso <span class="pbprof">${esc(p.nome)}</span></h3>
     <span class="pmc-b${c.live?"":" sim"}">${c.live?"Provvisorio &middot; si chiude a fine mese":"Simulazione &middot; il live parte il "+gg(P.prossima)}</span></div>
-   <div class="pmc-g"><b class="${cl}">${pc(c.r)}</b><span>da inizio mese &middot; ingresso alla chiusura del ${gg(c.dal)}</span></div>
+   <div class="pmc-g"><b class="${cl}">${pc(r)}</b><span>da inizio mese &middot; ingresso alla chiusura del ${gg(c.dal)}</span></div>
    <div><div class="pmc-bar"><i style="width:${Math.min(100,c.gg/c.tot*100).toFixed(0)}%"></i></div><div class="pmc-bl"><span>Giorno ${c.gg} di ${c.tot} di borsa</span><span>fine mese</span></div></div>
-   <div class="pmc-k">${k("Drawdown peggiore",pc(c.dd),"down")}${k("Rendimento / rischio",c.rr==null?"n/d":fx(c.rr,1))}${k("Mesi storici in positivo",wr==null?"n/d":wr+"%")}</div>
+   <div class="pmc-k">${k("Drawdown peggiore",pc(c.dd),"down")}${k("Rendimento / rischio",rr==null?"n/d":fx(rr,1))}${k("Mesi storici in positivo",wr==null?"n/d":wr+"%")}</div>
    ${termo}
    ${chiusi.length?`<div class="pmc-h"><div class="pmc-ht">Mesi chiusi (live)</div>${chiusi.map(x=>{const r=x.profili[p.id];return `<div class="pmc-hr"><span>${MES(MESI[+x.mese.slice(5)-1])} ${x.mese.slice(0,4)}</span><b class="${r.r>=0?"up":"down"}">${pc(r.r)}</b><em>drawdown ${pc(r.dd)}</em></div>`;}).join("")}</div>`:""}
    <p class="pmc-n">Prezzi a fine giornata (EOD), ingresso alla chiusura del giorno di rotazione.</p></div>`;}

@@ -232,6 +232,10 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+### v6.48
+Invito a iscriversi al canale Telegram: dopo circa 15 tocchi e 1 minuto di utilizzo compare in basso un foglio non bloccante ("Iscriviti su Telegram", "Dove lo trovo?", "Non ora"). "Dove lo trovo?" apre la barra laterale (telefono) o la allarga (PC) e fa pulsare la card Telegram. Non compare sopra consenso, manutenzione, guida o scheda titolo; "Non ora" lo rinvia di 14 giorni, dopo 2 inviti non torna piu'; chi ha gia' aperto il canale non lo vede (localStorage "ebTg"). Eventi statistici: telegram_invito (mostrato, iscriviti, mostra_dove, non_ora).
+Card "Mese in corso": titolo e badge del profilo allineati, numero grande ridotto del 20%, niente "-0,0%" (sotto 0,05 punti si mostra 0,0% neutro).
+
 ### v6.47
 Sottotitolo sotto il titolo: "Benvenuto su BoardEdge" al posto della descrizione lunga.
 
