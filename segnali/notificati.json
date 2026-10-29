@@ -12,7 +12,8 @@
    "fomc-rate-decision-october-2026": "2026-10-28",
    "us-gross-domestic-product-october-2026": "2026-10-29",
    "us-personal-income-and-outlays-pce-october-2026": "2026-10-29",
-   "ecb-rate-decision-october-2026": "2026-10-29"
+   "ecb-rate-decision-october-2026": "2026-10-29",
+   "bank-of-japan-rate-decision-october-2026": "2026-10-30"
   },
   "esito": {
    "CAD-2026-10-19": "2026-10-19",
@@ -20,5 +21,6 @@
   },
   "settimana": "2026-10-26"
  },
- "aggiornato": "2026-10-28T07:23Z"
+ "briefing": null,
+ "aggiornato": "2026-10-29T00:23Z"
 }
