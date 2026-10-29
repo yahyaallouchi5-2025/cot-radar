@@ -1081,3 +1081,10 @@ html.cbloccato,html.cbloccato body{overflow:hidden}
 .pmini>div{display:grid;grid-template-rows:subgrid;grid-row:span 3;row-gap:3px;align-content:start}
 .pmini span{align-self:end}
 .phmtip[hidden]{display:none}
+
+/* eventi: stato "IN CORSO" (dall'ora del dato fino alla scadenza) con punto che pulsa */
+.evp.incorso{--bc:var(--s);opacity:.92}
+.evp.incorso em{color:var(--bc);font-weight:800;display:inline-flex;align-items:center;gap:6px}
+.evlive{width:8px;height:8px;border-radius:50%;background:var(--bc);box-shadow:0 0 0 0 color-mix(in srgb,var(--bc) 60%,transparent);animation:evpulsa 1.6s infinite}
+@keyframes evpulsa{70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+@media (prefers-reduced-motion:reduce){.evlive{animation:none}}

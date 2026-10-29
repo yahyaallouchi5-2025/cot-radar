@@ -232,6 +232,9 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+### v6.43
+Eventi ad alto impatto: la pillola confronta ora anche l'**ora di Roma**. Dall'ora del dato diventa "IN CORSO" (punto che pulsa) e sparisce dopo 60 minuti (dato macro) o 90 (banca centrale, conferenza stampa). La lista si aggiorna da sola ogni minuto; se non resta nulla la card scompare.
+
 ### v6.42
 - **BCE più robusta**: se il servizio dati della BCE risponde con un errore temporaneo (5xx, es. "504 Gateway Time-out", o tempo scaduto) si riprova **una sola volta** dopo 4 secondi; errori 4xx non si riprovano. Poi si usano i dati salvati.
 - **Niente barre rosse tecniche per gli utenti**: gli errori di download restano nel registro admin. Solo se un'intera fonte è ferma compare il popup di manutenzione con il codice d'errore (es. "Errore server 504").

@@ -60,17 +60,27 @@ try{
    - Chi ha chiesto "riduci animazioni" nel sistema operativo vede le pillole ferme, una accanto all'altra (a capo).
    - Si ricalcola quando cambia la larghezza della finestra. La spiegazione sta nel tasto (i). */
 try{const ev=D.eventi||[],VEL=38;
- const GG=["dom","lun","mar","mer","gio","ven","sab"],oggi=new Date();oggi.setHours(0,0,0,0);
- const pill=e=>{const q=new Date(e.quando.replace(" ","T")),g=new Date(q);g.setHours(0,0,0,0);
-  const diff=Math.round((g-oggi)/864e5),quando=diff<=0?"OGGI":diff==1?"DOMANI":`tra ${diff} giorni`;
-  return `<span class="evp ${e.tipo=="banca"?"banca":"dato"}${diff<=0?" oggi":diff==1?" domani":""}" title="${e.tipo=="banca"?"Banca centrale":"Dato macro"}">
-   <span class="evv">${esc(e.valuta)}</span><b>${esc(e.nome)}</b><span class="evq">${GG[q.getDay()]} ${e.quando.slice(8,10)}/${e.quando.slice(5,7)} <b>${e.quando.slice(11)}</b></span><em>${quando}</em></span>`;};
- $("eventi").innerHTML=ev.length?`<div class="card eventi"><div class="evhead"><h3>Prossimi eventi ad alto impatto</h3>
+ const GG=["dom","lun","mar","mer","gio","ven","sab"];
+ /* ORA DI ROMA: gli orari degli eventi sono "ora di Roma"; li confrontiamo con l'adesso di Roma (non del dispositivo),
+    cosi' chi guarda da un altro fuso vede comunque lo stato giusto. Tutto in "minuti da epoca" fittizia (UTC finto). */
+ const adessoRoma=()=>{const p={};new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Rome",hourCycle:"h23",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})
+   .formatToParts(new Date()).forEach(x=>{p[x.type]=x.value;});return {g:`${p.year}-${p.month}-${p.day}`,m:Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute)/6e4};};
+ const minEv=q=>{const [d,h]=q.split(" "),[y,mo,g]=d.split("-").map(Number),[hh,mm]=h.split(":").map(Number);return Date.UTC(y,mo-1,g,hh,mm)/6e4;};
+ /* SCADENZA: dall'ora dell'evento la pillola e' "IN CORSO" (il mercato si muove proprio ora), poi sparisce:
+    dopo 60 minuti per un dato macro, 90 per una banca centrale (conferenza stampa). */
+ const FINESTRA=e=>e.tipo=="banca"?90:60;
+ const attivi=()=>{const n=adessoRoma();return ev.filter(e=>n.m-minEv(e.quando)<=FINESTRA(e));};
+ const pill=e=>{const n=adessoRoma(),q=new Date(e.quando.replace(" ","T")),dm=minEv(e.quando)-n.m;
+  const diff=Math.round((Date.UTC(...e.quando.slice(0,10).split("-").map((v,i)=>i==1?v-1:+v))-Date.UTC(...n.g.split("-").map((v,i)=>i==1?v-1:+v)))/864e5);
+  const incorso=dm<=0,quando=incorso?"IN CORSO":diff<=0?"OGGI":diff==1?"DOMANI":`tra ${diff} giorni`;
+  return `<span class="evp ${e.tipo=="banca"?"banca":"dato"}${incorso?" incorso":diff<=0?" oggi":diff==1?" domani":""}" title="${e.tipo=="banca"?"Banca centrale":"Dato macro"}">
+   <span class="evv">${esc(e.valuta)}</span><b>${esc(e.nome)}</b><span class="evq">${GG[q.getDay()]} ${e.quando.slice(8,10)}/${e.quando.slice(5,7)} <b>${e.quando.slice(11)}</b></span><em>${incorso?"<i class='evlive'></i>":""}${quando}</em></span>`;};
+ $("eventi").innerHTML=attivi().length?`<div class="card eventi"><div class="evhead"><h3>Prossimi eventi ad alto impatto</h3>
   <details class="info"><summary title="Come usarli" aria-label="Informazioni">i</summary><div>Il giorno del dato la volatilit&agrave; sale: per lo swing conviene valutare l'ingresso <b>dopo</b> l'uscita. Dopo il dato la riga "Notizie" delle card mostra se la sorpresa rafforza o penalizza il segnale.</div></details>
   ${D.agenda&&String(D.agenda.fonte||"").startsWith("financecalendar")?`<span class="small evfonte">Calendario: <a href="https://www.financecalendar.com" target="_blank" rel="noopener">financecalendar.com</a></span>`:""}</div>
   <div class="evnastro" role="marquee" aria-label="Prossimi eventi"><div class="evtrack"></div></div></div>`:"";
  const nastro=$("eventi").querySelector(".evnastro"),track=nastro&&nastro.querySelector(".evtrack");
- const base=ev.map(pill).join("");
+ let base=attivi().map(pill).join("");
  // Nastro a scorrimento lento CONTROLLATO DA JS (non piu' da CSS): si puo' trascinare avanti e indietro con dito o mouse,
  // al rilascio prosegue per inerzia e poi torna dolcemente alla velocita' di crociera (mai "inchiodato").
  // x = spostamento corrente in px (0 .. -L, ciclico), vel = velocita' istantanea px/s, crociera = -VEL.
@@ -90,7 +100,11 @@ try{const ev=D.eventi||[],VEL=38;
   track.insertAdjacentHTML("beforeend",`<span class="evmeta" aria-hidden="true">${meta.innerHTML}</span>`);
   L=meta.getBoundingClientRect().width;cicla();applica();
   cancelAnimationFrame(rafId);ultimoT=0;rafId=requestAnimationFrame(giro);}
- monta();let rt=0;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(monta,250);});
+ monta();
+ // ogni minuto: se un evento e' scaduto o e' appena iniziato, si ridisegna; se non resta nulla la card sparisce
+ setInterval(()=>{const l=attivi(),nb=l.map(pill).join("");if(nb==base)return;base=nb;
+  if(!l.length){$("eventi").innerHTML="";return;}monta();},60000);
+ let rt=0;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(monta,250);});
  if(nastro&&track){
   nastro.addEventListener("pointerdown",e=>{if(e.pointerType=="mouse"&&e.button!==0)return;
    trascina=true;mosso=0;px0=e.clientX;pt=performance.now();vm=0;nastro.classList.add("presa");
