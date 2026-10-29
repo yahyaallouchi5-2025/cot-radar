@@ -14,6 +14,11 @@ function caricaTV(){if(TV.caricato)return TV.caricato;
  return TV.caricato;}
 function disegnaTV(){const info=tvInfo(TV.spec),box=$("tvchart");box.innerHTML="";
  if(!info.sym){box.innerHTML=`<div class="tvmsg">Nessun grafico associato a questo strumento.</div>`;return;}
+ // SCHELETRO DI ATTESA (v6.49): lo script di TradingView arriva da internet e puo' metterci qualche secondo.
+ // Al posto del riquadro vuoto si vede la sagoma del grafico (barra in alto, assi e candele) che "respira".
+ box.innerHTML=`<div class="tvsk" aria-hidden="true"><div class="tvsk-top"><i class="sk" style="width:110px;height:13px"></i><i class="sk" style="width:150px;height:13px"></i><i class="sk" style="width:70px;height:13px"></i></div>
+  <div class="tvsk-corpo"><div class="tvsk-barre">${Array(26).fill(0).map((_,i)=>`<i class="sk" style="height:${22+((i*37)%62)}%"></i>`).join("")}</div>
+   <div class="tvsk-assi">${Array(5).fill('<i class="sk" style="width:38px;height:11px"></i>').join("")}</div></div></div>`;
  const scuro=true;   // tema unico blu notte: grafico sempre scuro
  caricaTV().then(()=>{new TradingView.widget({container_id:"tvchart",autosize:true,symbol:info.sym,interval:TV.iv,
    // "range" = periodo visibile. ATTENZIONE: TradingView adatta il timeframe al range (3M->1h, 12M->D, 60M->W),

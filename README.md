@@ -232,6 +232,10 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+### v6.49
+- **Backtest storico piu' chiaro**: il contenuto e' diviso in blocchi numerati con titolo e una riga che dice a cosa servono ("Quanto va contro", "Il controllo onesto", "Com'e' andata", "I segnali uno per uno"), separati da piu' spazio e da una linea sottile. Nel registro live le tabelle vengono prima delle schede dei segnali, cosi' l'ordine e' sempre rischio -> risultati -> dettaglio.
+- **Scheletro di attesa sul grafico**: mentre arriva lo script di TradingView (da internet) al posto del riquadro vuoto si vede la sagoma del grafico che "respira". Controllate tutte le schede: lo scheletro c'era gia' su Azionario, Pattern Detector, vetrina "Le 5 azioni piu' forti", scheda del titolo e Backtest storico; le altre schede leggono i dati gia' dentro la pagina e non hanno attesa.
+
 ### v6.48
 Invito a iscriversi al canale Telegram: dopo circa 15 tocchi e 1 minuto di utilizzo compare in basso un foglio non bloccante ("Iscriviti su Telegram", "Dove lo trovo?", "Non ora"). "Dove lo trovo?" apre la barra laterale (telefono) o la allarga (PC) e fa pulsare la card Telegram. Non compare sopra consenso, manutenzione, guida o scheda titolo; "Non ora" lo rinvia di 14 giorni, dopo 2 inviti non torna piu'; chi ha gia' aperto il canale non lo vede (localStorage "ebTg"). Eventi statistici: telegram_invito (mostrato, iscriviti, mostra_dove, non_ora).
 Card "Mese in corso": titolo e badge del profilo allineati, numero grande ridotto del 20%, niente "-0,0%" (sotto 0,05 punti si mostra 0,0% neutro).

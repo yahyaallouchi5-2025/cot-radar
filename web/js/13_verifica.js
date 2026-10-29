@@ -198,12 +198,20 @@ function ebVerifica(){try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!
    <div class="vfriga vfslider"><span class="vfetich">oppure</span><input type="range" id="vfgiorni" min="1" max="20" step="1" value="${V.d=="fine"?20:V.d}" aria-label="Giorni di mercato dopo l'ingresso"><b id="vfgtesto">${durata(V.d)}</b></div>
    ${infoP("vfinfodurata",`I giorni sono <b>giorni di mercato</b> (5 per settimana: sabato e domenica non contano). L'ingresso &egrave; la prima chiusura dopo l'uscita del segnale; drawdown, guadagno e risultato sono misurati <b id="vfdurtesto">${nomeD()}</b> dall'ingresso. "Al cambio segnale" = il trade si chiude quando il segnale cambia (al massimo dopo 12 settimane).`)}</div>`;}
 
+ /* SEZIONI NUMERATE (v6.49): la scheda e' lunga, quindi il contenuto e' diviso in tre blocchi con un numero,
+    un titolo e una riga che dice a cosa serve. Cosi' si capisce dove si e' e cosa si sta guardando. */
+ const blocco=(n,titolo,sotto,dentro)=>`<div class="vfsez"><div class="vfsez-t"><span class="vfsez-n">${n}</span>
+  <div><h2>${titolo}</h2><p class="small">${sotto}</p></div></div>${dentro}</div>`;
+
  function datiLive(){const P=R.stat,ap=R.aperti||[],ch=R.chiusi||[];
-  return bloccoDD(P,R.dd_campi,R.unita)+`<p class="small">I segnali gi&agrave; attivi all'avvio del registro sono esclusi.</p>`+
-   `<h2>Segnali aperti <span class="small">(${ap.length})</span></h2><div class="grid vfgrid">${ap.map(s=>scheda(s)).join("")||'<div class="small">Nessun segnale aperto.</div>'}</div>
-   <h2>Segnali chiusi <span class="small">(${R.n_chiusi})</span></h2><div class="grid vfgrid" id="vfchiusi">${ch.slice(0,12).map(s=>scheda(s)).join("")||'<div class="small">Ancora nessuno.</div>'}</div>
-   ${ch.length>12?`<button class="vfaltro" id="vfaltro">Mostra tutti (${ch.length})</button>`:""}
-   ${tabella("Per etichetta",P.etichetta,["STRONG BUY","BUY","SELL","STRONG SELL"])}${tabella("Per volatilit&agrave; al momento del segnale",P.vol,["calma","normale","agitata"])}${varianti(P.riass)}${tabella("Per strumento",P.strumento,null,1,R.profilo)}`;}
+  return blocco(1,"Quanto va contro","Prima dei guadagni: quanto il trade scende sotto l'ingresso, giorno per giorno.",
+    bloccoDD(P,R.dd_campi,R.unita)+`<p class="small">I segnali gi&agrave; attivi all'avvio del registro sono esclusi.</p>`)
+   +blocco(2,"Com'&egrave; andata","Gli stessi segnali divisi per etichetta, per volatilit&agrave; e per strumento.",
+    tabella("Per etichetta",P.etichetta,["STRONG BUY","BUY","SELL","STRONG SELL"])+tabella("Per volatilit&agrave; al momento del segnale",P.vol,["calma","normale","agitata"])+varianti(P.riass)+tabella("Per strumento",P.strumento,null,1,R.profilo))
+   +blocco(3,"I segnali uno per uno","Ogni segnale con data, ingresso e risultato alle varie durate.",
+    `<h3 class="vft">Aperti <span class="small">(${ap.length})</span></h3><div class="grid vfgrid">${ap.map(s=>scheda(s)).join("")||'<div class="small">Nessun segnale aperto.</div>'}</div>
+     <h3 class="vft">Chiusi <span class="small">(${R.n_chiusi})</span></h3><div class="grid vfgrid" id="vfchiusi">${ch.slice(0,12).map(s=>scheda(s)).join("")||'<div class="small">Ancora nessuno.</div>'}</div>
+     ${ch.length>12?`<button class="vfaltro" id="vfaltro">Mostra tutti (${ch.length})</button>`:""}`);}
 
  function datiBt(){const P=B.periodi[V.per]||B.periodi.tutti,nomeP={tutti:"tutto il periodo",sviluppo:"sviluppo",holdout:"holdout"}[V.per];
   const per={"Tutto il periodo":B.periodi.tutti.riass,"Sviluppo":B.periodi.sviluppo.riass,"Holdout (ultimi 2 anni)":B.periodi.holdout.riass};
@@ -211,10 +219,16 @@ function ebVerifica(){try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!
   const barre=anni.length?`<h3 class="vft">Anno per anno <span class="small">(resa media ${nomeD()})</span></h3><div class="vfanni">${anni.map(([a,x])=>{const h=Math.round(Math.abs(x.resa)/mx*100),hold=a>=B.holdout_dal.slice(0,4);
    return `<div class="vfanno${hold?" vfhold":""}" title="${a}: ${x.n} segnali, vinti ${x.hit}%, resa media ${pc(x.resa)}"><div class="vfmeta">${x.resa>=0?`<i class="su" style="height:${h}%"></i>`:""}</div><div class="vfmeta giu">${x.resa<0?`<i class="giu" style="height:${h}%"></i>`:""}</div><span>${a.slice(2)}</span></div>`;}).join("")}</div>`:"";
   const ordS=Object.keys(P.strumento||{}).sort((a,b)=>((st(P.strumento[b])||{}).resa??-99)-((st(P.strumento[a])||{}).resa??-99));
-  return bloccoDD(P,B.dd_campi,B.unita)+tabella("Sviluppo e holdout a confronto",per,Object.keys(per))+
-   `<p class="small">Il periodo di <b>holdout</b> (ultimi 2 anni) non va mai usato per tarare pesi o soglie: &egrave; il controllo onesto. Se sviluppo e holdout dicono cose molto diverse, il risultato del passato non &egrave; affidabile.</p>
-   ${tabella(`Per etichetta <span class="small">(${nomeP})</span>`,P.etichetta,["STRONG BUY","BUY","SELL","STRONG SELL"])}${tabella(`Per volatilit&agrave; al momento del segnale <span class="small">(${nomeP}: calma / normale / agitata rispetto ai 5 anni prima)</span>`,P.vol,["calma","normale","agitata"])}${varianti(P.riass)}${barre}
-   ${tabella(`Per strumento <span class="small">(${nomeP}, almeno ${V.per=="holdout"?5:20} segnali)</span>`,P.strumento,ordS,V.per=="holdout"?5:20,B.profilo)}`;}
+  return blocco(1,"Quanto va contro","Prima dei guadagni: quanto il trade simulato scende sotto l'ingresso, giorno per giorno.",
+    bloccoDD(P,B.dd_campi,B.unita))
+   +blocco(2,"Il controllo onesto","Gli anni tenuti da parte (holdout) messi a confronto con quelli su cui il metodo &egrave; stato costruito.",
+    tabella("Sviluppo e holdout a confronto",per,Object.keys(per))
+    +`<p class="small">Il periodo di <b>holdout</b> (ultimi 2 anni) non va mai usato per tarare pesi o soglie: &egrave; il controllo onesto. Se sviluppo e holdout dicono cose molto diverse, il risultato del passato non &egrave; affidabile.</p>`)
+   +blocco(3,"Com'&egrave; andata","Gli stessi segnali divisi per etichetta, per volatilit&agrave;, per anno e per strumento.",
+    tabella(`Per etichetta <span class="small">(${nomeP})</span>`,P.etichetta,["STRONG BUY","BUY","SELL","STRONG SELL"])
+    +tabella(`Per volatilit&agrave; al momento del segnale <span class="small">(${nomeP}: calma / normale / agitata rispetto ai 5 anni prima)</span>`,P.vol,["calma","normale","agitata"])
+    +varianti(P.riass)+barre
+    +tabella(`Per strumento <span class="small">(${nomeP}, almeno ${V.per=="holdout"?5:20} segnali)</span>`,P.strumento,ordS,V.per=="holdout"?5:20,B.profilo));}
 
  function live(){if(!R)return `<div class="card vfvuoto">Registro non disponibile in questo aggiornamento.</div>`;
   const cat=R.integra?`<span class="vfok">&#10003;</span> catena integra`:`<b class="vfko">&#10007; catena NON integra</b>`;
@@ -233,7 +247,7 @@ function ebVerifica(){try{(function(){const el=$("verifica"),R=D.reg,B=D.bt;if(!
     <li>Non incluse: la parte <b>Mercato e macro</b> (30% del punteggio live), le notizie e la stagionalit&agrave;.</li>
     <li>Costi stimati andata e ritorno sottratti: cambi principali ${B.costi.major}%, incroci ${B.costi.cross}%, emergenti ${B.costi.em}%, indici ${B.costi.indici}%, petrolio ${B.costi.energia}%, gas ${B.costi.NATGAS}%, crypto ${B.costi.crypto}%. Swap e rollover esclusi.</li>
     <li>Prezzi solo di chiusura giornaliera (FRED): guadagno e drawdown massimi sono misurati sulle chiusure.</li></ul></details>
-   <h2>Ultimi segnali simulati conclusi</h2><div class="grid vfgrid">${(B.ultimi||[]).slice(0,12).map(s=>scheda(s,true)).join("")}</div>`;}
+   ${blocco(4,"I segnali uno per uno","Gli ultimi segnali simulati conclusi, con ingresso e risultato alle varie durate.",`<div class="grid vfgrid">${(B.ultimi||[]).slice(0,12).map(s=>scheda(s,true)).join("")}</div>`)}`;}
 
  /* aggiorna SOLO i numeri (non i comandi): cosi' il cursore delle sedute si puo' trascinare senza scatti */
  function aggiorna(){const box=$("vfdati");if(!box)return;box.innerHTML=V.fin=="live"?datiLive():V.fin=="vol"?datiVol():datiBt();
