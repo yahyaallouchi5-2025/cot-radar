@@ -164,9 +164,10 @@ try{(function(){const el=$("azioni");if(!el)return;
    <div class="azmini"><div><span>1 mese</span>${pc(t.v1m)}</div><div><span>3 mesi</span>${pc(t.v3m)}</div><div><span>Da inizio anno</span>${pc(t.vytd)}</div>
     <div><span>1 anno</span>${pc(t.v1a)}</div><div><span>Dal massimo 52 sett.</span>${pc(t.dmax)}</div><div><span>Rispetto media 200g</span>${pc(t.t200)}</div></div>
    <div class="azbil">${sk("40%",16)}${sk("100%",140,"border-radius:14px;margin-top:10px")}</div>
+   <div class="azprof">${sk("30%",16)}${sk("100%",14,"margin-top:12px")}${sk("90%",14,"margin-top:8px")}<div class="azmini">${Array(4).fill(`<div>${sk("60%",11)}${sk("70%",16)}</div>`).join("")}</div></div>
    ${stag}<p class="small azfonte">${esc(x.borsa||"")}${x.val?" &middot; prezzi in "+esc(x.val):""}</p>`;
   c.querySelectorAll(".azper button").forEach(b=>b.onclick=()=>{ST.per=b.dataset.p;corpo(ov,t,x);});
-  bilancio(c.querySelector(".azbil"),t);
+  bilancio(c.querySelector(".azbil"),t);profilo(c.querySelector(".azprof"),t);
   tooltip(c.querySelector(".azgraf"),serie(),t.val,ST.per=="max");}
 
  // --- BILANCIO (aziende USA, fonte SEC: vedi cot_radar/fondamentali.py): ricavi, utile, anni in perdita, debito netto
@@ -185,15 +186,41 @@ try{(function(){const el=$("azioni");if(!el)return;
     return `<rect x="${(x+bw*.16).toFixed(1)}" y="${(Y0-r).toFixed(1)}" width="${(bw*.32).toFixed(1)}" height="${r.toFixed(1)}" rx="3" class="bric"><title>${y.a}: ricavi ${dollari(y.ricavi).replace("&minus;","-")}</title></rect>
      <rect x="${(x+bw*.52).toFixed(1)}" y="${(y.utile>=0?Y0-uu:Y0).toFixed(1)}" width="${(bw*.32).toFixed(1)}" height="${Math.max(1,uu).toFixed(1)}" rx="3" class="${y.utile>=0?"butu":"bper"}"><title>${y.a}: utile ${dollari(y.utile).replace("&minus;","-")}</title></rect>
      <text x="${(x+bw/2).toFixed(1)}" y="${H-6}" text-anchor="middle" class="pax">${y.a}</text>`;}).join("");
-   box.innerHTML=`<h4 class="aztit">Bilancio <span class="small">(ultimi ${A.length} anni fiscali, fonte SEC)</span></h4>
+   box.innerHTML=`<h4 class="aztit">Bilancio <span class="small">(ultimi ${A.length} anni fiscali, fonte SEC)</span>
+     <details class="info"><summary title="Da dove arrivano i dati" aria-label="Informazioni">i</summary><div>Bilanci annuali (10-K) depositati alla SEC: arrivano 2-3 mesi dopo la chiusura dell'anno fiscale e qui si aggiornano ogni settimana. Giudizio automatico e semplificato, non una valutazione di investimento.</div></details></h4>
     <div class="bgiu ${g[0]}"><b>${g[1]}</b><span>${esc(b.motivo||"")}</span></div>
     <div class="azmini bmini"><div><span>Ricavi ${u.a}</span><b>${dollari(u.ricavi)}</b>${b.crescita!=null?`<em class="${b.crescita>=0?"up":"down"}">${b.crescita>0?"+":""}${fx(b.crescita,1)}% l'anno</em>`:""}</div>
      <div><span>Utile netto ${u.a}</span><b class="${u.utile>=0?"up":"down"}">${dollari(u.utile)}</b><em>margine ${u.ricavi?fx(u.utile/u.ricavi*100,1)+"%":"n/d"}</em></div>
      <div><span>Anni in perdita</span><b class="${b.perdite?"down":"up"}">${b.perdite} su ${A.length}</b></div>
      <div><span>${u.dn!=null&&u.dn<0?"Liquidit&agrave; netta":"Debito netto"}</span><b>${u.dn==null?"n/d":dollari(Math.abs(u.dn))}</b><em>${u.dn!=null&&u.utile>0&&u.dn>0?fx(u.dn/u.utile,1)+" anni di utile":""}</em></div></div>
-    <svg viewBox="0 0 ${W} ${H}" class="bsvg" preserveAspectRatio="none" role="img" aria-label="Ricavi e utile per anno"><line x1="0" x2="${W}" y1="${Y0}" y2="${Y0}" class="pm0"/>${barre}</svg>
-    <div class="pmasse bleg"><span><i class="bric"></i>ricavi</span><span><i class="butu"></i>utile</span><span><i class="bper"></i>perdita</span></div>
-    <p class="small">Bilanci annuali (10-K) depositati alla SEC: arrivano 2-3 mesi dopo la chiusura dell'anno fiscale e qui si aggiornano ogni settimana. Giudizio automatico e semplificato, non una valutazione di investimento.</p>`;});}
+    <div class="bbox"><svg viewBox="0 0 ${W} ${H}" class="bsvg" preserveAspectRatio="none" role="img" aria-label="Ricavi e utile per anno"><line x1="0" x2="${W}" y1="${Y0}" y2="${Y0}" class="pm0"/>${barre}
+     ${A.map((y,i)=>`<rect x="${(i*bw).toFixed(1)}" y="0" width="${bw.toFixed(1)}" height="${H}" class="bzona" data-i="${i}"/>`).join("")}</svg><div class="btip" hidden></div></div>
+    <div class="pmasse bleg"><span><i class="bric"></i>ricavi</span><span><i class="butu"></i>utile</span><span><i class="bper"></i>perdita</span></div>`;
+   /* v6.52: tocco (telefono) o passaggio del mouse su un anno = fumetto con ricavi, utile e margine di quell'anno */
+   const bb=box.querySelector(".bbox"),tip=bb.querySelector(".btip");
+   const mostra=e=>{const z=e.target.closest(".bzona");if(!z)return;const y=A[+z.dataset.i];
+    bb.querySelectorAll(".bzona").forEach(q=>q.classList.toggle("on",q===z));
+    tip.innerHTML=`<b>${y.a}</b><span>Ricavi <b>${dollari(y.ricavi)}</b></span><span>${y.utile>=0?"Utile":"Perdita"} <b class="${y.utile>=0?"up":"down"}">${dollari(y.utile)}</b></span>${y.ricavi?`<span>Margine <b>${fx(y.utile/y.ricavi*100,1)}%</b></span>`:""}`;
+    tip.hidden=false;const r=bb.getBoundingClientRect(),zr=z.getBoundingClientRect(),w=tip.offsetWidth;
+    tip.style.left=Math.max(0,Math.min(r.width-w,zr.left-r.left+zr.width/2-w/2))+"px";};
+   bb.addEventListener("pointerover",mostra);bb.addEventListener("click",mostra);
+   bb.addEventListener("pointerleave",e=>{if(e.pointerType=="mouse"){tip.hidden=true;bb.querySelectorAll(".bzona").forEach(q=>q.classList.remove("on"));}});});}
+
+ // --- PROFILO DELL'AZIENDA (v6.52, cot_radar/profili.py): cosa fa, fondazione, sede, CEO, dipendenti, borse,
+ //     eventuale acquisizione negli ultimi 10 anni. Fonti: Wikidata e Wikipedia. File pubblico/profili/<T>.json.
+ function profilo(box,t){if(!box)return;
+  fetch(BASE+"profili/"+encodeURIComponent(t.t.replace("^","_"))+".json",{cache:"no-cache"}).then(r=>r.ok?r.json():null).catch(()=>null).then(p=>{
+   if(!box.isConnected)return;
+   if(!p){box.innerHTML=`<h4 class="aztit">L'azienda</h4><p class="small">Scheda dell'azienda in preparazione: arriva con i prossimi aggiornamenti.</p>`;return;}
+   const f=(et,v)=>v?`<div><span>${et}</span><b>${v}</b></div>`:"";
+   const dip=p.dipendenti?Number(p.dipendenti.n).toLocaleString("it-IT")+(p.dipendenti.anno?` <em>(${p.dipendenti.anno})</em>`:""):"";
+   const acq=(p.acquisita_da||[])[0];
+   box.innerHTML=`<h4 class="aztit">L'azienda</h4>
+    ${p.desc?`<p class="azdesc">${esc(p.desc.testo)}${p.desc.lingua!="it"?' <span class="small">(da Wikipedia in inglese)</span>':""}</p>`:""}
+    <div class="azmini azfatti">${f("Settore",esc(nomeSet(t.s)))}${f("Fondata",esc(p.fondata||""))}${f("Sede",esc([p.sede,p.paese].filter(Boolean).join(", ")))}
+     ${f((p.ceo||[]).length>1?"Amministratori delegati":"Amministratore delegato",esc((p.ceo||[]).join(", ")))}${f("Dipendenti",dip)}
+     ${f("Quotata su",esc((p.borse||[]).join(", ")||t.l.map(nomeList).join(", ")))}${acq?f("Acquisita da",esc(acq.nome)+` <em>(${acq.anno})</em>`):""}</div>
+    <p class="small azfonte">Fonte: Wikidata e Wikipedia${p.desc&&p.desc.url?` &middot; <a href="${esc(p.desc.url)}" target="_blank" rel="noopener">voce completa</a>`:""}${p.sito?` &middot; <a href="${esc(p.sito)}" target="_blank" rel="noopener">sito ufficiale</a>`:""}.</p>`;});}
 
  function grafico(s,logar,val){if(s.length<2)return `<div class="small" style="padding:40px;text-align:center">Dati insufficienti.</div>`;
   const W=640,H=240,L=8,R=58,T=12,B=26,v=s.map(p=>p[1]),f=logar?Math.log:(z=>z),lo=f(Math.min(...v)),hi=f(Math.max(...v));

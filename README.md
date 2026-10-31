@@ -232,6 +232,12 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+### v6.52
+- **Scheda dell'azienda** nel dettaglio di ogni titolo: cosa fa (riassunto di Wikipedia), settore, anno di fondazione, sede, amministratore delegato, dipendenti, borse dove e' quotata ed eventuale acquisizione negli ultimi 10 anni. Nuovo modulo `cot_radar/profili.py` (Wikidata + Wikipedia, ogni profilo al massimo una volta al mese, 300 titoli per giro, mai bloccante); file `pubblico/profili/<T>.json`. I profili si riempiono nei prossimi giri del workflow Azioni.
+- Bilancio SEC: la nota sulle fonti e' dentro la (i); toccando o passando sopra un anno compare il fumetto con ricavi, utile e margine.
+- Portafogli: i pulsanti (periodo del grafico, profilo, "Mostra tutte") non riportano piu' in cima alla pagina. La tabella dei risultati ha il titolo nella prima colonna e la colonna Live compare solo quando ci sono dati live.
+- Ultime rotazioni: per ogni mese chiuso risultato netto e drawdown, e "Dettaglio del mese" con ogni mercato (peso, rendimento, contributo in punti, drawdown) e i titoli scelti con il loro rendimento; in evidenza il mercato che ha pesato di piu'. Backend: `portafogli.dettaglio_mesi`, `satellite.storico` con il rendimento di ogni titolo.
+
 ### v6.51
 Backtest storico: le schede dei segnali di una riga hanno tutte la stessa altezza (prima erano "a scalini"); le schede senza prezzo d'ingresso mostrano la stessa tabella "in attesa" delle altre e la nota dell'ingresso B resta allineata in fondo.
 

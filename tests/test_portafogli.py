@@ -195,3 +195,23 @@ class MeseInCorso(unittest.TestCase):
             self.assertEqual(P.leggi_chiusure(d)[0]["dal"], "2026-11-02")
         finally:
             shutil.rmtree(d)
+
+
+class DettaglioMesi(unittest.TestCase):
+    def test_pesi_rendimenti_e_contributi(self):
+        # due mercati: SPY +10% nel mese, SHY fermo; portafoglio 50/50 -> totale +5%, contributo SPY 5 punti
+        date_ = ["2026-01-02", "2026-01-15", "2026-01-30", "2026-02-02", "2026-02-27", "2026-03-02"]
+        px = {"SPY": [(d, v) for d, v in zip(date_, [100, 95, 110, 110, 110, 110])],
+              "SHY": [(d, 50) for d in date_]}
+        g = P.Griglia(px)
+        giorni = [0, 3, 5]
+        piani = {0: {"SP500": .5, "CASH": .5}, 3: {"SP500": .5, "CASH": .5}}
+        curva = P.simula(g, piani, 0)
+        mesi = P.dettaglio_mesi(g, piani, giorni, curva)
+        gen = [m for m in mesi if m["mese"] == "2026-01"][0]
+        spy = [a for a in gen["asset"] if a["k"] == "SP500"][0]
+        self.assertEqual(spy["w"], 50.0)
+        self.assertEqual(spy["r"], 10.0)
+        self.assertEqual(spy["c"], 5.0)
+        self.assertEqual(spy["dd"], -5.0)
+        self.assertEqual(gen["r"], 5.0)

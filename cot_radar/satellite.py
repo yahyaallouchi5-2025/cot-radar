@@ -157,7 +157,9 @@ def storico(titoli, fino):
         ora = {x["t"] for x in sc}
         r -= COSTO * len(ora ^ prima) / N
         prima = ora
-        out.append([_ym(t + 1), round(r, 5), sorted(ora)])
+        # 4o elemento (v6.52): rendimento del mese di ogni titolo scelto, per il dettaglio "Ultime rotazioni"
+        det = {x["t"]: round(per[x["t"]].p[t + 1] / per[x["t"]].p[t] - 1, 5) for x in sc if t + 1 in per[x["t"]].p}
+        out.append([_ym(t + 1), round(r, 5), sorted(ora), det])
     return out
 
 
@@ -252,6 +254,8 @@ def calcola(cartella, oggi=None, titoli=None, anomalia=False):
                            for x in scelta(tt, cur)]}
     dati = {"aggiornato": oggi.isoformat(), "n": N, "costo": COSTO, "live_dal": LIVE_DAL, "titoli_universo": len(tt),
             "storico": st, "live": live(cartella, reg), "registro": reg, "anteprima": ante,
+            # nomi dei titoli scelti negli ultimi 13 mesi dello storico (per mostrarli nelle rotazioni)
+            "nomi": {x.t: x.nome for x in tt if any(x.t in m[2] for m in st[-13:])},
             "nota": "Azioni scelte: storico simulato con i titoli che oggi stanno negli indici, quindi ottimistico "
                     "(le aziende fallite o uscite non ci sono). Da " + A.MESI_IT[int(LIVE_DAL[5:]) - 1] + " " + LIVE_DAL[:4]
                     + " contano solo le scelte registrate dal vivo."}

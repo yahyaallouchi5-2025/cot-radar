@@ -1205,3 +1205,24 @@ h1.tmarchio em{text-shadow:none;filter:drop-shadow(0 0 10px rgba(46,196,182,.35)
 .vfgrid>.vfcard>.vfrighe{flex:1;display:flex;flex-direction:column}
 .vfgrid>.vfcard .vftab+.vfnota{margin-top:auto;padding-top:10px}
 .vftab.vfattesa td.small{color:var(--mute);opacity:.75}
+
+/* v6.52: barre del bilancio toccabili (fumetto per anno) e profilo dell'azienda */
+.bbox{position:relative}
+.bsvg .bzona{fill:transparent;cursor:pointer}.bsvg .bzona.on{fill:rgba(255,255,255,.05)}
+.btip{position:absolute;top:8px;z-index:3;display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:12px;background:#0d1626;border:1px solid var(--line);box-shadow:0 10px 26px rgba(2,8,20,.55);font-size:12.5px;color:var(--ink2);pointer-events:none;white-space:nowrap}
+.btip[hidden]{display:none}.btip>b{color:var(--ink);font-size:13.5px}.btip span b{color:var(--ink)}
+.azprof{margin-top:22px}.azdesc{margin:6px 0 12px;font-size:14.5px;line-height:1.55;color:var(--ink2)}
+.azfatti{grid-template-columns:repeat(2,minmax(0,1fr))}.azfatti em{font-style:normal;font-weight:500;color:var(--mute);font-size:12px}
+.azfonte{margin-top:10px}.azfonte a{color:var(--acc)}
+.azfatti b{font-size:14.5px;line-height:1.35}
+
+/* v6.52: tabella dei risultati con titolo nella prima colonna; rotazioni con risultato e dettaglio del mese */
+.ptab th.ptab0{text-align:left}
+.prisul{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:13.5px;color:var(--ink2)}
+.pdet{margin-top:8px}.pdet summary{cursor:pointer;color:var(--acc);font-weight:600;font-size:13.5px}
+.pdet summary:hover{text-decoration:underline}
+.pdett td{vertical-align:top}.ptit{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:4px;font-size:12px;color:var(--mute)}
+.ptit em{font-style:normal;font-weight:700}
+.protr>.prisul,.protr>.pdet{grid-column:2/-1}
+@media (max-width:600px){.protr>.prisul,.protr>.pdet{grid-column:1}}
+.protr:has(.pdet[open]){transform:none}

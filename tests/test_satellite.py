@@ -75,7 +75,7 @@ class Satellite(unittest.TestCase):
         d = S.calcola(self.dir, oggi=date(2026, 10, 30), titoli=self.el)
         self.assertTrue(os.path.exists(os.path.join(self.dir, "pubblico", "satellite.json")))
         self.assertTrue(d["storico"])
-        self.assertTrue(all(len(x) == 3 for x in d["storico"]))
+        self.assertTrue(all(len(x) == 4 for x in d["storico"]))   # v6.52: + rendimento di ogni titolo
         self.assertEqual(d["live"][0][1], 1.0 - S.COSTO)          # primo ingresso: costo dei 5 acquisti
 
 

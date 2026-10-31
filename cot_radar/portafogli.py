@@ -535,6 +535,52 @@ def rischio_mese(g, pesi, mese, fino_a):
             "positivi": sum(x > 0 for x in r), "dd_max": min(x["dd"] for x in anni), "mercati": mercati}
 
 
+def dettaglio_mesi(g, piani, giorni, curva, sat=None, n=12):
+    """ULTIMI n MESI CHIUSI di un profilo (v6.52), per la sezione "Ultime rotazioni":
+    per ogni mese (da una rotazione all'ultimo giorno di borsa prima della successiva) il risultato netto e il
+    drawdown del portafoglio e, per ogni mercato tenuto: peso a inizio mese, rendimento, contributo al totale
+    (peso x rendimento, in punti %) e drawdown dentro il mese. Per la quota "Azioni scelte" anche i singoli titoli.
+    I pesi sono quelli REALI a inizio mese (le quote derivano tra un ribilanciamento e l'altro, come in simula)."""
+    tutti_g, quote, pesi = set(giorni), {}, {}
+    for i in range(giorni[0], len(g.date)):
+        if i in piani:
+            quote = dict(piani[i])
+        elif quote:
+            quote = {k: v * (1 + g.rend(_ticker(k), i)) for k, v in quote.items()}
+        if i in tutti_g:
+            tot = sum(quote.values()) or 1.0
+            pesi[i] = {k: v / tot for k, v in quote.items()}
+    st = {m[0]: m for m in (sat or {}).get("storico") or []}
+    nomi = (sat or {}).get("nomi") or {}
+    reg = (sat or {}).get("registro") or {}
+    out = []
+    for a, b in list(zip(giorni[:-1], giorni[1:]))[-n:]:
+        r_t, dd_t = mese_tratto(curva, giorni[0], a, b - 1)
+        voci = []
+        for k, w in sorted(pesi.get(a, {}).items(), key=lambda x: -x[1]):
+            col = g.p.get(_ticker(k))
+            if not col or col[a] is None or col[b - 1] is None or w < 0.001:
+                continue
+            picco, dd = col[a], 0.0
+            for j in range(a, b):
+                if col[j] is not None:
+                    picco = max(picco, col[j])
+                    dd = min(dd, col[j] / picco - 1)
+            r = col[b - 1] / col[a] - 1
+            v = {"k": k, "nome": TUTTI[k][2] if k in TUTTI else k, "w": round(w * 100, 1), "r": round(r * 100, 1),
+                 "c": round(w * r * 100, 2), "dd": round(dd * 100, 1)}
+            if k == "AZ":
+                m = g.date[a][:7]
+                if m in st and len(st[m]) > 3:              # storico simulato: rendimento di ogni titolo
+                    v["titoli"] = [{"t": t, "n": nomi.get(t, t), "r": round(x * 100, 1)} for t, x in st[m][3].items()]
+                elif m in reg:                               # live: i titoli registrati (rendimento non ancora disponibile)
+                    v["titoli"] = [{"t": x["t"], "n": x.get("n", x["t"]), "r": None} for x in reg[m].get("titoli", [])]
+            voci.append(v)
+        out.append({"mese": g.date[a][:7], "dal": g.date[a], "al": g.date[b - 1], "r": round(r_t, 1),
+                    "dd": round(dd_t, 1), "asset": voci})
+    return list(reversed(out))
+
+
 # --------------------------------------------------------------------------- MESE IN CORSO e chiusure mensili
 def mese_tratto(curva, off, i0, i1):
     """Rendimento % e drawdown peggiore % del portafoglio tra il giorno i0 (ingresso, alla chiusura) e il giorno i1
@@ -804,6 +850,7 @@ def calcola(righe_cot, px, cartella=CARTELLA, scrivi=True, oggi=None, sat=None):
                      "live": statistiche(live) if live else None},
             "curva": _settimanale(curva), "live_dal": live[0][0] if live else None,
             "rotazioni": list(reversed(cambi)),
+            "mesi_chiusi": dettaglio_mesi(g, piani, giorni, curva, sat),
         })
     registra(rotazioni, g.date[ultimo_rib], composizioni, cartella, scrivi=scrivi)
     chiusure = registra_chiusure(leggi_chiusure(cartella), list(chiusi.values()), cartella, scrivi=scrivi)
