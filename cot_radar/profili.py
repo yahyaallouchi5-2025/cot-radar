@@ -156,6 +156,24 @@ def riassunto(url_voce):
     return {"testo": out.strip(), "lingua": lingua, "url": url_voce} if out.strip() else None
 
 
+URL_TRADUCI = "https://translate.googleapis.com/translate_a/single?client=gtx&sl={da}&tl=it&dt=t&q={q}"
+
+
+def traduci(desc):
+    """v6.54c: aggiunge alla descrizione non italiana la traduzione automatica (campo "trad"). Servizio gratuito
+    senza chiave; se non risponde la scheda si arrangia da sola (traduce nel browser). Mai bloccante."""
+    if not desc or desc.get("lingua") == "it" or desc.get("trad"):
+        return desc
+    try:
+        r = _get(URL_TRADUCI.format(da=desc.get("lingua") or "auto", q=urllib.parse.quote(desc["testo"])), timeout=20)
+        it = "".join(x[0] for x in (r[0] or []) if x and x[0]).strip()
+        if it:
+            desc = dict(desc, trad=it)
+    except Exception as e:
+        log.warning("profili: traduzione non riuscita (%s)", type(e).__name__)
+    return desc
+
+
 def componi(t, f, desc, oggi):
     """Il profilo pubblicato (compatto). Dipendenti: il dato piu' recente."""
     dip = sorted((d, n) for d, n in f.get("dip", []) if n)
@@ -175,7 +193,11 @@ def aggiorna(cartella, oggi=None, el=None, pausa=PAUSA):
     limite = (oggi - timedelta(days=GIORNI_VALIDITA)).isoformat()
     # v6.54: prima i titoli USA (ticker senza suffisso di borsa), poi gli altri; quelli senza voce su Wikidata
     # ricevono un file "vuoto" con la data, cosi' non vengono richiesti a ogni giro
-    da_fare = [t for t in titoli if ((A._leggi(file_di(t)) or {}).get("agg") or "") < limite]
+    def scaduto(t):                              # vecchio di 30 giorni, oppure in inglese senza traduzione (v6.54c)
+        p = A._leggi(file_di(t)) or {}
+        d = p.get("desc") or {}
+        return (p.get("agg") or "") < limite or (d.get("lingua") not in (None, "it") and not d.get("trad"))
+    da_fare = [t for t in titoli if scaduto(t)]
     da_fare = sorted(da_fare, key=lambda t: "." in t)[:MAX_PER_GIRO]
     fatti_ok, mancanti, inizio = 0, [], time.time()
     for i in range(0, len(da_fare), LOTTO):
@@ -197,7 +219,7 @@ def aggiorna(cartella, oggi=None, el=None, pausa=PAUSA):
                 A._scrivi(file_di(t), {"t": t, "agg": oggi.isoformat(), "vuoto": 1})   # il sito mostra i dati base
                 continue
             f = dati.get(qid[t], {})
-            desc = riassunto(f.get("it")) or riassunto(f.get("en"))
+            desc = traduci(riassunto(f.get("it")) or riassunto(f.get("en")))
             if pausa:
                 time.sleep(pausa)
             A._scrivi(file_di(t), componi(t, f, desc, oggi))

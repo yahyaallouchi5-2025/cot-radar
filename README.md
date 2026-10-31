@@ -232,6 +232,14 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+### v6.54c
+- Scheda del titolo a **pagina intera** con barra "Indietro" fissa in alto (funziona anche il tasto indietro del
+  telefono/browser e il tasto Esc): niente piu' pannello a meta' schermo con sovrapposizioni.
+- Fumetto (i) dei trimestrali sempre dentro lo schermo, con il carattere del sito.
+- Variazioni enormi su basi minuscole mostrate come multiplo ("x363 vs anno prima") invece di +36.225%.
+- Descrizioni in inglese: pulsante **Traduci** (italiano / originale), traduzione preparata dal workflow quando possibile,
+  altrimenti fatta nel browser e ricordata sul dispositivo.
+
 ### v6.54
 - Scheda del titolo: nuovo blocco **Risultati trimestrali** (aziende USA, fonte SEC gratuita): ultimi 4 trimestri con ricavi,
   utile netto ed EPS diluito e variazione sullo stesso trimestre dell'anno prima; 4o trimestre ricavato da anno intero
