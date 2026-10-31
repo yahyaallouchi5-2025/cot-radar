@@ -1260,3 +1260,30 @@ h1.tmarchio em{text-shadow:none;filter:drop-shadow(0 0 10px rgba(46,196,182,.35)
 .azcerca svg{stroke:var(--acc);width:18px;height:18px}
 .azcerca input{font-size:14.5px;font-weight:600}
 .azcerca input::placeholder{color:color-mix(in srgb,var(--ink) 72%,transparent);opacity:1}
+
+/* ===== v6.54c · scheda del titolo a PAGINA INTERA con barra "Indietro" ===== */
+html.azaperto,html.azaperto body{overflow:hidden}                       /* la pagina sotto non scorre */
+.azdett{background:var(--bg);-webkit-backdrop-filter:none;backdrop-filter:none}
+.azpan{left:0;right:0;width:auto;padding:0 0 64px;border-left:0;box-shadow:none;overflow-x:hidden;background:var(--bg);transform:translateY(14px)}
+.azwrap{max-width:980px;margin:0 auto;padding:26px 28px 0;box-sizing:border-box}
+.azbarra{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:14px;padding:12px max(16px,calc((100% - 980px)/2 + 28px));
+ background:color-mix(in srgb,var(--bg) 86%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.azdett .azx{position:static;width:auto;height:38px;padding:0 16px 0 10px;border-radius:99px;display:inline-flex;align-items:center;gap:6px;
+ font:650 14px system-ui;color:var(--ink);background:var(--soft);border:1px solid var(--line);transform:none;transition:background .15s,border-color .15s,transform .15s}
+.azdett .azx svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;transition:transform .15s}
+.azdett .azx:hover{background:color-mix(in srgb,var(--acc) 14%,var(--soft));border-color:var(--acc);transform:none}
+.azdett .azx:hover svg{transform:translateX(-3px)}
+.azbt{display:flex;align-items:baseline;gap:8px;min-width:0;opacity:.9}
+.azbt b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.azbt small{color:var(--mute);font-weight:600;font-size:12.5px}
+.aztesta h3{padding-right:0;font-size:26px}
+/* fumetto (i) dentro la scheda: stesso carattere del sito, mai fuori dal bordo */
+.azdett .aztit .info{display:inline-block;vertical-align:middle;margin-left:6px}
+.azdett .aztit .info div{left:auto;right:-8px;top:30px;width:min(380px,calc(100vw - 40px));font:400 13.5px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;font-style:normal;text-transform:none;letter-spacing:0}
+.ttab{overflow-x:auto}
+.azdesc .trad{display:inline-flex;align-items:center;gap:6px;margin-left:6px;padding:3px 11px 3px 9px;border-radius:99px;vertical-align:1px;cursor:pointer;
+ border:1px solid color-mix(in srgb,var(--acc) 55%,transparent);background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--acc);font:650 12.5px system-ui;transition:background .15s,border-color .15s}
+.azdesc .trad svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.azdesc .trad:hover{background:color-mix(in srgb,var(--acc) 22%,transparent);border-color:var(--acc)}
+.azdesc .trad[aria-pressed="true"]{color:var(--ink2);border-color:var(--line);background:var(--soft)}
+@media (max-width:760px){.azwrap{padding:18px 16px 0}.azbarra{padding:10px 16px}.azbt small{display:none}.aztesta h3{font-size:21px}}
+.azwrap [class^="az"],.tritit{scroll-margin-top:76px}

@@ -132,16 +132,27 @@ try{(function(){const el=$("azioni");if(!el)return;
  // ingresso dalla vetrina della Dashboard: apre la scheda e il dettaglio del titolo
  window.ebApriTitolo=tk=>{try{go("azioni");}catch(e){}const p=carica();(p&&p.then?p:Promise.resolve()).then(()=>{if(ST.dati)apri(tk);});};
 
- // --- DETTAGLIO di un titolo (pannello laterale): grafico 1 anno / 2 anni / storico mensile + stagionalita'
+ // --- DETTAGLIO di un titolo (v6.54c: PAGINA INTERA con barra "Indietro" in alto): grafico, bilancio, trimestrali,
+ //     azienda, stagionalita'. Si chiude con il pulsante Indietro, il tasto Esc o il tasto indietro del telefono/browser
+ //     (alla apertura si aggiunge una voce alla cronologia, cosi' "indietro" chiude la scheda invece di lasciare il sito).
  function apri(tk){const t=ST.dati.titoli.find(x=>x.t==tk);if(!t)return;
   let ov=document.querySelector(".azdett");if(!ov){ov=document.createElement("div");ov.className="azdett";document.body.appendChild(ov);
-   ov.addEventListener("click",e=>{if(e.target==ov||e.target.closest(".azx"))chiudi();});}
-  const chiudi=()=>{ov.classList.remove("on");document.removeEventListener("keydown",tasto);setTimeout(()=>{ov.innerHTML="";},250);};
-  const tasto=e=>{if(e.key=="Escape")chiudi();};document.addEventListener("keydown",tasto);
-  ov.innerHTML=`<aside class="azpan" role="dialog" aria-modal="true" aria-label="${esc(t.n)}"><button class="azx" aria-label="Chiudi">&times;</button>
+   ov.addEventListener("click",e=>{if(e.target.closest(".azx"))chiudi();});
+   window.addEventListener("popstate",()=>{if(ov.classList.contains("on"))chiudi(true);});}
+  if(!ov.classList.contains("on")){try{history.pushState({azTitolo:tk},"");}catch(e){}}   // una sola voce anche se si passa da un titolo all'altro
+  const chiudi=daCronologia=>{if(!ov.classList.contains("on"))return;
+   if(!daCronologia){try{if(history.state&&history.state.azTitolo){history.back();return;}}catch(e){}}   // il popstate richiama chiudi(true)
+   ov.classList.remove("on");document.documentElement.classList.remove("azaperto");document.removeEventListener("keydown",tasto);setTimeout(()=>{if(!ov.classList.contains("on"))ov.innerHTML="";},250);};
+  const tasto=e=>{if(e.key=="Escape")chiudi();};document.removeEventListener("keydown",ov._tasto||(()=>{}));ov._tasto=tasto;document.addEventListener("keydown",tasto);
+  document.documentElement.classList.add("azaperto");                                  // blocca lo scorrimento della pagina sotto
+  ov.innerHTML=`<div class="azpan" role="dialog" aria-modal="true" aria-label="${esc(t.n)}">
+   <div class="azbarra"><button class="azx" aria-label="Torna all'elenco dei titoli"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Indietro</button>
+    <span class="azbt"><b>${esc(t.n)}</b><small>${esc(t.t)}</small></span></div>
+   <div class="azwrap">
    <div class="aztesta"><span class="small">${esc(nomeSet(t.s))} &middot; ${t.l.map(nomeList).join(", ")}</span><h3>${esc(t.n)} <small>${esc(t.t)}</small></h3>
     <div class="azprz"><b>${prezzo(t.p,t.val)}</b>${pc(t.v1g,2)}<span class="small">al ${gg(t.data)}</span></div></div>
-   <div class="azcorpo">${sk("100%",230,"border-radius:14px")}<div class="azmini">${Array(6).fill(`<div>${sk("60%",11)}${sk("70%",18)}</div>`).join("")}</div>${sk("100%",150,"border-radius:14px;margin-top:18px")}</div></aside>`;
+   <div class="azcorpo">${sk("100%",230,"border-radius:14px")}<div class="azmini">${Array(6).fill(`<div>${sk("60%",11)}${sk("70%",18)}</div>`).join("")}</div>${sk("100%",150,"border-radius:14px;margin-top:18px")}</div></div></div>`;
+  ov.scrollTop=0;
   requestAnimationFrame(()=>ov.classList.add("on"));ov.querySelector(".azx").focus({preventScroll:true});
   try{window.ebStat&&ebStat.ev("azione",{ticker:tk});}catch(e){}
   fetch(BASE+"titoli/"+encodeURIComponent(tk.replace("^","_"))+".json",{cache:"no-cache"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
@@ -214,7 +225,8 @@ try{(function(){const el=$("azioni");if(!el)return;
   const M=m=>MB[m][0].toUpperCase()+MB[m].slice(1);return M(a.getMonth())+"&ndash;"+M(b.getMonth())+" "+b.getFullYear();};
  function trimestrali(b){const T=b.trim||[];if(!T.length)return "";
   const prima=q=>T.find(z=>{const g=(new Date(q.fine)-new Date(z.fine))/864e5;return g>=350&&g<=380;});   // stesso trimestre, anno prima
-  const var_=(v,o)=>v==null||o==null||!o?"":(v<0)!=(o<0)?(v<0?`<em class="down">in perdita</em>`:`<em class="up">torna in utile</em>`):(()=>{const p=(v-o)/Math.abs(o)*100;return `<em class="${p>=0?"up":"down"}">${p>0?"+":""}${fx(p,1)}%</em>`;})();
+  const var_=(v,o)=>v==null||o==null||!o?"":(v<0)!=(o<0)?(v<0?`<em class="down">in perdita</em>`:`<em class="up">torna in utile</em>`):(()=>{const p=(v-o)/Math.abs(o)*100;if(Math.abs(p)>=1000)return `<em class="${p>=0?"up":"down"}" title="${p>0?"+":""}${fx(p,0)}%">${p>0?"&times;"+fx(v/o,0)+" vs anno prima":"&minus;"+fx(Math.abs(p),0)+"%"}</em>`;
+   return `<em class="${p>=0?"up":"down"}">${p>0?"+":""}${fx(p,1)}%</em>`;})();   /* base minuscola: la % non si legge, meglio il multiplo */
   /* var_: se cambia segno (utile -> perdita) la percentuale non ha senso: si scrive a parole */
   const eps=v=>v==null?"n/d":(v<0?"&minus;":"")+fx(Math.abs(v),2)+" $";
   const righe=T.slice(-4).reverse().map(q=>{const o=prima(q)||{};
@@ -240,11 +252,28 @@ try{(function(){const el=$("azioni");if(!el)return;
    const dip=p.dipendenti?Number(p.dipendenti.n).toLocaleString("it-IT")+(p.dipendenti.anno?` <em>(${p.dipendenti.anno})</em>`:""):"";
    const acq=(p.acquisita_da||[])[0];
    box.innerHTML=`<h4 class="aztit">L'azienda</h4>
-    ${p.desc?`<p class="azdesc">${esc(p.desc.testo)}${p.desc.lingua!="it"?' <span class="small">(da Wikipedia in inglese)</span>':""}</p>`:""}
+    ${p.desc?`<p class="azdesc"><span class="dtesto">${esc(p.desc.testo)}</span>${p.desc.lingua!="it"?` <button type="button" class="trad" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h9M8.5 3v2M6 5c.6 3.4 2.6 6 6 7.5M11 5c-.8 3.6-3.3 6.6-7 8M13 21l4.5-10L22 21M14.5 18h6"/></svg>Traduci</button>`:""}</p>`:""}
     <div class="azmini azfatti">${f("Settore",esc(nomeSet(t.s)))}${f("Fondata",esc(p.fondata||""))}${f("Sede",esc([p.sede,p.paese].filter(Boolean).join(", ")))}
      ${f((p.ceo||[]).length>1?"Amministratori delegati":"Amministratore delegato",esc((p.ceo||[]).join(", ")))}${f("Dipendenti",dip)}
      ${f("Quotata su",esc((p.borse||[]).join(", ")||t.l.map(nomeList).join(", ")))}${acq?f("Acquisita da",esc(acq.nome)+` <em>(${acq.anno})</em>`):""}</div>
-    <p class="small azfonte">Fonte: Wikidata e Wikipedia${p.desc&&p.desc.url?` &middot; <a href="${esc(p.desc.url)}" target="_blank" rel="noopener">voce completa</a>`:""}${p.sito?` &middot; <a href="${esc(p.sito)}" target="_blank" rel="noopener">sito ufficiale</a>`:""}.</p>`;});}
+    <p class="small azfonte">Fonte: Wikidata e Wikipedia${p.desc&&p.desc.url?` &middot; <a href="${esc(p.desc.url)}" target="_blank" rel="noopener">voce completa</a>`:""}${p.sito?` &middot; <a href="${esc(p.sito)}" target="_blank" rel="noopener">sito ufficiale</a>`:""}.</p>`;
+   /* v6.54c: "Traduci" al posto di "(da Wikipedia in inglese)": un tocco mostra l'italiano, un altro torna all'originale */
+   const bt=box.querySelector(".trad"),dt=box.querySelector(".dtesto");
+   if(bt)bt.onclick=()=>{const on=bt.getAttribute("aria-pressed")=="true",et=bt.lastChild;
+    if(on){dt.textContent=p.desc.testo;et.textContent="Traduci";bt.setAttribute("aria-pressed","false");return;}
+    const metti=it=>{if(!it){et.textContent="Traduzione non disponibile";setTimeout(()=>{et.textContent="Traduci";},2500);return;}
+     dt.textContent=it;et.textContent="Originale in inglese";bt.setAttribute("aria-pressed","true");};
+    if(p.desc.trad){metti(p.desc.trad);return;}
+    et.textContent="Traduco\u2026";tradBrowser(p.desc).then(metti);};});}
+
+ /* v6.54c: traduzione automatica nel browser (solo se il file non la contiene ancora). Prima Google (gratuito, senza
+    chiave), poi MyMemory; risultato memorizzato sul dispositivo per non richiederlo a ogni apertura. */
+ function tradBrowser(d){const k="ebTrad:"+d.url;let c=null;try{c=localStorage.getItem(k);}catch(e){}
+  if(c)return Promise.resolve(c);
+  const q=encodeURIComponent(d.testo);
+  return fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${d.lingua||"auto"}&tl=it&dt=t&q=${q}`).then(r=>r.json()).then(j=>j[0].map(x=>x[0]).join("").trim())
+   .catch(()=>fetch(`https://api.mymemory.translated.net/get?langpair=${d.lingua||"en"}|it&q=${q}`).then(r=>r.json()).then(j=>(j.responseData||{}).translatedText||""))
+   .catch(()=>"").then(it=>{if(it){try{localStorage.setItem(k,it);}catch(e){}}return it;});}
 
  function grafico(s,logar,val){if(s.length<2)return `<div class="small" style="padding:40px;text-align:center">Dati insufficienti.</div>`;
   const W=640,H=240,L=8,R=58,T=12,B=26,v=s.map(p=>p[1]),f=logar?Math.log:(z=>z),lo=f(Math.min(...v)),hi=f(Math.max(...v));
