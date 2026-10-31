@@ -1,0 +1,39 @@
+# AGGIORNAMENTO AUTOMATICO (v6.53): carichi un file .patch nella cartella "aggiornamento" dal sito di GitHub
+# (Add file -> Upload files -> Commit changes) e questo workflow:
+#   1) applica la modifica al codice (in ordine di nome se i file sono piu' di uno),
+#   2) cancella il file .patch (la cartella resta grazie a LEGGIMI.md),
+#   3) avvia la ricostruzione del sito (workflow "Sito").
+# Limite di GitHub: una patch NON puo' modificare i file dentro .github/workflows (quelli si cambiano a mano).
+name: Aggiornamento automatico
+on:
+  push:
+    branches: [main]
+    paths: ["aggiornamento/*.patch"]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency: aggiornamento
+jobs:
+  applica:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Applica le patch
+        run: |
+          set -e
+          ls aggiornamento/*.patch >/dev/null 2>&1 || { echo "nessuna patch"; exit 0; }
+          for f in $(ls aggiornamento/*.patch | sort -V); do
+            echo "applico $f"; sha256sum "$f"
+            git apply --whitespace=nowarn "$f"
+            git rm -q "$f"
+          done
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "aggiornamento automatico: $(git diff --cached --stat | tail -1)"
+          git push
+      - name: Ricostruisci il sito
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run sito.yml --ref main
