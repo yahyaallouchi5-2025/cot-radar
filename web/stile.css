@@ -1287,3 +1287,23 @@ html.azaperto,html.azaperto body{overflow:hidden}                       /* la pa
 .azdesc .trad[aria-pressed="true"]{color:var(--ink2);border-color:var(--line);background:var(--soft)}
 @media (max-width:760px){.azwrap{padding:18px 16px 0}.azbarra{padding:10px 16px}.azbt small{display:none}.aztesta h3{font-size:21px}}
 .azwrap [class^="az"],.tritit{scroll-margin-top:76px}
+
+/* ===== v6.55 · SMART DISCOUNT: colonna in classifica e riquadro nella scheda del titolo ===== */
+.sdp{display:inline-flex;flex-direction:column;align-items:flex-end;gap:1px;font-weight:800;font-size:15px;font-variant-numeric:tabular-nums;line-height:1.1}
+.sdp small{font-size:10.5px;font-weight:650;letter-spacing:.2px;opacity:.85;white-space:nowrap}
+.sdm{color:#4ade80}.sds{color:var(--acc)}.sdn{color:#facc15}.sdc{color:#f87171}
+.sdbox{margin-top:18px;padding:16px 18px;border-radius:16px;background:var(--soft);border:1px solid var(--line);border-left:4px solid currentColor}
+.sdbox p{margin:12px 0 0;color:var(--ink2)}
+.sdtesta{display:flex;align-items:center;gap:8px}
+.sdlab{font-size:12px;font-weight:800;letter-spacing:.14em;color:var(--ink)}
+.sdtesta .info div{left:auto;right:auto;font:400 13.5px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink2);width:min(380px,calc(100vw - 48px))}
+.sdcorpo{display:flex;align-items:center;gap:22px;margin-top:10px}
+.sdnum{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:96px;height:96px;border-radius:50%;
+ border:3px solid currentColor;background:color-mix(in srgb,currentColor 10%,transparent)}
+.sdnum b{font-size:32px;line-height:1;font-variant-numeric:tabular-nums}.sdnum span{font-size:11px;font-weight:700;margin-top:4px;text-align:center;padding:0 6px}
+.sdbarre{flex:1;display:grid;gap:12px;min-width:0}
+.sdbarre>div{display:grid;grid-template-columns:150px 1fr 34px;align-items:center;gap:10px;font-size:13px;color:var(--ink2)}
+.sdbarre i{height:8px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}
+.sdbarre em{display:block;height:100%;border-radius:99px;background:currentColor;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.sdbarre b{text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+@media (max-width:520px){.sdcorpo{gap:14px}.sdnum{min-width:80px;height:80px}.sdnum b{font-size:26px}.sdbarre>div{grid-template-columns:1fr 30px}.sdbarre>div span{grid-column:1/-1}}

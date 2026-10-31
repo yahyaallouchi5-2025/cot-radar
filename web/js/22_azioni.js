@@ -67,7 +67,7 @@ try{(function(){const el=$("azioni");if(!el)return;
  const MESI=["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
 
  function disegna(){const d=ST.dati,base=filtrati(false),righe=filtrati(true),mese=MESI[new Date().getMonth()];
-  const COL=[["rk","#",1],["n","Titolo",0],["pt","Punteggio",0],["p","Prezzo",1],["v1g","1G",1],["v1m","1M",1],["v3m","3M",1,"azh"],["vytd","Da gennaio",1,"azh"],["v1a","1 anno",1],["st_pos",mese[0].toUpperCase()+mese.slice(1),1,"azh"],["t200","vs media 200g",1,"azh azh3"],["sp","Ultimo anno",0,"azh2"]];
+  const COL=[["rk","#",1],["n","Titolo",0],["pt","Punteggio",0],["sd","Smart Discount",1],["p","Prezzo",1],["v1g","1G",1],["v1m","1M",1],["v3m","3M",1,"azh"],["vytd","Da gennaio",1,"azh"],["v1a","1 anno",1],["st_pos",mese[0].toUpperCase()+mese.slice(1),1,"azh"],["t200","vs media 200g",1,"azh azh3"],["sp","Ultimo anno",0,"azh2"]];
   const ord=[...righe].sort((a,b)=>{const k=ST.ord;if(k=="n")return ST.dir*String(a.n).localeCompare(String(b.n));
    const x=a[k],y=b[k];if(x==null)return 1;if(y==null)return -1;return ST.dir*(x-y);});
   const np=Math.max(1,Math.ceil(ord.length/PAG));if(ST.pag>np)ST.pag=np;
@@ -85,9 +85,9 @@ try{(function(){const el=$("azioni");if(!el)return;
      return `<button class="azsc${ST.set==s.id?" on":""}" data-s="${s.id}"><span>${esc(s.nome)} <small>${t.length}</small></span><b class="${y>=0?"up":"down"}">${y==null?"n/d":(y>0?"+":"")+fx(y,1)+"%"}</b>
       <em>1 mese ${m==null?"n/d":(m>0?"+":"")+fx(m,1)+"%"}</em><span class="azbr" title="${sopra}% dei titoli sopra la media a 200 giorni"><i style="width:${sopra}%"></i></span><small class="azbrt">${sopra}% sopra media 200g</small></button>`;}).join("")}</div>
    <h3 class="vft azcl">${ST.set=="tutti"?"Classifica":esc(nomeSet(ST.set))} <span class="small">(${righe.length} titoli${ST.cerca?" per &laquo;"+esc(ST.cerca)+"&raquo;":""} &middot; clic sulle colonne per ordinare)</span></h3>
-   <div class="tablewrap"><table class="aztab"><tr>${COL.map(c=>`<th class="${c[2]?"num":""} ${c[3]||""}${c[0]!="sp"?" azo":""}${ST.ord==c[0]?" on":""}" ${c[0]!="sp"?`data-o="${c[0]}"`:""}${c[0]=="st_pos"?` title="Stagionalit&agrave; di ${mese}: quota di anni positivi e rendimento medio del mese"`:""}>${c[1]}${ST.ord==c[0]?(ST.dir>0?" &uarr;":" &darr;"):""}</th>`).join("")}</tr>
+   <div class="tablewrap"><table class="aztab"><tr>${COL.map(c=>`<th class="${c[2]?"num":""} ${c[3]||""}${c[0]!="sp"?" azo":""}${ST.ord==c[0]?" on":""}" ${c[0]!="sp"?`data-o="${c[0]}"`:""}${c[0]=="sd"?` title="SMART DISCOUNT 0-100: quanto il titolo e' scontato oggi rispetto alla sua storia e se in passato comprare a quello sconto e' andato meglio che comprare a caso"`:""}${c[0]=="st_pos"?` title="Stagionalit&agrave; di ${mese}: quota di anni positivi e rendimento medio del mese"`:""}>${c[1]}${ST.ord==c[0]?(ST.dir>0?" &uarr;":" &darr;"):""}</th>`).join("")}</tr>
     ${vis.map(t=>`<tr class="clic" data-t="${esc(t.t)}" tabindex="0"><td class="num azrk">${t.rk}</td><td class="aznome"><b>${esc(t.n)}</b><span>${esc(t.t)} &middot; ${t.l.map(nomeList).join(", ")}</span></td>
-     <td>${forza(t.pt)}</td><td class="num">${prezzo(t.p,t.val)}</td><td class="num">${pc(t.v1g,2)}</td><td class="num">${pc(t.v1m)}</td><td class="num azh">${pc(t.v3m)}</td><td class="num azh">${pc(t.vytd)}</td>
+     <td>${forza(t.pt)}</td><td class="num">${sdCella(t)}</td><td class="num">${prezzo(t.p,t.val)}</td><td class="num">${pc(t.v1g,2)}</td><td class="num">${pc(t.v1m)}</td><td class="num azh">${pc(t.v3m)}</td><td class="num azh">${pc(t.vytd)}</td>
      <td class="num">${pc(t.v1a)}</td><td class="num azh azst">${t.st_pos==null?'<span class="flat">n/d</span>':`<b>${t.st_pos}%</b> ${pc(t.st_media)}`}</td><td class="num azh azh3">${pc(t.t200)}</td><td class="azh2">${spark(t.sp,(t.v1a||0)>=0?"su":"giu")}</td></tr>`).join("")}
     ${!righe.length?`<tr><td colspan="12" class="small" style="text-align:center;padding:28px">Nessun titolo con questi filtri.</td></tr>`:""}</table></div>
    ${pagine(ord.length)}`;
@@ -174,12 +174,28 @@ try{(function(){const el=$("azioni");if(!el)return;
    <div class="azgraf">${grafico(serie(),ST.per=="max",t.val)}</div>
    <div class="azmini"><div><span>1 mese</span>${pc(t.v1m)}</div><div><span>3 mesi</span>${pc(t.v3m)}</div><div><span>Da inizio anno</span>${pc(t.vytd)}</div>
     <div><span>1 anno</span>${pc(t.v1a)}</div><div><span>Dal massimo 52 sett.</span>${pc(t.dmax)}</div><div><span>Rispetto media 200g</span>${pc(t.t200)}</div></div>
+   ${sdBlocco(t)}
    <div class="azbil">${sk("40%",16)}${sk("100%",140,"border-radius:14px;margin-top:10px")}</div>
    <div class="azprof">${sk("30%",16)}${sk("100%",14,"margin-top:12px")}${sk("90%",14,"margin-top:8px")}<div class="azmini">${Array(4).fill(`<div>${sk("60%",11)}${sk("70%",16)}</div>`).join("")}</div></div>
    ${stag}<p class="small azfonte">${esc(x.borsa||"")}${x.val?" &middot; prezzi in "+esc(x.val):""}</p>`;
   c.querySelectorAll(".azper button").forEach(b=>b.onclick=()=>{ST.per=b.dataset.p;corpo(ov,t,x);});
   bilancio(c.querySelector(".azbil"),t);profilo(c.querySelector(".azprof"),t);
   tooltip(c.querySelector(".azgraf"),serie(),t.val,ST.per=="max");}
+
+ // --- SMART DISCOUNT (v6.55, cot_radar/sconto.py): 0-100 = 60% rarita' dello sconto di oggi nella storia del titolo
+ //     + 40% qualita' (comprare a quello sconto, in passato, e' andato meglio o peggio che comprare a caso?)
+ const SDG=v=>v>=80?["m","Molto scontato"]:v>=60?["s","Scontato"]:v>=40?["n","Neutro"]:["c","Caro"];
+ function sdCella(t){if(t.sd==null)return '<span class="flat">n/d</span>';const g=SDG(t.sd);
+  return `<span class="sdp sd${g[0]}" title="${g[1]} &middot; sconto dal massimo 12 mesi ${fx(t.sdo,1)}%">${t.sd}<small>${g[1]}</small></span>`;}
+ function sdBlocco(t){if(t.sd==null)return "";const g=SDG(t.sd);
+  const frase=t.sdo>-10?`Il prezzo &egrave; vicino al massimo degli ultimi 12 mesi: nessuno sconto da sfruttare.`
+   :`Oggi &egrave; ${fx(Math.abs(t.sdo),1)}% sotto il massimo dei 12 mesi: uno sconto pi&ugrave; profondo del ${t.sdr}% dei mesi della sua storia. In passato, comprando a questo livello, 12 mesi dopo il risultato era positivo nel <b>${t.sdv}%</b> dei casi, contro il ${t.sdb}% normale${t.sdn?` (${t.sdn} casi${t.sdx?" del suo settore":" di questo titolo"})`:""}.`;
+  return `<div class="sdbox sd${g[0]}"><div class="sdtesta"><span class="sdlab">SMART DISCOUNT</span>
+    <details class="info"><summary title="Come si calcola" aria-label="Informazioni">i</summary><div>Punteggio 0-100: 60% <b>rarit&agrave;</b> (quanti mesi della storia del titolo avevano uno sconto meno profondo di oggi, dal massimo delle ultime 12 chiusure mensili) + 40% <b>qualit&agrave;</b> (quanto comprare a questo livello di sconto &egrave; andato meglio di comprare a caso; 50 = uguale). Backtest su ~1.000 mercati e 40.000 occasioni di sconto dal 1962. Attenzione: i titoli falliti non sono nei dati, quindi la qualit&agrave; &egrave; un po' ottimista. Statistica del passato, non un consiglio di investimento.</div></details></div>
+   <div class="sdcorpo"><div class="sdnum"><b>${t.sd}</b><span>${g[1]}</span></div>
+    <div class="sdbarre"><div><span>Rarit&agrave; dello sconto</span><i><em style="width:${t.sdr}%"></em></i><b>${t.sdr}</b></div>
+     <div><span>Qualit&agrave; storica</span><i><em style="width:${t.sdq}%"></em></i><b>${t.sdq}</b></div></div></div>
+   <p class="small">${frase}</p></div>`;}
 
  // --- BILANCIO (aziende USA, fonte SEC: vedi cot_radar/fondamentali.py): ricavi, utile, anni in perdita, debito netto
  //     e giudizio SOLIDA / NELLA MEDIA / INDEBITATA. File pubblico/bilanci/<T>.json; assente = azienda non USA.
