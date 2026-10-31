@@ -1226,3 +1226,8 @@ h1.tmarchio em{text-shadow:none;filter:drop-shadow(0 0 10px rgba(46,196,182,.35)
 .protr>.prisul,.protr>.pdet{grid-column:2/-1}
 @media (max-width:600px){.protr>.prisul,.protr>.pdet{grid-column:1}}
 .protr:has(.pdet[open]){transform:none}
+
+/* v6.53: Stagionalita' a blocchi (come il Backtest), comandi in una card, schede della stessa riga alte uguali */
+.stagcmd{margin-bottom:20px}
+.stag2{align-items:stretch}.stag2>.card{display:flex;flex-direction:column}
+.stagblk{margin-top:24px}

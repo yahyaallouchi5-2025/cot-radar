@@ -39,10 +39,12 @@ try{(function(){const S=D.stag||{},el=$("stag"),M12=["Gen","Feb","Mar","Apr","Ma
   const mp=X.mappa;
   const hcard=mp?`<div class="card"><h3>Mappa anni &times; mesi (ultimi ${mp.anni.length} anni)</h3><div class="tablewrap" style="box-shadow:none;margin-top:10px"><table class="mappa"><tr><th></th>${M12.map(m=>`<th>${m}</th>`).join("")}</tr>
    ${mp.anni.map((y,r)=>`<tr><th>${y}</th>${mp.v[r].map(v=>`<td style="background:${cella(v)}">${v==null?"":fx(v,1)}</td>`).join("")}</tr>`).reverse().join("")}</table></div></div>`:"";
-  $("stagdett").innerHTML=`<div class="grid stag2">${fcard}${gcard}</div><div style="margin-top:20px">${mcard}</div><div style="margin-top:20px">${hcard}</div>`;}
+  $("stagdett").innerHTML=`<div class="grid stag2">${fcard}${gcard}</div><div class="stagblk">${mcard}</div><div class="stagblk">${hcard}</div>`;}
  el.innerHTML=`<h2>Stagionalit&agrave;</h2><p class="sub">Come si e' comportato ogni strumento negli anni passati: nelle prossime 4 settimane, mese per mese e giorno per giorno. Conta solo cio' che supera i filtri anti-coincidenza (vedi Metodo).</p>
-  <div class="card" style="margin-bottom:20px"><h3>Effetti affidabili adesso (prossime 4 settimane)</h3><div class="evlist">${attive.length?attive.map(k=>{const f=S[k].finestra;return `<button class="ev stagbtn" data-k="${esc(k)}"><b>${esc(k)}</b> ${f.score>0?"&uarr;":"&darr;"} ${f.score>0?f.su:f.n-f.su}/${f.n} anni &middot; ${pc(f.med,1)}</button>`}).join(""):'<span class="small">Nessun effetto affidabile in questo periodo dell\'anno.</span>'}</div></div>
-  <div class="filters"><select id="stagsel" class="tvbtn">${tutte.map(k=>`<option value="${esc(k)}">${esc(nome(k))}</option>`).join("")}</select></div><div id="stagdett"></div>`;
+  <div class="vfsez"><div class="vfsez-t"><span class="vfsez-n">1</span><div><h2>Adesso</h2><p class="small">Gli strumenti con un effetto stagionale affidabile nelle prossime 4 settimane: toccane uno per aprirlo qui sotto.</p></div></div>
+  <div class="card"><h3>Effetti affidabili adesso (prossime 4 settimane)</h3><div class="evlist">${attive.length?attive.map(k=>{const f=S[k].finestra;return `<button class="ev stagbtn" data-k="${esc(k)}"><b>${esc(k)}</b> ${f.score>0?"&uarr;":"&darr;"} ${f.score>0?f.su:f.n-f.su}/${f.n} anni &middot; ${pc(f.med,1)}</button>`}).join(""):'<span class="small">Nessun effetto affidabile in questo periodo dell\'anno.</span>'}</div></div></div>
+  <div class="vfsez"><div class="vfsez-t"><span class="vfsez-n">2</span><div><h2>Uno strumento in dettaglio</h2><p class="small">Prossime 4 settimane, giorni della settimana, mesi e mappa anno per anno dello strumento scelto.</p></div></div>
+  <div class="card vfcomandi stagcmd"><div class="vfriga"><span class="vfetich">Strumento</span><select id="stagsel" class="vfsel">${tutte.map(k=>`<option value="${esc(k)}">${esc(nome(k))}</option>`).join("")}</select></div></div><div id="stagdett"></div></div>`;
  const scegli=k=>{sel=k;$("stagsel").value=k;disegna();};
  $("stagsel").onchange=e=>scegli(e.target.value);
  el.querySelectorAll(".stagbtn").forEach(b=>b.onclick=()=>scegli(b.dataset.k));

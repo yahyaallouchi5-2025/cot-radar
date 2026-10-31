@@ -232,6 +232,10 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+### v6.53
+- Stagionalita' divisa in due blocchi numerati ("Adesso" e "Uno strumento in dettaglio"), scelta dello strumento dentro una card con etichetta, schede della stessa riga alte uguali.
+- Nuovo workflow "Aggiornamento automatico": un file .patch caricato nella cartella `aggiornamento` viene applicato, cancellato e il sito si ricostruisce da solo.
+
 ### v6.52
 - **Scheda dell'azienda** nel dettaglio di ogni titolo: cosa fa (riassunto di Wikipedia), settore, anno di fondazione, sede, amministratore delegato, dipendenti, borse dove e' quotata ed eventuale acquisizione negli ultimi 10 anni. Nuovo modulo `cot_radar/profili.py` (Wikidata + Wikipedia, ogni profilo al massimo una volta al mese, 300 titoli per giro, mai bloccante); file `pubblico/profili/<T>.json`. I profili si riempiono nei prossimi giri del workflow Azioni.
 - Bilancio SEC: la nota sulle fonti e' dentro la (i); toccando o passando sopra un anno compare il fumetto con ricavi, utile e margine.
