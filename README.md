@@ -232,6 +232,12 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+### v6.55
+- **SMART DISCOUNT** (cot_radar/sconto.py): punteggio 0-100 per ogni titolo = 60% rarita' dello sconto di oggi
+  (dal massimo delle ultime 12 chiusure mensili) nella storia del titolo + 40% qualita' (comprare a quello sconto,
+  in passato, e' andato meglio di comprare a caso?). Colonna ordinabile in classifica e riquadro nella scheda.
+- Backtest completo in tools/backtest_sconto.py (dati: tools/scarica.py): ~1.000 mercati, 40.000 eventi dal 1962.
+
 ### v6.54c
 - Scheda del titolo a **pagina intera** con barra "Indietro" fissa in alto (funziona anche il tasto indietro del
   telefono/browser e il tasto Esc): niente piu' pannello a meta' schermo con sovrapposizioni.

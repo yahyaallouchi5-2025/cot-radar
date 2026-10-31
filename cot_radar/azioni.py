@@ -316,7 +316,7 @@ def pubblica(cartella, stato=None, titoli=None):
     """Scrive cartella/pubblico/: indice.json (tutti i titoli + indici + settori) e titoli/<T>.json.
     Usa SOLO le copie grezze: se oggi Yahoo non ha risposto, la scheda mostra gli ultimi dati con l'avviso."""
     el = titoli if titoli is not None else elenco()
-    righe, dettagli = [], 0
+    righe, dettagli, mensili = [], 0, {}
     for x in el:
         rec = _leggi(os.path.join(cartella, "grezzi", _nome_file(x["t"]) + ".json"))
         r = riassunto(rec) if rec else None
@@ -330,6 +330,7 @@ def pubblica(cartella, stato=None, titoli=None):
         det = {"t": x["t"], "n": rec.get("nome") or x["nome"], "s": x["s"], "l": x["l"], "val": rec.get("valuta"),
                "borsa": rec.get("borsa"), "d": rec["d"], "m": rec.get("m") or [], "stag": stag}
         _scrivi(os.path.join(cartella, "pubblico", "titoli", _nome_file(x["t"]) + ".json"), det)
+        mensili[x["t"]] = [v for _, v in (rec.get("m") or [])[:-1]]   # SMART DISCOUNT: solo mesi chiusi
         dettagli += 1
     indici = []
     for t, nome, l in INDICI:
@@ -338,6 +339,11 @@ def pubblica(cartella, stato=None, titoli=None):
         if r:
             indici.append(dict({"t": t, "n": nome, "l": l, "val": rec.get("valuta")}, **r))
     punteggi(righe)
+    try:                                       # v6.55 SMART DISCOUNT (sconto.py): mai bloccante per la scheda
+        from . import sconto
+        log.warning("smart discount: %d titoli valutati", sconto.calcola(mensili, righe))
+    except Exception as e:
+        log.warning("smart discount non calcolato (%s: %s)", type(e).__name__, e)
     top = vetrina(righe)
     ultimo = max((r["data"] for r in righe), default=None)
     indice = {"aggiornato": ultimo, "generato": ora_italia().strftime("%Y-%m-%d %H:%M"),
