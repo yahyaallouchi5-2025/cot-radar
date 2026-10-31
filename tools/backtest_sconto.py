@@ -127,3 +127,133 @@ def eventi(s, sc):
     return ev
 
 
+def futuri(s, i):
+    """Rendimenti a 3/6/12/24 mesi e drawdown successivo (12 mesi) dal mese i. None se il futuro non c'e' ancora."""
+    p = s.values
+    r = {h: (p[i + h] / p[i] - 1) * 100 if i + h < len(p) else None for h in ORIZZONTI}
+    fin = p[i + 1:i + 13]
+    dd = (fin.min() / p[i] - 1) * 100 if len(fin) else None
+    return r, (min(dd, 0.0) if dd is not None else None)
+
+
+def base12(s):
+    """Rendimenti a 12 mesi da TUTTI i mesi (il riferimento 'comprare a caso')."""
+    p = s.values
+    return (p[12:] / p[:-12] - 1) * 100 if len(p) > 12 else np.array([])
+
+
+# --------------------------------------------------------------------------- statistiche
+def riassumi(lista, chiave):
+    v = np.array([x[chiave] for x in lista if x[chiave] is not None], dtype=float)
+    if not len(v):
+        return None
+    return {"n": int(len(v)), "media": round(float(v.mean()), 1), "mediana": round(float(np.median(v)), 1),
+            "pos": round(float((v > 0).mean() * 100), 0), "p10": round(float(np.percentile(v, 10)), 1)}
+
+
+def tabella(evs):
+    """Per ogni soglia: n eventi, rendimenti 3/6/12/24 mesi, drawdown successivo."""
+    out = {}
+    for k in SOGLIE:
+        e = [x for x in evs if x["k"] == k]
+        if not e:
+            continue
+        out[k] = {"eventi": len(e), **{f"r{h}": riassumi(e, f"r{h}") for h in ORIZZONTI}, "dd": riassumi(e, "dd")}
+    return out
+
+
+def main(cartella):
+    dati = serie_mensili(cartella)
+    tutti_ev, base_per_gruppo, righe, corretti = [], {}, [], 0
+    for cod, (nome, gruppo, s, info) in dati.items():
+        if len(s) < MESI_MIN:
+            continue
+        s, nc = pulisci(s)
+        corretti += nc
+        sc, sc_ath = sconto(s), sconto(s, None)
+        b = base12(s)
+        base_per_gruppo.setdefault(gruppo, []).extend(b.tolist())
+        evs = []
+        media24 = s.rolling(24, min_periods=24).mean()                # trend lungo: media delle ultime 24 chiusure
+        for k, i in eventi(s, sc):
+            r, dd = futuri(s, i)
+            trend = None if pd.isna(media24.iloc[i]) else bool(s.iloc[i] > media24.iloc[i])
+            evs.append({"cod": cod, "gruppo": gruppo, "k": k, "mese": str(s.index[i]), "sconto": round(sc.iloc[i], 1),
+                        **{f"r{h}": r[h] for h in ORIZZONTI}, "dd": dd, "trend": trend})
+        tutti_ev.extend(evs)
+        # ---- situazione di OGGI: ultimo prezzo disponibile contro il massimo delle ultime 12 chiusure
+        ultimo = float(info.get("p") or s.iloc[-1])
+        oggi = (ultimo / max(s.iloc[-11:].max(), ultimo) - 1) * 100   # stessa definizione del backtest (fine mese)
+        oggi_ath = (ultimo / max(s.max(), ultimo) - 1) * 100
+        rarita = float((sc.values > oggi).mean() * 100)   # % di mesi con sconto MENO profondo di oggi
+        livello = max([k for k in SOGLIE if oggi <= k], default=None)  # soglia raggiunta oggi (es. -20)
+        righe.append({"cod": cod, "nome": nome, "gruppo": gruppo, "mesi": len(s), "dal": str(s.index[0]),
+                      "oggi": round(oggi, 1), "oggi_ath": round(oggi_ath, 1), "rarita": round(rarita, 0),
+                      "tipico": round(float(np.median(sc.values)), 1), "p10": round(float(np.percentile(sc.values, 10)), 1),
+                      "livello": livello, "evs": evs,
+                      "base12": round(float(np.median(b)), 1) if len(b) else None,
+                      "base_pos": round(float((b > 0).mean() * 100), 0) if len(b) else None})
+
+    # ---- qualita': % positivi a 12 mesi dopo eventi alla soglia di oggi (proprio storico o del gruppo)
+    per_gruppo = {}
+    for e in tutti_ev:
+        if e["r12"] is not None:
+            per_gruppo.setdefault((e["gruppo"], e["k"]), []).append(e["r12"])
+    for r in righe:
+        k, base = r["livello"], (r["base_pos"] or 60)
+        if k is None:                                   # sconto sotto -10%: nessun vantaggio ne' svantaggio
+            w, fonte = base, "nessuno sconto rilevante"
+        else:
+            mie = [e["r12"] for e in r["evs"] if e["k"] == k and e["r12"] is not None]
+            if len(mie) >= EVENTI_MIN:
+                pos, n, fonte = float((np.array(mie) > 0).sum()), len(mie), f"{len(mie)} eventi propri"
+            else:
+                g = per_gruppo.get((r["gruppo"], k), [])
+                pos, n, fonte = float((np.array(g) > 0).sum()), len(g), f"settore ({len(g)} eventi)"
+                bg = np.array(base_per_gruppo.get(r["gruppo"], []))      # confronto alla pari: settore con settore
+                base = float((bg > 0).mean() * 100) if len(bg) else base
+            w = (pos + PRIOR * base / 100) / (n + PRIOR) * 100   # % positivi "frenata" verso quella normale
+        q = max(0.0, min(100.0, 50 + (w - base) * 2))           # +25 punti % sopra il normale = 100
+        r["qualita"], r["vinte"], r["fonte_q"] = round(q, 0), round(w, 0), fonte
+        r["punteggio"] = int(round(0.6 * r["rarita"] + 0.4 * q))
+        r["giudizio"] = ("Molto scontato" if r["punteggio"] >= 80 else "Scontato" if r["punteggio"] >= 60
+                         else "Neutro" if r["punteggio"] >= 40 else "Caro")
+        r["n_ev"] = len(r.pop("evs"))
+
+    # ---- tabelle riassuntive per gruppo + confronto con "comprare a caso"
+    gruppi = sorted({e["gruppo"] for e in tutti_ev} | {"Azioni (tutte)"})
+    risultati = {}
+    for g in gruppi:
+        evs = tutti_ev if g == "Azioni (tutte)" else [e for e in tutti_ev if e["gruppo"] == g]
+        if g == "Azioni (tutte)":
+            evs = [e for e in evs if e["gruppo"] in SETTORI.values()]
+            base = [x for k, v in base_per_gruppo.items() if k in SETTORI.values() for x in v]
+        else:
+            base = base_per_gruppo.get(g, [])
+        bb = np.array(base)
+        # FILTRO TREND: lo stesso sconto, ma con il prezzo ancora SOPRA (ritracciamento in un rialzo) o SOTTO
+        # (mercato gia' in discesa da tempo) la media delle ultime 24 chiusure mensili
+        filtro = {lab: {k: riassumi([e for e in evs if e["k"] == k and e["trend"] is v], "r12") for k in SOGLIE}
+                  for lab, v in (("sopra", True), ("sotto", False))}
+        risultati[g] = {"tabella": tabella(evs), "trend": filtro, "base12": {"mediana": round(float(np.median(bb)), 1),
+                        "pos": round(float((bb > 0).mean() * 100), 0), "n": int(len(bb))} if len(bb) else None}
+    # ---- crisi: quanti eventi per anno (per vedere la concentrazione)
+    anni = pd.Series([e["mese"][:4] for e in tutti_ev if e["k"] == -20]).value_counts().sort_index()
+    out = {"generato": pd.Timestamp.now().strftime("%Y-%m-%d"), "mercati": len(righe), "eventi": len(tutti_ev),
+           "picchi_corretti": corretti,
+           "gruppi": risultati, "oggi": sorted(righe, key=lambda r: -r["punteggio"]),
+           "anni_eventi20": {k: int(v) for k, v in anni.items()},
+           "esempi": {c: [e for e in tutti_ev if e["cod"] == c and e["k"] == -20] for c in ("AMZN", "NASDAQCOM", "DCOILWTICO")}}
+    json.dump(out, open("risultati.json", "w"), ensure_ascii=False, indent=1, default=float)
+    return out
+
+
+if __name__ == "__main__":
+    r = main(sys.argv[1] if len(sys.argv) > 1 else "dati")
+    print("mercati:", r["mercati"], "eventi:", r["eventi"])
+    for g, v in r["gruppi"].items():
+        print("\n==", g, "| comprare a caso 12m: mediana", v["base12"] and v["base12"]["mediana"], "% positivi", v["base12"] and v["base12"]["pos"])
+        for k, t in v["tabella"].items():
+            r12 = t["r12"] or {}
+            print(f"  soglia {k:>4}%: {t['eventi']:>5} eventi | 12m mediana {r12.get('mediana')}% pos {r12.get('pos')}% "
+                  f"p10 {r12.get('p10')} | 24m med {(t['r24'] or {}).get('mediana')} | dd successivo med {(t['dd'] or {}).get('mediana')}")
