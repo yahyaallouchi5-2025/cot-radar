@@ -84,3 +84,39 @@ class Bilanci(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# --------------------------------------------------------------------------- v6.54: trimestrali e date dei conti
+def periodo(ini, fine, val, form="10-Q", filed="2026-01-01"):
+    return {"start": ini, "end": fine, "val": val, "form": form, "filed": filed, "fp": "Q"}
+
+
+class Trimestrali(unittest.TestCase):
+    def fatti(self):
+        q = [periodo("2025-01-01", "2025-03-31", 100), periodo("2025-04-01", "2025-06-30", 110),
+             periodo("2025-07-01", "2025-09-30", 120), periodo("2025-01-01", "2025-12-31", 460, "10-K"),
+             periodo("2025-01-01", "2025-06-30", 210),                       # cumulato semestrale: va ignorato
+             periodo("2026-01-01", "2026-03-31", 130)]
+        u = [dict(x, val=x["val"] / 10) for x in q]
+        e = [dict(x, val=x["val"] / 100) for x in q]
+        return {"facts": {"us-gaap": {"Revenues": {"units": {"USD": q}}, "NetIncomeLoss": {"units": {"USD": u}},
+                                      "EarningsPerShareDiluted": {"units": {"USD/shares": e}}}}}
+
+    def test_quarto_trimestre_ricavato(self):
+        t = F.trimestri(self.fatti())
+        self.assertEqual([x["fine"] for x in t], ["2025-03-31", "2025-06-30", "2025-09-30", "2025-12-31", "2026-03-31"])
+        q4 = t[3]
+        self.assertEqual(q4["ricavi"], 130)                 # 460 - 100 - 110 - 120
+        self.assertEqual(q4["ini"], "2025-10-01")
+        self.assertTrue(q4["r4"])
+        self.assertFalse(t[0]["r4"])
+        self.assertEqual(t[0]["eps"], 1.0)
+
+    def test_date_dei_conti(self):
+        dep = {"filings": {"recent": {"form": ["8-K", "8-K", "10-Q", "8-K", "8-K"],
+                                      "filingDate": ["2026-10-30", "2026-07-31", "2026-08-01", "2025-10-30", "2026-05-02"],
+                                      "items": ["2.02,9.01", "2.02", "", "2.02", "5.07"]}}}
+        c = F.conti(dep, date(2026, 10, 31))
+        self.assertEqual(c["ultimo"], "2026-10-30")
+        self.assertEqual(c["prossimo"], "2027-01-29")       # niente 8-K 2.02 di gennaio: ultimo + 91 giorni
+        self.assertIsNone(F.conti({}, date(2026, 10, 31)))

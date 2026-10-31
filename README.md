@@ -232,6 +232,15 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+### v6.54
+- Scheda del titolo: nuovo blocco **Risultati trimestrali** (aziende USA, fonte SEC gratuita): ultimi 4 trimestri con ricavi,
+  utile netto ed EPS diluito e variazione sullo stesso trimestre dell'anno prima; 4o trimestre ricavato da anno intero
+  meno i primi tre; data degli ultimi conti e stima dei prossimi dagli 8-K (voce 2.02). Nella stagione dei conti il
+  titolo si riscarica ogni giorno per 21 giorni.
+- Profili aziende: fino a 2000 titoli per giro (limite 10 minuti), prima i titoli USA; i titoli senza voce su Wikidata
+  ricevono un file "vuoto" e la scheda mostra settore e borse.
+- Barra "Cerca titolo o ticker" piu' visibile (bordo e icona in turchese, testo segnaposto piu' chiaro).
+
 ### v6.53
 - Stagionalita' divisa in due blocchi numerati ("Adesso" e "Uno strumento in dettaglio"), scelta dello strumento dentro una card con etichetta, schede della stessa riga alte uguali.
 - Nuovo workflow "Aggiornamento automatico": un file .patch caricato nella cartella `aggiornamento` viene applicato, cancellato e il sito si ricostruisce da solo.

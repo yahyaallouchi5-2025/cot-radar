@@ -56,6 +56,10 @@ DEBITO_BREVE = ["LongTermDebtCurrent", "DebtCurrent"]
 CASSA = ["CashAndCashEquivalentsAtCarryingValue", "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents",
          "CashAndDueFromBanks"]
 PN = ["StockholdersEquity", "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"]
+EPS = ["EarningsPerShareDiluted", "EarningsPerShareBasicAndDiluted", "EarningsPerShareBasic"]
+URL_DEPOSITI = "https://data.sec.gov/submissions/CIK{cik:010d}.json"
+TRIMESTRI = 8                   # trimestri conservati: 4 da mostrare + 4 per il confronto con l'anno prima
+FINESTRA_CONTI = 21             # giorni dopo la data stimata dei conti in cui il titolo si riscarica ogni giorno
 
 
 def _ua():
@@ -173,6 +177,77 @@ def titoli_usa(el=None):
     return [x for x in (el if el is not None else A.elenco()) if ("sp500" in x["l"] or "ndx" in x["l"]) and "." not in x["t"]]
 
 
+# --------------------------------------------------------------------------- trimestrali (v6.54)
+def _periodi(fatti, concetti, unita="USD"):
+    """Tutti i periodi con durata dal primo concetto utile: {(inizio, fine): valore}. Vince il deposito piu' recente
+    (correzioni). Prende sia i 10-Q (trimestri 1-3) sia i 10-K (anno intero, serve per ricavare il 4o trimestre)."""
+    usgaap = (fatti or {}).get("facts", {}).get("us-gaap", {})
+    for c in concetti:                                     # primo concetto con dati: niente mescolanze tra concetti
+        righe = (usgaap.get(c) or {}).get("units", {}).get(unita) or []
+        out = {}
+        for f in righe:
+            if not str(f.get("form", "")).startswith(("10-Q", "10-K")) or f.get("val") is None:
+                continue
+            ini, fine = f.get("start"), f.get("end")
+            if not ini or not fine:
+                continue
+            k = (ini, fine)
+            if k not in out or f.get("filed", "") >= out[k][1]:
+                out[k] = (f["val"], f.get("filed", ""))
+        if out:
+            return {k: v[0] for k, v in out.items()}
+    return {}
+
+
+def _giorni(a, b):
+    return (date.fromisoformat(b) - date.fromisoformat(a)).days
+
+
+def _trimestrali(per):
+    """{fine: (inizio, valore, ricavato)} dei trimestri. I trimestri 1-3 arrivano dai 10-Q (periodi di ~3 mesi);
+    il 4o NON viene depositato da solo: si ricava come anno intero meno i tre trimestri precedenti (ricavato=True)."""
+    q = {f: (i, v, False) for (i, f), v in per.items() if 80 <= _giorni(i, f) <= 100}
+    for (i, f), v in per.items():
+        if not 330 <= _giorni(i, f) <= 400 or f in q:
+            continue
+        dentro = sorted((qf, qv) for qf, (qi, qv, _) in q.items() if qi >= i and qf < f)   # trimestri di quell'anno
+        if len(dentro) == 3 and 250 <= _giorni(i, dentro[-1][0]) <= 300:
+            ini4 = (date.fromisoformat(dentro[-1][0]) + timedelta(days=1)).isoformat()
+            q[f] = (ini4, v - sum(x[1] for x in dentro), True)
+    return q
+
+
+def trimestri(fatti):
+    """Ultimi TRIMESTRI trimestri: [{ini, fine, ricavi, utile, eps, r4 (4o trimestre ricavato)}] dal piu' vecchio.
+    Le variazioni sull'anno prima le calcola il sito (stesso trimestre di ~1 anno prima)."""
+    ric = _trimestrali(_periodi(fatti, RICAVI))
+    ut = _trimestrali(_periodi(fatti, UTILE))
+    eps = _trimestrali(_periodi(fatti, EPS, "USD/shares"))
+    fini = sorted(set(ric) & set(ut))[-TRIMESTRI:]
+    out = []
+    for f in fini:
+        e = eps.get(f)
+        out.append({"ini": ric[f][0], "fine": f, "ricavi": ric[f][1], "utile": ut[f][1],
+                    "eps": round(e[1], 2) if e else None, "r4": ric[f][2] or ut[f][2]})
+    return out
+
+
+def conti(depositi, oggi):
+    """Date dei risultati dagli 8-K con voce 2.02 ("Results of Operations"): ultimo comunicato e prossimo STIMATO
+    (la stessa data di un anno prima + 52 settimane). La SEC non pubblica il calendario: e' una stima, e il sito lo dice."""
+    r = ((depositi or {}).get("filings") or {}).get("recent") or {}
+    date_ = sorted({d for fo, d, it in zip(r.get("form", []), r.get("filingDate", []), r.get("items", []))
+                    if fo == "8-K" and "2.02" in str(it)})
+    if not date_:
+        return None
+    ultimo = date_[-1]
+    candidati = [date.fromisoformat(d) + timedelta(days=364) for d in date_ if d > (oggi - timedelta(days=430)).isoformat()]
+    # il prossimo e' a circa un trimestre dall'ultimo (60-120 giorni); se l'anno prima manca, ultimo + 13 settimane
+    futuri = [c for c in candidati if 60 <= _giorni(ultimo, c.isoformat()) <= 120]
+    prossimo = min(futuri) if futuri else date.fromisoformat(ultimo) + timedelta(days=91)
+    return {"ultimo": ultimo, "prossimo": prossimo.isoformat(), "stima": True}
+
+
 def aggiorna(cartella, oggi=None, el=None, scarica=None, pausa=PAUSA):
     """Riscarica (al massimo una volta a settimana per titolo) e scrive pubblico/bilanci/<T>.json + bilanci.json.
     Restituisce {ok, aggiornati, falliti, saltato}. Mai bloccante per il resto del workflow."""
@@ -191,7 +266,11 @@ def aggiorna(cartella, oggi=None, el=None, scarica=None, pausa=PAUSA):
         vecchio = A._leggi(f) or {}
         giorno = zlib.crc32(("sec" + t).encode()) % 5                     # ogni titolo il suo giorno della settimana
         scaduto = vecchio.get("agg", "") < (oggi - timedelta(days=8)).isoformat()
-        if not vecchio or (oggi.weekday() == giorno and vecchio.get("agg") != oggi.isoformat()) or scaduto:
+        pc = (vecchio.get("conti") or {}).get("prossimo")
+        # stagione dei conti: dalla data stimata e per FINESTRA_CONTI giorni si riscarica ogni giorno (trimestrale fresca)
+        stagione = bool(pc) and 0 <= _giorni(pc, oggi.isoformat()) <= FINESTRA_CONTI and vecchio.get("agg") != oggi.isoformat()
+        if not vecchio or (oggi.weekday() == giorno and vecchio.get("agg") != oggi.isoformat()) or scaduto or stagione \
+                or (vecchio.get("anni") and "trim" not in vecchio):        # v6.54: file vecchi senza trimestrali
             cik = mappa.get(t.upper()) or mappa.get(t.upper().replace("-", "."))
             fatti = get(URL_FATTI.format(cik=cik)) if cik else None
             if pausa and cik:
@@ -202,7 +281,13 @@ def aggiorna(cartella, oggi=None, el=None, scarica=None, pausa=PAUSA):
                 log.warning("bilanci SEC: %s non elaborato (%s: %s)", t, type(e).__name__, e)
                 sintesi = None
             if sintesi:
-                vecchio = dict(sintesi, t=t, agg=oggi.isoformat(), fonte="SEC EDGAR (10-K)")
+                try:                                     # trimestrali e date dei conti: extra, mai bloccanti
+                    sintesi["trim"] = trimestri(fatti)
+                    dep = get(URL_DEPOSITI.format(cik=cik))
+                    sintesi["conti"] = conti(dep, oggi)
+                except Exception as e:
+                    log.warning("trimestrali SEC: %s non elaborato (%s: %s)", t, type(e).__name__, e)
+                vecchio = dict(sintesi, t=t, agg=oggi.isoformat(), fonte="SEC EDGAR (10-K, 10-Q, 8-K)")
                 A._scrivi(f, vecchio)
                 aggiornati += 1
             else:

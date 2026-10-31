@@ -30,7 +30,8 @@ log = logging.getLogger(__name__)
 SPARQL = "https://query.wikidata.org/sparql"
 RIASSUNTO = "https://{lingua}.wikipedia.org/api/rest_v1/page/summary/{titolo}"
 GIORNI_VALIDITA = 30            # un profilo si riscarica dopo 30 giorni
-MAX_PER_GIRO = 300              # titoli aggiornati al massimo in un giro
+MAX_PER_GIRO = 2000             # titoli aggiornati al massimo in un giro (v6.54: prima 300, troppo lento)
+TEMPO_MAX = 600                 # secondi massimi per giro: oltre si riprende al giro dopo
 LOTTO = 60                      # ticker per interrogazione SPARQL
 PAUSA = 0.2                     # secondi tra le richieste a Wikipedia
 
@@ -172,9 +173,15 @@ def aggiorna(cartella, oggi=None, el=None, pausa=PAUSA):
     titoli = [x["t"] for x in (el if el is not None else A.elenco())]
     file_di = lambda t: os.path.join(cartella, "pubblico", "profili", A._nome_file(t) + ".json")
     limite = (oggi - timedelta(days=GIORNI_VALIDITA)).isoformat()
-    da_fare = [t for t in titoli if ((A._leggi(file_di(t)) or {}).get("agg") or "") < limite][:MAX_PER_GIRO]
-    fatti_ok, mancanti = 0, []
+    # v6.54: prima i titoli USA (ticker senza suffisso di borsa), poi gli altri; quelli senza voce su Wikidata
+    # ricevono un file "vuoto" con la data, cosi' non vengono richiesti a ogni giro
+    da_fare = [t for t in titoli if ((A._leggi(file_di(t)) or {}).get("agg") or "") < limite]
+    da_fare = sorted(da_fare, key=lambda t: "." in t)[:MAX_PER_GIRO]
+    fatti_ok, mancanti, inizio = 0, [], time.time()
     for i in range(0, len(da_fare), LOTTO):
+        if time.time() - inizio > TEMPO_MAX:
+            log.warning("profili: tempo massimo raggiunto, %d titoli rimandati al prossimo giro", len(da_fare) - i)
+            break
         lotto = da_fare[i:i + LOTTO]
         try:
             qid = trova_item(lotto)
@@ -187,6 +194,7 @@ def aggiorna(cartella, oggi=None, el=None, pausa=PAUSA):
         for t in lotto:
             if t not in qid:
                 mancanti.append(t)
+                A._scrivi(file_di(t), {"t": t, "agg": oggi.isoformat(), "vuoto": 1})   # il sito mostra i dati base
                 continue
             f = dati.get(qid[t], {})
             desc = riassunto(f.get("it")) or riassunto(f.get("en"))
