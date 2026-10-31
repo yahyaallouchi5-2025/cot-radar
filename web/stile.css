@@ -1231,3 +1231,4 @@ h1.tmarchio em{text-shadow:none;filter:drop-shadow(0 0 10px rgba(46,196,182,.35)
 .stagcmd{margin-bottom:20px}
 .stag2{align-items:stretch}.stag2>.card{display:flex;flex-direction:column}
 .stagblk{margin-top:24px}
+.stag2 .compatta td:last-child,.stag2 .compatta th:last-child{white-space:normal;min-width:84px}

@@ -178,6 +178,8 @@ def aggiorna(cartella, oggi=None, el=None, pausa=PAUSA):
         lotto = da_fare[i:i + LOTTO]
         try:
             qid = trova_item(lotto)
+            if i == 0:
+                log.warning("profili: primo lotto, %d ticker su %d trovati su Wikidata", len(qid), len(lotto))
             dati = fatti(sorted(set(qid.values()))) if qid else {}
         except Exception as e:                      # Wikidata lento o giu': riprova al prossimo giro, niente blocchi
             log.warning("profili: lotto %d non scaricato (%s: %s)", i // LOTTO + 1, type(e).__name__, e)
@@ -192,5 +194,7 @@ def aggiorna(cartella, oggi=None, el=None, pausa=PAUSA):
                 time.sleep(pausa)
             A._scrivi(file_di(t), componi(t, f, desc, oggi))
             fatti_ok += 1
-    log.info("profili aziende: %d aggiornati, %d senza voce su Wikidata", fatti_ok, len(mancanti))
+    # riepilogo sempre visibile nel registro del workflow (livello warning: le info non vengono stampate)
+    log.warning("profili aziende: %d da aggiornare, %d aggiornati, %d senza voce su Wikidata%s", len(da_fare), fatti_ok,
+                len(mancanti), (" (es. " + ", ".join(mancanti[:8]) + ")") if mancanti else "")
     return {"aggiornati": fatti_ok, "mancanti": mancanti}
