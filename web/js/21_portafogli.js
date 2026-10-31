@@ -198,6 +198,43 @@ try{(function(){const P=D.port,el=$("port");if(!el)return;
    <span class="small">${r.liquidita?`liquidit&agrave; ${r.liquidita}%`:""}</span>${dettMese(perMese[r.data.slice(0,7)])}</div>`).join("")}
    ${p.rotazioni.length>6?`<button class="ptutte">${tutteRot?"Mostra meno":`Mostra tutte (${p.rotazioni.length})`}</button>`:""}</div>`;}
 
+ // --- CONFRONTO DEI 3 PROFILI mese per mese (v6.56): stessi mesi chiusi delle rotazioni, i tre profili affiancati,
+ //     con rischio (volatilita' annua e drawdown sul periodo), mesi negativi, peggior mese, correlazione e la spiegazione
+ //     automatica di ogni mese negativo (il mercato che ha pesato di piu'). Interruttore: profilo in evidenza.
+ let cfrSel=null;
+ function confronto(){const PR=P.profili,mesi=[...new Set(PR.flatMap(p=>(p.mesi_chiusi||[]).map(m=>m.mese)))].sort().reverse();
+  if(!mesi.length)return "";
+  const evid=cfrSel||sel,M=MESI.map(x=>x.slice(0,3));
+  const serie=p=>mesi.map(k=>((p.mesi_chiusi||[]).find(m=>m.mese==k)||{}).r).reverse();   // dal piu' vecchio
+  const st=p=>{const v=serie(p).filter(x=>x!=null);if(!v.length)return null;
+   let cap=1,max=1,dd=0;v.forEach(r=>{cap*=1+r/100;max=Math.max(max,cap);dd=Math.min(dd,cap/max-1);});
+   const med=v.reduce((a,b)=>a+b,0)/v.length,sd=Math.sqrt(v.reduce((a,b)=>a+(b-med)**2,0)/Math.max(1,v.length-1));
+   return {tot:(cap-1)*100,neg:v.filter(r=>r<0).length,n:v.length,peg:Math.min(...v),vol:sd*Math.sqrt(12),dd:dd*100};};
+  const corr=(a,b)=>{const x=serie(a),y=serie(b),c=x.map((v,i)=>[v,y[i]]).filter(q=>q[0]!=null&&q[1]!=null);if(c.length<4)return null;
+   const ma=c.reduce((s,q)=>s+q[0],0)/c.length,mb=c.reduce((s,q)=>s+q[1],0)/c.length;let sab=0,sa=0,sb=0;
+   c.forEach(q=>{sab+=(q[0]-ma)*(q[1]-mb);sa+=(q[0]-ma)**2;sb+=(q[1]-mb)**2;});return sa&&sb?sab/Math.sqrt(sa*sb):null;};
+  const S=PR.map(st),pe=PR.find(p=>p.id==evid)||PR[0];
+  const perche=k=>{const m=(pe.mesi_chiusi||[]).find(z=>z.mese==k);if(!m||m.r>=0)return "";
+   const neg=[...m.asset].filter(a=>a.c<0).sort((a,b)=>a.c-b.c).slice(0,2);
+   return neg.map(a=>`${esc(a.nome)} ${pc(a.r)}`).join(" &middot; ");};
+  const cel=v=>(v=v==null?null:(Math.round(v*10)/10||0),v==null)?'<td class="num">&ndash;</td>':`<td class="num"><span class="pcf ${v>=0?"su":"giu"}" style="--a:${Math.min(1,Math.abs(v)/6)}">${pc(v)}</span></td>`;
+  const ym=k=>M[+k.slice(5)-1]+" "+k.slice(0,4);
+  return `<h3 class="vft">Confronto dei 3 profili <span class="small">(ultimi ${mesi.length} mesi chiusi, stesso periodo per tutti)</span></h3>
+   <div class="card pcfr">
+    <div class="vfswitch pcfsw" role="tablist" aria-label="Profilo in evidenza">${PR.map(x=>`<button data-c="${x.id}" class="${x.id==evid?"on":""}">${x.nome}</button>`).join("")}</div>
+    <div class="tablewrap"><table class="compatta pcft"><tr><th>Mese</th>${PR.map(x=>`<th class="num${x.id==evid?" ev":""}"><span class="pcl">${x.nome}</span><span class="pcs">${x.nome.slice(0,4)}.</span></th>`).join("")}<th class="pcfw">Perch&eacute; negativo <span class="small">(${esc(pe.nome)})</span></th></tr>
+     ${mesi.map(k=>`<tr><td>${ym(k)}</td>${PR.map(x=>cel(((x.mesi_chiusi||[]).find(m=>m.mese==k)||{}).r).replace('class="num"',`class="num${x.id==evid?" ev":""}"`)).join("")}<td class="pcfw small">${perche(k)}</td></tr>`).join("")}
+     <tr class="pcftot"><td>Totale periodo</td>${S.map((v,i)=>`<td class="num${PR[i].id==evid?" ev":""} ${v&&v.tot>=0?"up":"down"}"><b>${v?pc(v.tot):"n/d"}</b></td>`).join("")}<td class="pcfw"></td></tr>
+     <tr><td>Mesi negativi</td>${S.map((v,i)=>`<td class="num${PR[i].id==evid?" ev":""}">${v?v.neg+" su "+v.n:"n/d"}</td>`).join("")}<td class="pcfw"></td></tr>
+     <tr><td>Peggior mese</td>${S.map((v,i)=>`<td class="num down${PR[i].id==evid?" ev":""}">${v?pc(v.peg):"n/d"}</td>`).join("")}<td class="pcfw"></td></tr>
+     <tr><td>Volatilit&agrave; annua</td>${S.map((v,i)=>`<td class="num${PR[i].id==evid?" ev":""}">${v?fx(v.vol,1)+"%":"n/d"}</td>`).join("")}<td class="pcfw small">quanto oscilla in un anno (da mesi)</td></tr>
+     <tr><td>Drawdown del periodo</td>${S.map((v,i)=>`<td class="num down${PR[i].id==evid?" ev":""}">${v?pc(v.dd):"n/d"}</td>`).join("")}<td class="pcfw small">dal picco al minimo, a fine mese</td></tr>
+     <tr><td>Correlazione con ${esc(pe.nome)}</td>${PR.map(x=>{const c=x.id==pe.id?1:corr(x,pe);return `<td class="num${x.id==evid?" ev":""}">${c==null?"n/d":fx(c,2)}</td>`;}).join("")}<td class="pcfw small">1 = si muovono uguale</td></tr>
+     <tr class="pcfsto"><td>Storico dal ${esc((PR[0].stat.totale.dal||"").slice(0,4))}: mesi positivi</td>${PR.map(x=>`<td class="num${x.id==evid?" ev":""}">${x.stat.totale.mesi_pos??"n/d"}%</td>`).join("")}<td class="pcfw small">la regola, su tutta la storia</td></tr>
+     <tr><td>Storico: max drawdown</td>${PR.map(x=>`<td class="num down${x.id==evid?" ev":""}">${pc(x.stat.totale.maxdd)}</td>`).join("")}<td class="pcfw"></td></tr>
+     <tr><td>Storico: rendimento annuo</td>${PR.map(x=>`<td class="num up${x.id==evid?" ev":""}">${pc(x.stat.totale.cagr)}</td>`).join("")}<td class="pcfw"></td></tr></table></div>
+    <p class="small pcfnota">Un mese negativo su tre &egrave; normale per un portafoglio diversificato: nello storico i mesi positivi sono circa due su tre. Il risultato si misura sull'anno, non sul singolo mese. ${pe.live_dal?`Prima del ${gg(pe.live_dal)} i mesi sono calcolati applicando le regole attuali al passato (simulazione), non operazioni reali.`:""} Non &egrave; un consiglio di investimento.</p></div>`;}
+
  // --- AVVISO DATI NON AGGIORNATI (P.avviso dal backend): solo il popup comune di manutenzione (manutenzione.js),
  //     nessuna barra fissa. Data e ora dell'anomalia arrivano dal backend (P.avviso.quando).
  if(P.avviso)ebManutenzione({scheda:"port",codice:P.avviso.codice,quando:P.avviso.quando,dal:P.avviso.dal});
@@ -239,6 +276,7 @@ try{(function(){const P=D.port,el=$("port");if(!el)return;
    <div class="vfswitch pper">${[["tutto","Tutto"],["oos","Fuori campione"],["live","Live"]].map(x=>`<button data-per="${x[0]}" class="${per==x[0]?"on":""}">${x[1]}</button>`).join("")}</div>
    <div class="card pgraf">${curva(p)}</div>
    ${tabella(p)}
+   ${confronto()}
    <div class="grid k2 pbasso"><div><h3 class="vft">Ultime rotazioni <span class="small">(+ entrati, &minus; usciti, = rimasti)</span></h3>${rotazioni(p)}</div>
     <div><h3 class="vft">In pausa questo mese <span class="small">(mercati della base sotto la media a 200 giorni: il loro peso &egrave; nella liquidit&agrave; e rientra quando il trend torna positivo)</span></h3>
     <div class="card pescl">${p.esclusi.length?p.esclusi.map(x=>`<div class="pesr"><b>${esc(nomeK(x.k))}</b><span>${x.motivo}</span><em>base ${fx(x.base,0)}% &middot; trend ${pc(x.trend)} &middot; COT ${x.score!=null?sg(x.score,0):"n/d"}</em></div>`).join(""):'<div class="small">Nessun mercato in pausa: tutta la base &egrave; investita.</div>'}</div></div></div>`;
@@ -246,6 +284,7 @@ try{(function(){const P=D.port,el=$("port");if(!el)return;
   // clic su un titolo delle azioni scelte: apre la sua scheda nell'Azionario (azioni.js)
   el.querySelectorAll("[data-az]").forEach(b=>b.onclick=()=>{if(window.ebApriTitolo)window.ebApriTitolo(b.dataset.az);});
   el.querySelectorAll(".pper button").forEach(b=>b.onclick=()=>{per=b.dataset.per;ridisegna();});
+  el.querySelectorAll(".pcfsw button").forEach(b=>b.onclick=()=>{cfrSel=b.dataset.c;ridisegna();});
   const bt=el.querySelector(".ptutte");if(bt)bt.onclick=()=>{tutteRot=!tutteRot;ridisegna();};
   // copia dell'ISIN: feedback "Copiato" per 1,5 secondi
   el.querySelectorAll(".pisin").forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.isin);}catch(e){}

@@ -1307,3 +1307,23 @@ html.azaperto,html.azaperto body{overflow:hidden}                       /* la pa
 .sdbarre em{display:block;height:100%;border-radius:99px;background:currentColor;transition:width .6s cubic-bezier(.2,.8,.2,1)}
 .sdbarre b{text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
 @media (max-width:520px){.sdcorpo{gap:14px}.sdnum{min-width:80px;height:80px}.sdnum b{font-size:26px}.sdbarre>div{grid-template-columns:1fr 30px}.sdbarre>div span{grid-column:1/-1}}
+
+/* ===== v6.56 · confronto dei 3 profili mese per mese ===== */
+.pcfr{padding:16px 18px}
+.pcfsw{margin-bottom:12px}
+.pcft th.ev,.pcft td.ev{background:color-mix(in srgb,var(--acc) 9%,transparent)}
+.pcft th.ev{color:var(--acc)}
+.pcf{display:inline-block;min-width:62px;padding:3px 8px;border-radius:8px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.pcf.su{color:#4ade80;background:rgba(74,222,128,calc(.06 + .22*var(--a)))}
+.pcf.giu{color:#f87171;background:rgba(248,113,113,calc(.06 + .22*var(--a)))}
+.pcft .pcfw{white-space:normal;min-width:200px;color:var(--ink2)}
+.pcft tr.pcftot td{border-top:2px solid var(--line);font-size:14px}
+.pcft tr.pcfsto td{border-top:2px dashed var(--line)}
+.pcfnota{margin:12px 0 0}
+@media (max-width:760px){.pcft .pcfw{min-width:150px}.pcf{min-width:54px;padding:2px 6px}}
+.pcft td:first-child{white-space:normal;min-width:96px}
+@media (max-width:600px){.pcft .pcfw{display:none}.pcft th,.pcft td{padding:8px 6px;font-size:12.5px}.pcft th{font-size:10.5px;letter-spacing:.2px}.pcf{min-width:0;padding:2px 5px}.pcfr{padding:12px}}
+.pcft .pcs{display:none}
+@media (max-width:600px){.pcft .pcl{display:none}.pcft .pcs{display:inline}}
+.pcft td,.pcft th{border-radius:0!important}
+.pcft td.ev.up,.pcft td.ev.up b{color:#4ade80}.pcft td.ev.down,.pcft td.ev.down b{color:#f87171}

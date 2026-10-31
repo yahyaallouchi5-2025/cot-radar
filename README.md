@@ -232,6 +232,11 @@ Uso: `python -m cot_radar.confronto storico` (con la cartella dell'archivio). Il
 - **Statistica**: per ogni strumento quante volte, dopo 5 candele, il prezzo era nella direzione del segnale.
 - **Anomalia**: Yahoo fermo -> restano i segnali del giro prima, popup di manutenzione, mail di GitHub all'admin.
 
+### v6.56
+- Portafogli: nuovo blocco **Confronto dei 3 profili** (ultimi mesi chiusi affiancati: conservativo, moderato,
+  aggressivo), con interruttore del profilo in evidenza, motivo automatico di ogni mese negativo, totale del
+  periodo, mesi negativi, peggior mese, volatilita' annua, drawdown, correlazione tra profili e dati storici.
+
 ### v6.55
 - **SMART DISCOUNT** (cot_radar/sconto.py): punteggio 0-100 per ogni titolo = 60% rarita' dello sconto di oggi
   (dal massimo delle ultime 12 chiusure mensili) nella storia del titolo + 40% qualita' (comprare a quello sconto,
