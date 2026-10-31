@@ -1327,3 +1327,9 @@ html.azaperto,html.azaperto body{overflow:hidden}                       /* la pa
 @media (max-width:600px){.pcft .pcl{display:none}.pcft .pcs{display:inline}}
 .pcft td,.pcft th{border-radius:0!important}
 .pcft td.ev.up,.pcft td.ev.up b{color:#4ade80}.pcft td.ev.down,.pcft td.ev.down b{color:#f87171}
+
+/* ===== v6.56b · fumetti (i) nella scheda del titolo: ancorati al TITOLO del blocco, non all'icona.
+   Cosi' partono sempre dal bordo sinistro del contenuto e non escono mai dallo schermo (telefono compreso). ===== */
+.azdett .aztit,.azdett .sdtesta{position:relative}
+.azdett .aztit .info,.azdett .sdtesta .info{position:static}
+.azdett .aztit .info div,.azdett .sdtesta .info div{left:0;right:auto;top:calc(100% + 8px);width:auto;max-width:min(440px,100%);box-sizing:border-box;z-index:20}
