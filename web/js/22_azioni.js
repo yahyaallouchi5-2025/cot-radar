@@ -178,7 +178,7 @@ try{(function(){const el=$("azioni");if(!el)return;
  function bilancio(box,t){if(!box)return;
   fetch(BASE+"bilanci/"+encodeURIComponent(t.t.replace("^","_"))+".json",{cache:"no-cache"}).then(r=>r.ok?r.json():null).catch(()=>null).then(b=>{
    if(!box.isConnected)return;
-   if(!b||!b.anni||!b.anni.length){box.innerHTML=`<h4 class="aztit">Bilancio</h4><p class="small">I bilanci sono disponibili per le aziende USA (S&amp;P 500 e Nasdaq-100), fonte SEC.</p>`;return;}
+   if(!b||!b.anni||!b.anni.length){box.innerHTML=`<h4 class="aztit">Bilancio e trimestrali</h4><p class="small">Bilanci annuali e risultati trimestrali sono disponibili per le aziende USA (S&amp;P 500 e Nasdaq-100), fonte SEC. Gratuiti, ma la SEC copre solo le societ&agrave; americane.</p>`;return;}
    const A=b.anni,u=A[A.length-1],g=GIU[b.giudizio]||["med",b.giudizio];
    const mx=Math.max(1,...A.map(y=>Math.abs(y.ricavi||0))),W=440,H=150,T=10,B=22,bw=(W/A.length);
    const Y0=T+(H-T-B)*0.78,Ys=v=>Math.min(Y0-T,(Math.abs(v)/mx)*(Y0-T)),Yn=v=>Math.min(H-B-Y0-4,(Math.abs(v)/mx)*(Y0-T));   // zero al 78%: le perdite scendono sotto
@@ -195,7 +195,7 @@ try{(function(){const el=$("azioni");if(!el)return;
      <div><span>${u.dn!=null&&u.dn<0?"Liquidit&agrave; netta":"Debito netto"}</span><b>${u.dn==null?"n/d":dollari(Math.abs(u.dn))}</b><em>${u.dn!=null&&u.utile>0&&u.dn>0?fx(u.dn/u.utile,1)+" anni di utile":""}</em></div></div>
     <div class="bbox"><svg viewBox="0 0 ${W} ${H}" class="bsvg" preserveAspectRatio="none" role="img" aria-label="Ricavi e utile per anno"><line x1="0" x2="${W}" y1="${Y0}" y2="${Y0}" class="pm0"/>${barre}
      ${A.map((y,i)=>`<rect x="${(i*bw).toFixed(1)}" y="0" width="${bw.toFixed(1)}" height="${H}" class="bzona" data-i="${i}"/>`).join("")}</svg><div class="btip" hidden></div></div>
-    <div class="pmasse bleg"><span><i class="bric"></i>ricavi</span><span><i class="butu"></i>utile</span><span><i class="bper"></i>perdita</span></div>`;
+    <div class="pmasse bleg"><span><i class="bric"></i>ricavi</span><span><i class="butu"></i>utile</span><span><i class="bper"></i>perdita</span></div>${trimestrali(b)}`;
    /* v6.52: tocco (telefono) o passaggio del mouse su un anno = fumetto con ricavi, utile e margine di quell'anno */
    const bb=box.querySelector(".bbox"),tip=bb.querySelector(".btip");
    const mostra=e=>{const z=e.target.closest(".bzona");if(!z)return;const y=A[+z.dataset.i];
@@ -206,12 +206,36 @@ try{(function(){const el=$("azioni");if(!el)return;
    bb.addEventListener("pointerover",mostra);bb.addEventListener("click",mostra);
    bb.addEventListener("pointerleave",e=>{if(e.pointerType=="mouse"){tip.hidden=true;bb.querySelectorAll(".bzona").forEach(q=>q.classList.remove("on"));}});});}
 
+ // --- RISULTATI TRIMESTRALI (v6.54, cot_radar/fondamentali.py): ultimi 4 trimestri dai 10-Q/10-K della SEC con la
+ //     variazione sullo stesso trimestre dell'anno prima, data degli ultimi conti e stima dei prossimi (dagli 8-K).
+ const MB=["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
+ const dataIt=d=>{const x=new Date(d+"T12:00:00");return x.getDate()+" "+MB[x.getMonth()]+" "+x.getFullYear();};
+ const nomeTrim=q=>{const a=new Date(q.ini+"T12:00:00"),b=new Date(q.fine+"T12:00:00");      // es. "Lug–Set 2026"
+  const M=m=>MB[m][0].toUpperCase()+MB[m].slice(1);return M(a.getMonth())+"&ndash;"+M(b.getMonth())+" "+b.getFullYear();};
+ function trimestrali(b){const T=b.trim||[];if(!T.length)return "";
+  const prima=q=>T.find(z=>{const g=(new Date(q.fine)-new Date(z.fine))/864e5;return g>=350&&g<=380;});   // stesso trimestre, anno prima
+  const var_=(v,o)=>v==null||o==null||!o?"":(v<0)!=(o<0)?(v<0?`<em class="down">in perdita</em>`:`<em class="up">torna in utile</em>`):(()=>{const p=(v-o)/Math.abs(o)*100;return `<em class="${p>=0?"up":"down"}">${p>0?"+":""}${fx(p,1)}%</em>`;})();
+  /* var_: se cambia segno (utile -> perdita) la percentuale non ha senso: si scrive a parole */
+  const eps=v=>v==null?"n/d":(v<0?"&minus;":"")+fx(Math.abs(v),2)+" $";
+  const righe=T.slice(-4).reverse().map(q=>{const o=prima(q)||{};
+   return `<tr><td>${nomeTrim(q)}${q.r4?"<sup>*</sup>":""}</td><td><b>${dollari(q.ricavi)}</b>${var_(q.ricavi,o.ricavi)}</td>
+    <td class="tut"><b class="${q.utile>=0?"up":"down"}">${dollari(q.utile)}</b>${var_(q.utile,o.utile)}</td><td><b>${eps(q.eps)}</b>${var_(q.eps,o.eps)}</td></tr>`;}).join("");
+  const c=b.conti,oggi=new Date().toISOString().slice(0,10);
+  const pross=c?(c.prossimo<=oggi?`<b>attesi a breve</b>`:`<b>~ ${dataIt(c.prossimo)}</b>`):"";
+  return `<h4 class="aztit tritit">Risultati trimestrali <span class="small">(ultimi 4 trimestri, fonte SEC)</span>
+    <details class="info"><summary title="Come leggere la tabella" aria-label="Informazioni">i</summary><div>Ricavi, utile netto e utile per azione (EPS diluito) dai bilanci trimestrali depositati alla SEC (10-Q), con la variazione rispetto allo stesso trimestre dell'anno prima. Il 4&deg; trimestre non viene depositato da solo: &egrave; calcolato come anno intero meno i primi tre (*). La data dei prossimi conti &egrave; una stima basata sul calendario dell'anno precedente. Dati gratuiti con qualche giorno di ritardo; le stime degli analisti non sono incluse.</div></details></h4>
+   ${c?`<div class="tconti"><span>Ultimi conti <b>${dataIt(c.ultimo)}</b></span><span class="prox">Prossimi conti (stima) ${pross}</span></div>`:""}
+   <div class="ttab"><table><thead><tr><th>Trimestre</th><th>Ricavi</th><th class="tut">Utile netto</th><th>EPS</th></tr></thead><tbody>${righe}</tbody></table></div>
+   ${T.slice(-4).some(q=>q.r4)?`<p class="small">* 4&deg; trimestre calcolato: anno intero meno i primi tre trimestri.</p>`:""}`;}
+
  // --- PROFILO DELL'AZIENDA (v6.52, cot_radar/profili.py): cosa fa, fondazione, sede, CEO, dipendenti, borse,
  //     eventuale acquisizione negli ultimi 10 anni. Fonti: Wikidata e Wikipedia. File pubblico/profili/<T>.json.
  function profilo(box,t){if(!box)return;
   fetch(BASE+"profili/"+encodeURIComponent(t.t.replace("^","_"))+".json",{cache:"no-cache"}).then(r=>r.ok?r.json():null).catch(()=>null).then(p=>{
    if(!box.isConnected)return;
    if(!p){box.innerHTML=`<h4 class="aztit">L'azienda</h4><p class="small">Scheda dell'azienda in preparazione: arriva con i prossimi aggiornamenti.</p>`;return;}
+   if(p.vuoto){box.innerHTML=`<h4 class="aztit">L'azienda</h4><div class="azmini azfatti"><div><span>Settore</span><b>${esc(nomeSet(t.s))}</b></div><div><span>Quotata su</span><b>${esc(t.l.map(nomeList).join(", "))}</b></div></div>
+    <p class="small azfonte">Descrizione non disponibile: il titolo non ha una voce su Wikidata.</p>`;return;}   // v6.54: titolo senza voce
    const f=(et,v)=>v?`<div><span>${et}</span><b>${v}</b></div>`:"";
    const dip=p.dipendenti?Number(p.dipendenti.n).toLocaleString("it-IT")+(p.dipendenti.anno?` <em>(${p.dipendenti.anno})</em>`:""):"";
    const acq=(p.acquisita_da||[])[0];

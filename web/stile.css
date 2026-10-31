@@ -1232,3 +1232,31 @@ h1.tmarchio em{text-shadow:none;filter:drop-shadow(0 0 10px rgba(46,196,182,.35)
 .stag2{align-items:stretch}.stag2>.card{display:flex;flex-direction:column}
 .stagblk{margin-top:24px}
 .stag2 .compatta td:last-child,.stag2 .compatta th:last-child{white-space:normal;min-width:84px}
+
+/* ===== v6.54 · risultati trimestrali nella scheda del titolo ===== */
+.tritit{margin-top:22px}
+.tconti{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 12px}
+.tconti span{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:99px;border:1px solid var(--line);background:rgba(255,255,255,.03);font-size:12.5px;color:var(--mute)}
+.tconti span b{color:var(--ink);font-weight:700}
+.tconti .prox{border-color:rgba(250,204,21,.45);background:rgba(250,204,21,.08)}
+.tconti .prox b{color:#fde68a}
+.ttab{border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.ttab table{width:100%;border-collapse:collapse;font-size:13px}
+.ttab th{text-align:right;padding:9px 12px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mute);background:rgba(255,255,255,.03);border-bottom:1px solid var(--line)}
+.ttab td{text-align:right;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap}
+.ttab th:first-child,.ttab td:first-child{text-align:left;color:var(--ink);font-weight:600}
+.ttab tr:last-child td{border-bottom:0}
+.ttab tbody tr{transition:background .15s}
+.ttab tbody tr:hover{background:rgba(255,255,255,.035)}
+.ttab td b{display:block;font-weight:700}
+.ttab td em{display:block;font-style:normal;font-size:11.5px;margin-top:2px}
+.ttab sup{color:var(--mute);margin-left:2px}
+@media (max-width:520px){.ttab .tut{display:none}.ttab td,.ttab th{padding:9px 10px}}
+
+/* ===== v6.54 · barra di ricerca titolo piu' visibile ===== */
+.azcerca{height:42px;border:1.5px solid color-mix(in srgb,var(--acc) 55%,transparent);background:color-mix(in srgb,var(--acc) 9%,var(--card));box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 10%,transparent),0 6px 18px rgba(2,8,20,.35)}
+.azcerca:hover{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 13%,var(--card))}
+.azcerca:focus-within{border-color:var(--acc);box-shadow:0 0 0 4px color-mix(in srgb,var(--acc) 26%,transparent)}
+.azcerca svg{stroke:var(--acc);width:18px;height:18px}
+.azcerca input{font-size:14.5px;font-weight:600}
+.azcerca input::placeholder{color:color-mix(in srgb,var(--ink) 72%,transparent);opacity:1}
