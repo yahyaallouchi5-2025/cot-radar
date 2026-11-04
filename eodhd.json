@@ -1,0 +1,696 @@
+{
+ "quando": "2026-11-04 20:49 UTC",
+ "borse": {
+  "http": 200,
+  "totale": 70,
+  "elenco": [
+   [
+    "US",
+    "USA Stocks",
+    "USA",
+    "USD"
+   ],
+   [
+    "LSE",
+    "London Exchange",
+    "UK",
+    "GBP"
+   ],
+   [
+    "NEO",
+    "NEO Exchange",
+    "Canada",
+    "CAD"
+   ],
+   [
+    "V",
+    "TSX Venture Exchange",
+    "Canada",
+    "CAD"
+   ],
+   [
+    "TO",
+    "Toronto Exchange",
+    "Canada",
+    "CAD"
+   ],
+   [
+    "F",
+    "Frankfurt Exchange",
+    "Germany",
+    "EUR"
+   ],
+   [
+    "STU",
+    "Stuttgart Exchange",
+    "Germany",
+    "EUR"
+   ],
+   [
+    "MU",
+    "Munich Exchange",
+    "Germany",
+    "EUR"
+   ],
+   [
+    "HA",
+    "Hanover Exchange",
+    "Germany",
+    "EUR"
+   ],
+   [
+    "DU",
+    "Dusseldorf Exchange",
+    "Germany",
+    "EUR"
+   ],
+   [
+    "HM",
+    "Hamburg Exchange",
+    "Germany",
+    "EUR"
+   ],
+   [
+    "XETRA",
+    "XETRA Stock Exchange",
+    "Germany",
+    "EUR"
+   ],
+   [
+    "LU",
+    "Luxembourg Stock Exchange",
+    "Luxembourg",
+    "EUR"
+   ],
+   [
+    "VI",
+    "Vienna Exchange",
+    "Austria",
+    "EUR"
+   ],
+   [
+    "PA",
+    "Euronext Paris",
+    "France",
+    "EUR"
+   ],
+   [
+    "BR",
+    "Euronext Brussels",
+    "Belgium",
+    "EUR"
+   ],
+   [
+    "SW",
+    "SIX Swiss Exchange",
+    "Switzerland",
+    "CHF"
+   ],
+   [
+    "MC",
+    "Madrid Exchange",
+    "Spain",
+    "EUR"
+   ],
+   [
+    "LS",
+    "Euronext Lisbon",
+    "Portugal",
+    "EUR"
+   ],
+   [
+    "AS",
+    "Euronext Amsterdam",
+    "Netherlands",
+    "EUR"
+   ],
+   [
+    "CO",
+    "Copenhagen Exchange",
+    "Denmark",
+    "DKK"
+   ],
+   [
+    "ST",
+    "Stockholm Exchange",
+    "Sweden",
+    "SEK"
+   ],
+   [
+    "OL",
+    "Oslo Stock Exchange",
+    "Norway",
+    "NOK"
+   ],
+   [
+    "HE",
+    "Helsinki Exchange",
+    "Finland",
+    "EUR"
+   ],
+   [
+    "IR",
+    "Irish Exchange",
+    "Ireland",
+    "EUR"
+   ],
+   [
+    "VFEX",
+    "Victoria Falls Stock Exchange",
+    "Zimbabwe",
+    "ZWL"
+   ],
+   [
+    "XZIM",
+    "Zimbabwe Stock Exchange",
+    "Zimbabwe",
+    "ZWL"
+   ],
+   [
+    "PR",
+    "Prague Stock Exchange",
+    "Czech Republic",
+    "CZK"
+   ],
+   [
+    "XBOT",
+    "Botswana Stock Exchange",
+    "Botswana",
+    "BWP"
+   ],
+   [
+    "LUSE",
+    "Lusaka Stock Exchange",
+    "Zambia",
+    "ZMW"
+   ],
+   [
+    "EGX",
+    "Egyptian Exchange",
+    "Egypt",
+    "EGP"
+   ],
+   [
+    "GSE",
+    "Ghana Stock Exchange",
+    "Ghana",
+    "GHS"
+   ],
+   [
+    "USE",
+    "Uganda Securities Exchange",
+    "Uganda",
+    "UGX"
+   ],
+   [
+    "XNAI",
+    "Nairobi Securities Exchange",
+    "Kenya",
+    "KES"
+   ],
+   [
+    "RSE",
+    "Rwanda Stock Exchange",
+    "Rwanda",
+    "RWF"
+   ],
+   [
+    "DSE",
+    "Dar es Salaam Stock Exchange",
+    "Tanzania",
+    "TZS"
+   ],
+   [
+    "BC",
+    "Casablanca Stock Exchange",
+    "Morocco",
+    "MAD"
+   ],
+   [
+    "SEM",
+    "Stock Exchange of Mauritius",
+    "Mauritius",
+    "MUR"
+   ],
+   [
+    "MSE",
+    "Malawi Stock Exchange",
+    "Malawi",
+    "MWK"
+   ],
+   [
+    "XNSA",
+    "Nigerian Stock Exchange",
+    "Nigeria",
+    "NGN"
+   ],
+   [
+    "KQ",
+    "KOSDAQ",
+    "Korea",
+    "KRW"
+   ],
+   [
+    "KO",
+    "Korea Stock Exchange",
+    "Korea",
+    "KRW"
+   ],
+   [
+    "BUD",
+    "Budapest Stock Exchange",
+    "Hungary",
+    "HUF"
+   ],
+   [
+    "WAR",
+    "Warsaw Stock Exchange",
+    "Poland",
+    "PLN"
+   ],
+   [
+    "PSE",
+    "Philippine Stock Exchange",
+    "Philippines",
+    "PHP"
+   ],
+   [
+    "BK",
+    "Thailand Exchange",
+    "Thailand",
+    "THB"
+   ],
+   [
+    "AU",
+    "Australian Securities Exchange",
+    "Australia",
+    "AUD"
+   ],
+   [
+    "SHE",
+    "Shenzhen Stock Exchange",
+    "China",
+    "CNY"
+   ],
+   [
+    "AT",
+    "Athens Exchange",
+    "Greece",
+    "EUR"
+   ],
+   [
+    "SHG",
+    "Shanghai Stock Exchange",
+    "China",
+    "CNY"
+   ],
+   [
+    "JK",
+    "Jakarta Exchange",
+    "Indonesia",
+    "IDR"
+   ],
+   [
+    "JSE",
+    "Johannesburg Exchange",
+    "South Africa",
+    "ZAR"
+   ],
+   [
+    "KAR",
+    "Karachi Stock Exchange",
+    "Pakistan",
+    "PKR"
+   ],
+   [
+    "SN",
+    "Chilean Stock Exchange",
+    "Chile",
+    "CLP"
+   ],
+   [
+    "CM",
+    "Colombo Stock Exchange",
+    "Sri Lanka",
+    "LKR"
+   ],
+   [
+    "VN",
+    "Vietnam Stocks",
+    "Vietnam",
+    "VND"
+   ],
+   [
+    "KLSE",
+    "Kuala Lumpur Exchange",
+    "Malaysia",
+    "MYR"
+   ],
+   [
+    "RO",
+    "Bucharest Stock Exchange",
+    "Romania",
+    "RON"
+   ],
+   [
+    "BA",
+    "Buenos Aires Exchange",
+    "Argentina",
+    "ARS"
+   ],
+   [
+    "SA",
+    "Sao Paulo Exchange",
+    "Brazil",
+    "BRL"
+   ],
+   [
+    "MX",
+    "Mexican Exchange",
+    "Mexico",
+    "MXN"
+   ],
+   [
+    "ZSE",
+    "Zagreb Stock Exchange",
+    "Croatia",
+    "EUR"
+   ],
+   [
+    "TW",
+    "Taiwan Stock Exchange",
+    "Taiwan",
+    "TWD"
+   ],
+   [
+    "MONEY",
+    "Money Market Virtual Exchange",
+    "Unknown",
+    "Unknown"
+   ],
+   [
+    "EUFUND",
+    "Europe Fund Virtual Exchange",
+    "Unknown",
+    "EUR"
+   ],
+   [
+    "GBOND",
+    "Government Bonds",
+    "Unknown",
+    "Unknown"
+   ],
+   [
+    "TWO",
+    "Taiwan OTC Exchange",
+    "Taiwan",
+    "TWD"
+   ],
+   [
+    "LIM",
+    "Bolsa de Valores de Lima",
+    "Peru",
+    "PEN"
+   ],
+   [
+    "CC",
+    "Cryptocurrencies",
+    "Unknown",
+    "USD"
+   ],
+   [
+    "FOREX",
+    "FOREX",
+    "Unknown",
+    "Unknown"
+   ]
+  ]
+ },
+ "simboli": {
+  "US": {
+   "http": 200,
+   "totale": 50640,
+   "per_tipo": {
+    "FUND": 20792,
+    "Common Stock": 17571,
+    "ETF": 5962,
+    "Mutual Fund": 4949,
+    "Warrant": 474,
+    "Preferred Stock": 463,
+    "Unit": 288,
+    "Notes": 135
+   }
+  },
+  "US (delistati)": {
+   "http": 200,
+   "totale": 59982,
+   "per_tipo": {
+    "Common Stock": 33186,
+    "FUND": 19032,
+    "Mutual Fund": 3523,
+    "ETF": 3033,
+    "Preferred Stock": 793,
+    "Unit": 236,
+    "Notes": 87,
+    "Warrant": 82
+   }
+  },
+  "XETRA": {
+   "http": 200,
+   "totale": 4346,
+   "per_tipo": {
+    "ETF": 3558,
+    "Common Stock": 711,
+    "ETC": 76,
+    "INDEX": 1
+   }
+  },
+  "MI": {
+   "http": 404,
+   "totale": null,
+   "per_tipo": {}
+  },
+  "PA": {
+   "http": 200,
+   "totale": 1379,
+   "per_tipo": {
+    "ETF": 720,
+    "Common Stock": 638,
+    "INDEX": 19,
+    "FUND": 2
+   }
+  },
+  "LSE": {
+   "http": 200,
+   "totale": 7297,
+   "per_tipo": {
+    "Common Stock": 3800,
+    "ETF": 3399,
+    "FUND": 65,
+    "ETC": 20,
+    "Preferred Stock": 12,
+    "BOND": 1
+   }
+  },
+  "AS": {
+   "http": 200,
+   "totale": 531,
+   "per_tipo": {
+    "ETF": 396,
+    "Common Stock": 109,
+    "FUND": 13,
+    "INDEX": 11,
+    "BOND": 1,
+    "ETC": 1
+   }
+  },
+  "SW": {
+   "http": 200,
+   "totale": 1599,
+   "per_tipo": {
+    "ETF": 1240,
+    "Common Stock": 229,
+    "FUND": 128,
+    "ETC": 1,
+    "INDEX": 1
+   }
+  },
+  "TO": {
+   "http": 200,
+   "totale": 3086,
+   "per_tipo": {
+    "ETF": 1629,
+    "Common Stock": 884,
+    "FUND": 324,
+    "Preferred Stock": 249
+   }
+  },
+  "FOREX": {
+   "http": 200,
+   "totale": 998,
+   "per_tipo": {
+    "Currency": 998
+   }
+  },
+  "CC": {
+   "http": 200,
+   "totale": 1851,
+   "per_tipo": {
+    "Currency": 1847,
+    "FUND": 4
+   }
+  },
+  "INDX": {
+   "http": 200,
+   "totale": 1681,
+   "per_tipo": {
+    "INDEX": 1681
+   }
+  }
+ },
+ "prezzi": {
+  "SXR8.XETRA": {
+   "http": 200,
+   "ultimi": [
+    [
+     "2026-10-29",
+     746.06,
+     746.06
+    ],
+    [
+     "2026-10-30",
+     734.62,
+     734.62
+    ],
+    [
+     "2026-11-02",
+     735.36,
+     735.36
+    ],
+    [
+     "2026-11-03",
+     730.28,
+     730.28
+    ],
+    [
+     "2026-11-04",
+     738.44,
+     738.44
+    ]
+   ]
+  },
+  "EXPD.US": {
+   "http": 200,
+   "ultimi": [
+    [
+     "2026-10-28",
+     197.15,
+     197.15
+    ],
+    [
+     "2026-10-29",
+     198.39,
+     198.39
+    ],
+    [
+     "2026-10-30",
+     198.85,
+     198.85
+    ],
+    [
+     "2026-11-02",
+     200.56,
+     200.56
+    ],
+    [
+     "2026-11-03",
+     204.31,
+     204.31
+    ]
+   ]
+  },
+  "EURUSD.FOREX": {
+   "http": 200,
+   "ultimi": [
+    [
+     "2026-10-31",
+     1.1162,
+     1.1162
+    ],
+    [
+     "2026-11-01",
+     1.11566,
+     1.11566
+    ],
+    [
+     "2026-11-02",
+     1.11918,
+     1.11918
+    ],
+    [
+     "2026-11-03",
+     1.12069,
+     1.12069
+    ],
+    [
+     "2026-11-04",
+     1.1253,
+     1.1253
+    ]
+   ]
+  }
+ },
+ "ricerca_isin": {
+  "http": 200,
+  "risultati": [
+   [
+    "IS-FF702",
+    "TA",
+    "ILA",
+    "ETF"
+   ],
+   [
+    "CSPX",
+    "LSE",
+    "USD",
+    "ETF"
+   ],
+   [
+    "SXR8",
+    "XETRA",
+    "EUR",
+    "ETF"
+   ],
+   [
+    "CSSPX",
+    "SW",
+    "USD",
+    "ETF"
+   ],
+   [
+    "CSP1",
+    "LSE",
+    "GBX",
+    "ETF"
+   ],
+   [
+    "CSPX",
+    "AS",
+    "EUR",
+    "ETF"
+   ],
+   [
+    "CSPXN",
+    "MX",
+    "MXN",
+    "ETF"
+   ],
+   [
+    "SXR8",
+    "F",
+    "EUR",
+    "ETF"
+   ]
+  ]
+ }
+}
